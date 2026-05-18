@@ -14,7 +14,7 @@ class UserSummaryResource extends JsonResource
             'name' => $this->name,
             'avatar_url' => $this->avatar_url,
             'average_rating' => $this->average_rating,
-            'total_trips' => $this->total_trips,
+            'total_trips' => $this->when(isset($this->total_trips), $this->total_trips),
         ];
     }
 }

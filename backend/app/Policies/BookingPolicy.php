@@ -9,16 +9,19 @@ class BookingPolicy
 {
     public function view(User $user, Booking $booking): bool
     {
-        return $user->id === $booking->customer_id || $user->id === $booking->car->host_id || $user->isAdmin();
+        return $user->id === $booking->customer_id
+            || $user->id === $booking->car->host_id
+            || $user->isAdmin();
     }
 
     public function cancel(User $user, Booking $booking): bool
     {
-        return $user->id === $booking->customer_id && in_array($booking->status, ['pending', 'confirmed']);
+        return $user->id === $booking->customer_id && $booking->isCancellable();
     }
 
-    public function approve(User $user, Booking $booking): bool
+    public function review(User $user, Booking $booking): bool
     {
-        return $user->id === $booking->car->host_id && $booking->status === 'pending';
+        return ($user->id === $booking->customer_id || $user->id === $booking->car->host_id)
+            && $booking->isCompleted();
     }
 }

@@ -1,21 +1,15 @@
 <?php
 
+use App\Models\ChatThread;
 use Illuminate\Support\Facades\Broadcast;
 
-/*
-|--------------------------------------------------------------------------
-| Broadcast Channels
-|--------------------------------------------------------------------------
-*/
-
-Broadcast::channel('chat.thread.{threadId}', function ($user, $threadId) {
-    $thread = \App\Models\ChatThread::find($threadId);
-    if (!$thread) return false;
-    return $user->id === $thread->participant_one || $user->id === $thread->participant_two;
+Broadcast::channel('user.{id}', function ($user, $id) {
+    return $user->id === $id;
 });
 
-Broadcast::channel('user.{userId}', function ($user, $userId) {
-    return $user->id === $userId;
+Broadcast::channel('chat.thread.{threadId}', function ($user, $threadId) {
+    $thread = ChatThread::find($threadId);
+    return $thread && $thread->hasParticipant($user->id);
 });
 
 Broadcast::channel('booking.{bookingId}', function ($user, $bookingId) {

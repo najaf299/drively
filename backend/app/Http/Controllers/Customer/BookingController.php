@@ -5,13 +5,18 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
+use App\Models\Car;
 use App\Services\BookingService;
+use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BookingController extends Controller
 {
-    public function __construct(private BookingService $bookingService) {}
+    public function __construct(
+        private BookingService $bookingService,
+        private PaymentService $paymentService,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -33,12 +38,17 @@ class BookingController extends Controller
             'pickup_address' => ['required', 'string'],
             'addons' => ['nullable', 'array'],
             'promo_code' => ['nullable', 'string'],
+            'booking_type' => ['nullable', 'in:instant,request'],
         ]);
 
-        $validated['customer_id'] = $request->user()->id;
-        $booking = $this->bookingService->createBooking($validated);
+        try {
+            $booking = $this->bookingService->createBooking($request->user(), $validated);
+            $booking->load(['car.photos', 'car.host:id,name,avatar_url']);
 
-        return $this->success(new BookingResource($booking), 'Booking created', 201);
+            return $this->success(new BookingResource($booking), 'Booking created', 201);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
     }
 
     public function show(Booking $booking): JsonResponse
@@ -52,7 +62,46 @@ class BookingController extends Controller
     {
         $this->authorize('cancel', $booking);
         $validated = $request->validate(['reason' => ['required', 'string']]);
-        $booking = $this->bookingService->cancelBooking($booking, $validated['reason']);
-        return $this->success(new BookingResource($booking), 'Booking cancelled');
+
+        try {
+            $booking = $this->bookingService->cancelBooking($booking, $validated['reason']);
+            return $this->success(new BookingResource($booking), 'Booking cancelled');
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    public function pricing(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'car_id' => ['required', 'uuid', 'exists:cars,id'],
+            'pickup_at' => ['required', 'date', 'after:now'],
+            'return_at' => ['required', 'date', 'after:pickup_at'],
+            'promo_code' => ['nullable', 'string'],
+            'addons' => ['nullable', 'array'],
+        ]);
+
+        $car = Car::findOrFail($validated['car_id']);
+        $pricing = $this->bookingService->calculatePricing(
+            $car,
+            $validated['pickup_at'],
+            $validated['return_at'],
+            $validated['promo_code'] ?? null,
+            $validated['addons'] ?? [],
+        );
+
+        return $this->success($pricing);
+    }
+
+    public function pay(Booking $booking): JsonResponse
+    {
+        $this->authorize('view', $booking);
+
+        if (!$booking->isPending() && !$booking->isConfirmed()) {
+            return $this->error('Payment not available for this booking status.', 422);
+        }
+
+        $paymentData = $this->paymentService->createPaymentIntent($booking);
+        return $this->success($paymentData);
     }
 }

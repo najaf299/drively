@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\KycStatus;
 use App\Models\KycDocument;
 use App\Models\User;
+use App\Events\KycSubmitted;
 
 class KycService
 {
@@ -18,25 +20,38 @@ class KycService
             'status' => 'pending',
         ]);
 
-        $user->update(['kyc_status' => 'pending']);
+        $user->update(['kyc_status' => KycStatus::Pending]);
+
+        event(new KycSubmitted($document));
 
         return $document;
     }
 
-    public function reviewDocument(KycDocument $document, string $status, ?string $reason = null): KycDocument
+    public function reviewDocument(KycDocument $document, string $status, ?string $reason = null, ?string $reviewerId = null): KycDocument
     {
         $document->update([
             'status' => $status,
             'rejection_reason' => $reason,
             'reviewed_at' => now(),
+            'reviewed_by' => $reviewerId,
         ]);
 
-        if ($status === 'approved') {
-            $document->user->update(['kyc_status' => 'approved']);
-        } elseif ($status === 'rejected') {
-            $document->user->update(['kyc_status' => 'rejected']);
-        }
+        $kycStatus = match ($status) {
+            'approved' => KycStatus::Approved,
+            'rejected' => KycStatus::Rejected,
+            default => KycStatus::Pending,
+        };
 
-        return $document;
+        $document->user->update(['kyc_status' => $kycStatus]);
+
+        return $document->fresh();
+    }
+
+    public function getUserDocuments(User $user): array
+    {
+        return [
+            'kyc_status' => $user->kyc_status,
+            'documents' => $user->kycDocuments()->orderByDesc('created_at')->get(),
+        ];
     }
 }

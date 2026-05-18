@@ -12,7 +12,6 @@ class CarPhotoResource extends JsonResource
         return [
             'id' => $this->id,
             'url' => $this->url,
-            'thumbnail_url' => $this->thumbnail_url,
             'order' => $this->order,
             'is_cover' => $this->is_cover,
         ];
