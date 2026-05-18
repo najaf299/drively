@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Role;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,7 +13,7 @@ class EnsureHostVerified
     {
         $user = $request->user();
 
-        if (!$user || $user->role !== 'host') {
+        if (!$user || $user->role !== Role::Host) {
             return response()->json(['message' => 'Host access required.'], 403);
         }
 

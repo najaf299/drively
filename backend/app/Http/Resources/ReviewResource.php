@@ -11,6 +11,7 @@ class ReviewResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'booking_id' => $this->booking_id,
             'type' => $this->type,
             'rating' => $this->rating,
             'cleanliness_rating' => $this->cleanliness_rating,
@@ -20,7 +21,15 @@ class ReviewResource extends JsonResource
             'comment' => $this->comment,
             'tags' => $this->tags,
             'photo_urls' => $this->photo_urls,
+            'is_public' => $this->is_public,
             'reviewer' => new UserSummaryResource($this->whenLoaded('reviewer')),
+            'reviewee' => new UserSummaryResource($this->whenLoaded('reviewee')),
+            'car' => $this->whenLoaded('car', fn () => [
+                'id' => $this->car->id,
+                'make' => $this->car->make,
+                'model' => $this->car->model,
+                'year' => $this->car->year,
+            ]),
             'created_at' => $this->created_at,
         ];
     }
