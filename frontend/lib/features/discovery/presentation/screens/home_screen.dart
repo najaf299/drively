@@ -12,7 +12,8 @@ import '../../domain/car_filters.dart';
 import '../../domain/providers/car_provider.dart';
 import 'filters_sheet.dart';
 
-/// Customer landing: search entry, quick fuel filters and a paginated car list.
+/// Customer landing (Discover): location header, a search/date pill + filter
+/// button, category chips and a paginated car list.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -70,156 +71,253 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final cars = ref.watch(carListProvider);
     final filters = ref.watch(carFiltersProvider);
     final user = ref.watch(authProvider).user;
+    final text = Theme.of(context).textTheme;
 
-    return RefreshIndicator(
-      onRefresh: () => ref.read(carListProvider.notifier).refresh(),
-      child: CustomScrollView(
-        controller: _scroll,
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 132,
-            backgroundColor: BrandColors.background,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding:
-                  const EdgeInsets.fromLTRB(Spacing.x5, 0, Spacing.x5, 14),
-              title: Text(
-                'Find your drive, ${user?.name.split(' ').first ?? 'there'}',
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  Spacing.x5, 0, Spacing.x5, Spacing.x3),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => context.push('/search'),
-                      child: Container(
-                        height: 48,
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: Spacing.x4),
-                        decoration: BoxDecoration(
-                          color: BrandColors.surface,
-                          borderRadius: BorderRadius.circular(Radii.pill),
-                          border: Border.all(color: BrandColors.border),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.search, color: BrandColors.mutedFg),
-                            SizedBox(width: Spacing.x3),
-                            Text('Search cars, cities…',
-                                style: TextStyle(color: BrandColors.mutedFg)),
-                          ],
+    return SafeArea(
+      bottom: false,
+      child: RefreshIndicator(
+        onRefresh: () => ref.read(carListProvider.notifier).refresh(),
+        child: CustomScrollView(
+          controller: _scroll,
+          slivers: [
+            // ── Header: location + avatar ──────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Pickup in',
+                            style: TextStyle(
+                                color: BrandColors.mutedFg, fontSize: 13),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on,
+                                  color: BrandColors.primary, size: 20),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Karachi, PK',
+                                  style: text.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.x3),
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: BrandColors.accent,
+                      child: Text(
+                        (user?.name.trim().isNotEmpty ?? false)
+                            ? user!.name.trim()[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: Spacing.x3),
-                  _RoundButton(
-                    icon: Icons.tune,
-                    badge: filters.activeCount,
-                    onTap: _openFilters,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(child: _fuelChips(filters)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x2),
-              child: Text('Top picks near you',
-                  style: Theme.of(context).textTheme.titleMedium),
-            ),
-          ),
-          ...cars.when(
-            loading: () => [const SliverFillRemaining(child: LoadingView())],
-            error: (e, _) => [
-              SliverFillRemaining(
-                child: ErrorView(
-                  message: e.toString(),
-                  onRetry: () =>
-                      ref.read(carListProvider.notifier).load(filters),
+                  ],
                 ),
               ),
-            ],
-            data: (list) {
-              if (list.isEmpty) {
+            ),
+            // ── Search/date pill + filter button ───────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.x5, 0, Spacing.x5, Spacing.x4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => context.push('/search'),
+                        child: Container(
+                          height: 52,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: Spacing.x4),
+                          decoration: BoxDecoration(
+                            color: BrandColors.surface,
+                            borderRadius: BorderRadius.circular(Radii.pill),
+                            border: Border.all(color: BrandColors.border),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.search, color: BrandColors.mutedFg),
+                              SizedBox(width: Spacing.x3),
+                              Text('When?  ·  Add dates',
+                                  style:
+                                      TextStyle(color: BrandColors.mutedFg)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.x3),
+                    _FilterButton(
+                      badge: filters.activeCount,
+                      onTap: _openFilters,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // ── Category chips ─────────────────────────────────────────────
+            SliverToBoxAdapter(child: _categoryChips(filters)),
+            // ── Section title ──────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.x5, Spacing.x5, Spacing.x5, Spacing.x3),
+                child: Text('Top picks near you',
+                    style: text.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+              ),
+            ),
+            // ── Car list ───────────────────────────────────────────────────
+            ...cars.when(
+              loading: () => [const SliverFillRemaining(child: LoadingView())],
+              error: (e, _) => [
+                SliverFillRemaining(
+                  child: ErrorView(
+                    message: e.toString(),
+                    onRetry: () =>
+                        ref.read(carListProvider.notifier).load(filters),
+                  ),
+                ),
+              ],
+              data: (list) {
+                if (list.isEmpty) {
+                  return [
+                    const SliverFillRemaining(
+                      child: EmptyView(
+                        icon: Icons.directions_car_outlined,
+                        title: 'No cars found',
+                        subtitle: 'Try adjusting your filters or search area.',
+                      ),
+                    ),
+                  ];
+                }
                 return [
-                  const SliverFillRemaining(
-                    child: EmptyView(
-                      icon: Icons.directions_car_outlined,
-                      title: 'No cars found',
-                      subtitle: 'Try adjusting your filters or search area.',
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                        Spacing.x5, 0, Spacing.x5, Spacing.x6),
+                    sliver: SliverList.separated(
+                      itemCount: list.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: Spacing.x4),
+                      itemBuilder: (_, i) => CarCard(
+                        car: list[i],
+                        onTap: () => context.push('/car/${list[i].id}'),
+                      ),
                     ),
                   ),
                 ];
-              }
-              return [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                      Spacing.x5, 0, Spacing.x5, Spacing.x6),
-                  sliver: SliverList.separated(
-                    itemCount: list.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: Spacing.x4),
-                    itemBuilder: (_, i) => CarCard(
-                      car: list[i],
-                      onTap: () => context.push('/car/${list[i].id}'),
-                    ),
-                  ),
-                ),
-              ];
-            },
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _fuelChips(CarFilters filters) {
+  /// Category chips. "All" clears the fuel filter; the rest reuse the existing
+  /// fuel filter values via [_selectFuel].
+  Widget _categoryChips(CarFilters filters) {
     const fuels = {
       'electric': 'Electric',
       'hybrid': 'Hybrid',
       'petrol': 'Petrol',
       'diesel': 'Diesel',
     };
+    final chips = <Widget>[
+      _CategoryChip(
+        label: 'All',
+        selected: filters.fuelType == null,
+        onTap: () => _selectFuel(null),
+      ),
+      ...fuels.entries.map((e) {
+        final selected = filters.fuelType == e.key;
+        return _CategoryChip(
+          label: e.value,
+          selected: selected,
+          onTap: () => _selectFuel(selected ? null : e.key),
+        );
+      }),
+    ];
     return SizedBox(
       height: 40,
-      child: ListView(
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
-        children: fuels.entries.map((e) {
-          final selected = filters.fuelType == e.key;
-          return Padding(
-            padding: const EdgeInsets.only(right: Spacing.x2),
-            child: ChoiceChip(
-              label: Text(e.value),
-              selected: selected,
-              onSelected: (_) => _selectFuel(selected ? null : e.key),
-            ),
-          );
-        }).toList(),
+        itemCount: chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: Spacing.x2),
+        itemBuilder: (_, i) => chips[i],
       ),
     );
   }
 }
 
-class _RoundButton extends StatelessWidget {
-  final IconData icon;
+/// Stadium category pill: active = lime + dark text, inactive = surface.
+class _CategoryChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _CategoryChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.x4),
+        decoration: BoxDecoration(
+          color: selected ? BrandColors.primary : BrandColors.surface,
+          borderRadius: BorderRadius.circular(Radii.pill),
+          border: Border.all(
+            color: selected ? BrandColors.primary : BrandColors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? BrandColors.primaryFg : BrandColors.mutedFg,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 48px round filter button (tune icon) with an optional active-count badge.
+class _FilterButton extends StatelessWidget {
   final int badge;
   final VoidCallback onTap;
-  const _RoundButton({required this.icon, this.badge = 0, required this.onTap});
+  const _FilterButton({this.badge = 0, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         Material(
           color: BrandColors.surface,
@@ -238,8 +336,8 @@ class _RoundButton extends StatelessWidget {
         ),
         if (badge > 0)
           Positioned(
-            right: 0,
-            top: 0,
+            right: -2,
+            top: -2,
             child: Container(
               padding: const EdgeInsets.all(5),
               decoration: const BoxDecoration(

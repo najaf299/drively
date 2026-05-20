@@ -5,6 +5,7 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/wallet.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/state_views.dart';
+import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/wallet_service.dart';
 import '../../domain/providers/wallet_provider.dart';
 
@@ -33,119 +34,266 @@ class WalletScreen extends ConsumerWidget {
     }
   }
 
+  void _soon(BuildContext context) =>
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coming soon.')),
+      );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wallet = ref.watch(walletProvider);
     final txns = ref.watch(walletTransactionsProvider);
+    final user = ref.watch(authProvider).user;
 
     return Scaffold(
-      appBar:
-          AppBar(title: const Text('Wallet'), automaticallyImplyLeading: false),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(walletProvider);
-          ref.invalidate(walletTransactionsProvider);
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(Spacing.x5),
-          children: [
-            _balanceCard(context, ref, wallet),
-            const SizedBox(height: Spacing.x6),
-            Text('Recent activity',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: Spacing.x2),
-            txns.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(Spacing.x6),
-                child: LoadingView(),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(walletProvider);
+            ref.invalidate(walletTransactionsProvider);
+          },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+                Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
+            children: [
+              Row(
+                children: [
+                  Text('Wallet',
+                      style: Theme.of(context).textTheme.headlineLarge),
+                  const Spacer(),
+                  _CircleAction(
+                    icon: Icons.add,
+                    onTap: () => _topUp(context, ref),
+                  ),
+                ],
               ),
-              error: (e, _) => ErrorView(
-                message: e.toString(),
-                onRetry: () => ref.invalidate(walletTransactionsProvider),
-              ),
-              data: (list) {
-                if (list.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: Spacing.x6),
-                    child: EmptyView(
-                      icon: Icons.receipt_long_outlined,
-                      title: 'No transactions yet',
-                      subtitle: 'Top up your wallet to get started.',
+              const SizedBox(height: Spacing.x5),
+              _BalanceCard(wallet: wallet, name: user?.name ?? 'Drivly member'),
+              const SizedBox(height: Spacing.x5),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionTile(
+                      icon: Icons.add,
+                      label: 'Top up',
+                      onTap: () => _topUp(context, ref),
                     ),
+                  ),
+                  const SizedBox(width: Spacing.x3),
+                  Expanded(
+                    child: _ActionTile(
+                      icon: Icons.arrow_outward,
+                      label: 'Send',
+                      onTap: () => _soon(context),
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.x3),
+                  Expanded(
+                    child: _ActionTile(
+                      icon: Icons.card_giftcard,
+                      label: 'Refer',
+                      onTap: () => _soon(context),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.x6),
+              Text('Activity',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: Spacing.x3),
+              txns.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(Spacing.x6),
+                  child: LoadingView(),
+                ),
+                error: (e, _) => ErrorView(
+                  message: e.toString(),
+                  onRetry: () => ref.invalidate(walletTransactionsProvider),
+                ),
+                data: (list) {
+                  if (list.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: Spacing.x6),
+                      child: EmptyView(
+                        icon: Icons.receipt_long_outlined,
+                        title: 'No transactions yet',
+                        subtitle: 'Top up your wallet to get started.',
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: [
+                      for (final t in list) ...[
+                        _TxnTile(txn: t),
+                        const SizedBox(height: Spacing.x3),
+                      ],
+                    ],
                   );
-                }
-                return Column(
-                  children: list.map((t) => _TxnTile(txn: t)).toList(),
-                );
-              },
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _balanceCard(
-      BuildContext context, WidgetRef ref, AsyncValue<Wallet> wallet) {
+class _BalanceCard extends StatelessWidget {
+  final AsyncValue<Wallet> wallet;
+  final String name;
+  const _BalanceCard({required this.wallet, required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    final balance = wallet.maybeWhen(
+      data: (w) => Formatters.money(w.balance),
+      orElse: () => '—',
+    );
     return Container(
       padding: const EdgeInsets.all(Spacing.x5),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [BrandColors.primary, BrandColors.accent],
+        gradient: LinearGradient(
+          colors: [
+            BrandColors.primary,
+            Color.lerp(BrandColors.primary, BrandColors.primaryFg, 0.18)!,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.card + 4),
+        boxShadow: [
+          BoxShadow(
+            color: BrandColors.primary.withValues(alpha: 0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Available balance',
-              style: TextStyle(color: BrandColors.primaryFg)),
-          const SizedBox(height: Spacing.x2),
+          Row(
+            children: [
+              const Text('Drivly Balance',
+                  style: TextStyle(
+                    color: BrandColors.primaryFg,
+                    fontWeight: FontWeight.w600,
+                  )),
+              const Spacer(),
+              Icon(Icons.account_balance_wallet,
+                  color: BrandColors.primaryFg.withValues(alpha: 0.6),
+                  size: 22),
+            ],
+          ),
+          const SizedBox(height: Spacing.x4),
           Text(
-            wallet.maybeWhen(
-              data: (w) => Formatters.money(w.balance),
-              orElse: () => '—',
-            ),
+            balance,
             style: const TextStyle(
               color: BrandColors.primaryFg,
-              fontSize: 34,
+              fontSize: 40,
               fontWeight: FontWeight.w700,
+              letterSpacing: -1,
               fontFeatures: [FontFeature.tabularFigures()],
             ),
           ),
-          const SizedBox(height: Spacing.x4),
+          const SizedBox(height: Spacing.x6),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _topUp(context, ref),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: BrandColors.primaryFg,
-                    side: const BorderSide(color: BrandColors.primaryFg),
+                child: Text(
+                  '${name.toUpperCase()}  ••••  8492',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BrandColors.primaryFg.withValues(alpha: 0.85),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                   ),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Top up'),
                 ),
               ),
               const SizedBox(width: Spacing.x3),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Withdrawals coming soon.')),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: BrandColors.primaryFg,
-                    side: const BorderSide(color: BrandColors.primaryFg),
-                  ),
-                  icon: const Icon(Icons.arrow_outward),
-                  label: const Text('Withdraw'),
+              const Text(
+                'drivly.',
+                style: TextStyle(
+                  color: BrandColors.primaryFg,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _ActionTile(
+      {required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BrandColors.surface,
+      borderRadius: BorderRadius.circular(Radii.card),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Radii.card),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: Spacing.x4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Radii.card),
+            border: Border.all(color: BrandColors.border),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: BrandColors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: BrandColors.primary, size: 20),
+              ),
+              const SizedBox(height: Spacing.x2),
+              Text(label,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CircleAction extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _CircleAction({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BrandColors.surface,
+      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, color: BrandColors.foreground, size: 22),
+        ),
       ),
     );
   }
@@ -159,29 +307,65 @@ class _TxnTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final credit = txn.isCredit || txn.isRefund;
     final color = txn.isRefund
-        ? BrandColors.accent
+        ? BrandColors.success
         : credit
             ? BrandColors.success
-            : BrandColors.destructive;
+            : BrandColors.foreground;
     final icon = txn.isRefund
         ? Icons.replay
         : credit
             ? Icons.arrow_downward
             : Icons.arrow_upward;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: color.withValues(alpha: 0.15),
-        child: Icon(icon, color: color, size: 20),
+    return Container(
+      padding: const EdgeInsets.all(Spacing.x3),
+      decoration: BoxDecoration(
+        color: BrandColors.surface,
+        borderRadius: BorderRadius.circular(Radii.card),
+        border: Border.all(color: BrandColors.border),
       ),
-      title: Text(txn.description ?? _humanise(txn.type)),
-      subtitle: txn.createdAt != null
-          ? Text(Formatters.date(txn.createdAt!),
-              style: const TextStyle(color: BrandColors.mutedFg, fontSize: 12))
-          : null,
-      trailing: Text(
-        '${credit ? '+' : '-'}${Formatters.money(txn.amount)}',
-        style: TextStyle(color: color, fontWeight: FontWeight.w700),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: BrandColors.surface2,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: BrandColors.mutedFg, size: 20),
+          ),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  txn.description ?? _humanise(txn.type),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                if (txn.createdAt != null) ...[
+                  const SizedBox(height: 2),
+                  Text(Formatters.date(txn.createdAt!),
+                      style: const TextStyle(
+                          color: BrandColors.mutedFg, fontSize: 12)),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: Spacing.x3),
+          Text(
+            '${credit ? '+' : '−'}${Formatters.money(txn.amount)}',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
       ),
     );
   }

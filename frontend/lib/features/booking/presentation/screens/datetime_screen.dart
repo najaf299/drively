@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -65,85 +66,155 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    return Scaffold(
-      appBar: AppBar(title: const Text('Select dates')),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(Spacing.x4),
-              child: Column(
-                children: [
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(Spacing.x2),
-                      child: TableCalendar(
-                        firstDay: today,
-                        lastDay: today.add(const Duration(days: 365)),
-                        focusedDay: _focusedDay,
-                        rangeStartDay: _rangeStart,
-                        rangeEndDay: _rangeEnd,
-                        rangeSelectionMode: RangeSelectionMode.toggledOn,
-                        startingDayOfWeek: StartingDayOfWeek.monday,
-                        availableGestures: AvailableGestures.horizontalSwipe,
-                        headerStyle: const HeaderStyle(
-                          formatButtonVisible: false,
-                          titleCentered: true,
-                        ),
-                        calendarStyle: const CalendarStyle(
-                          rangeHighlightColor: BrandColors.surface2,
-                          rangeStartDecoration: BoxDecoration(
-                              color: BrandColors.primary,
-                              shape: BoxShape.circle),
-                          rangeEndDecoration: BoxDecoration(
-                              color: BrandColors.primary,
-                              shape: BoxShape.circle),
-                          rangeStartTextStyle:
-                              TextStyle(color: BrandColors.primaryFg),
-                          rangeEndTextStyle:
-                              TextStyle(color: BrandColors.primaryFg),
-                          todayDecoration: BoxDecoration(
-                              color: BrandColors.surface2,
-                              shape: BoxShape.circle),
-                          withinRangeTextStyle:
-                              TextStyle(color: BrandColors.foreground),
-                          defaultTextStyle:
-                              TextStyle(color: BrandColors.foreground),
-                          weekendTextStyle:
-                              TextStyle(color: BrandColors.foreground),
-                          disabledTextStyle:
-                              TextStyle(color: BrandColors.mutedFg),
-                        ),
-                        onRangeSelected: (start, end, focused) {
-                          setState(() {
-                            _rangeStart = start;
-                            _rangeEnd = end;
-                            _focusedDay = focused;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.x4),
-                  Row(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: BrandColors.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _header(context),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                      Spacing.x5, Spacing.x2, Spacing.x5, Spacing.x6),
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _timeTile(
-                            'Pickup time', _pickupTime, () => _pickTime(true)),
-                      ),
-                      const SizedBox(width: Spacing.x3),
-                      Expanded(
-                        child: _timeTile(
-                            'Return time', _returnTime, () => _pickTime(false)),
+                      _calendarCard(today),
+                      const SizedBox(height: Spacing.x4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _timeTile('Pickup time', _pickupTime,
+                                () => _pickTime(true)),
+                          ),
+                          const SizedBox(width: Spacing.x3),
+                          Expanded(
+                            child: _timeTile('Return time', _returnTime,
+                                () => _pickTime(false)),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
+              _summaryBar(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.x4, Spacing.x2, Spacing.x5, Spacing.x2),
+      child: Row(
+        children: [
+          _CircleBackButton(onTap: () => context.pop()),
+          const SizedBox(width: Spacing.x3),
+          const Text(
+            'Select dates',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+              color: BrandColors.foreground,
             ),
           ),
-          _summaryBar(),
         ],
+      ),
+    );
+  }
+
+  Widget _calendarCard(DateTime today) {
+    return Container(
+      padding: const EdgeInsets.all(Spacing.x3),
+      decoration: BoxDecoration(
+        color: BrandColors.surface,
+        borderRadius: BorderRadius.circular(Radii.card),
+        border: Border.all(color: BrandColors.border),
+      ),
+      child: TableCalendar(
+        firstDay: today,
+        lastDay: today.add(const Duration(days: 365)),
+        focusedDay: _focusedDay,
+        rangeStartDay: _rangeStart,
+        rangeEndDay: _rangeEnd,
+        rangeSelectionMode: RangeSelectionMode.toggledOn,
+        startingDayOfWeek: StartingDayOfWeek.monday,
+        availableGestures: AvailableGestures.horizontalSwipe,
+        rowHeight: 46,
+        headerStyle: const HeaderStyle(
+          formatButtonVisible: false,
+          titleCentered: true,
+          leftChevronIcon:
+              Icon(Icons.chevron_left_rounded, color: BrandColors.foreground),
+          rightChevronIcon:
+              Icon(Icons.chevron_right_rounded, color: BrandColors.foreground),
+          titleTextStyle: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: BrandColors.foreground,
+          ),
+        ),
+        daysOfWeekStyle: const DaysOfWeekStyle(
+          weekdayStyle: TextStyle(
+            color: BrandColors.mutedFg,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+          weekendStyle: TextStyle(
+            color: BrandColors.mutedFg,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+        calendarStyle: CalendarStyle(
+          rangeHighlightColor: BrandColors.primary.withValues(alpha: 0.14),
+          rangeStartDecoration: const BoxDecoration(
+            color: BrandColors.primary,
+            shape: BoxShape.circle,
+          ),
+          rangeEndDecoration: const BoxDecoration(
+            color: BrandColors.primary,
+            shape: BoxShape.circle,
+          ),
+          rangeStartTextStyle: const TextStyle(
+            color: BrandColors.primaryFg,
+            fontWeight: FontWeight.w700,
+          ),
+          rangeEndTextStyle: const TextStyle(
+            color: BrandColors.primaryFg,
+            fontWeight: FontWeight.w700,
+          ),
+          todayDecoration: BoxDecoration(
+            color: Colors.transparent,
+            shape: BoxShape.circle,
+            border: Border.all(color: BrandColors.primary, width: 1.5),
+          ),
+          todayTextStyle: const TextStyle(
+            color: BrandColors.primary,
+            fontWeight: FontWeight.w600,
+          ),
+          withinRangeTextStyle:
+              const TextStyle(color: BrandColors.foreground),
+          defaultTextStyle: const TextStyle(color: BrandColors.foreground),
+          weekendTextStyle: const TextStyle(color: BrandColors.foreground),
+          outsideTextStyle: const TextStyle(color: BrandColors.mutedFg),
+          disabledTextStyle: TextStyle(
+            color: BrandColors.mutedFg.withValues(alpha: 0.4),
+          ),
+        ),
+        onRangeSelected: (start, end, focused) {
+          setState(() {
+            _rangeStart = start;
+            _rangeEnd = end;
+            _focusedDay = focused;
+          });
+        },
       ),
     );
   }
@@ -151,26 +222,44 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
   Widget _timeTile(String label, TimeOfDay time, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(Radii.md),
+      borderRadius: BorderRadius.circular(Radii.card),
       child: Container(
-        padding: const EdgeInsets.all(Spacing.x3),
+        padding: const EdgeInsets.all(Spacing.x4),
         decoration: BoxDecoration(
           color: BrandColors.surface,
-          borderRadius: BorderRadius.circular(Radii.md),
+          borderRadius: BorderRadius.circular(Radii.card),
           border: Border.all(color: BrandColors.border),
         ),
         child: Row(
           children: [
-            const Icon(Icons.access_time, size: 18, color: BrandColors.mutedFg),
-            const SizedBox(width: Spacing.x2),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: BrandColors.surface2,
+                borderRadius: BorderRadius.circular(Radii.md),
+              ),
+              child: const Icon(Icons.access_time_rounded,
+                  size: 18, color: BrandColors.primary),
+            ),
+            const SizedBox(width: Spacing.x3),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(
-                        color: BrandColors.mutedFg, fontSize: 11)),
-                Text(time.format(context),
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                      color: BrandColors.mutedFg, fontSize: 11),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  time.format(context),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: BrandColors.foreground,
+                  ),
+                ),
               ],
             ),
           ],
@@ -181,40 +270,96 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
 
   Widget _summaryBar() {
     final subtotal = widget.car.dailyPrice * _days;
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.all(Spacing.x4),
-        decoration: const BoxDecoration(
-          color: BrandColors.surface,
-          border: Border(top: BorderSide(color: BrandColors.border)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_valid)
-              Padding(
-                padding: const EdgeInsets.only(bottom: Spacing.x3),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${Formatters.money(widget.car.dailyPrice)} × '
-                      '${Formatters.plural(_days, 'day')}',
-                      style: const TextStyle(color: BrandColors.mutedFg),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x4),
+      decoration: const BoxDecoration(
+        color: BrandColors.background,
+        border: Border(top: BorderSide(color: BrandColors.border)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_valid)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Spacing.x3),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${Formatters.money(widget.car.dailyPrice)} × '
+                    '${Formatters.plural(_days, 'day')}',
+                    style: const TextStyle(color: BrandColors.mutedFg),
+                  ),
+                  Text(
+                    Formatters.money(subtotal),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: BrandColors.primary,
                     ),
-                    Text(Formatters.money(subtotal),
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            SizedBox(
+            ),
+          _PillButtonTheme(
+            child: SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: _valid ? _confirm : null,
                 child: Text(_valid ? 'Confirm dates' : 'Select your dates'),
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Wraps a [FilledButton]/[LoadingButton] so it renders as a ~56-tall lime pill.
+class _PillButtonTheme extends StatelessWidget {
+  final Widget child;
+  const _PillButtonTheme({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButtonTheme(
+      data: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: BrandColors.primary,
+          foregroundColor: BrandColors.primaryFg,
+          disabledBackgroundColor: BrandColors.primary.withValues(alpha: 0.4),
+          minimumSize: const Size.fromHeight(56),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          shape: const StadiumBorder(),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Circular 40px back button on a surface tile.
+class _CircleBackButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CircleBackButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BrandColors.surface,
+      shape: const CircleBorder(
+        side: BorderSide(color: BrandColors.border),
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(Icons.arrow_back_ios_new_rounded,
+              size: 16, color: BrandColors.foreground),
         ),
       ),
     );

@@ -43,6 +43,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _onQueryChanged(String value) {
+    setState(() {}); // refresh the clear button
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
       final next = ref.read(carFiltersProvider).copyWith(query: value);
@@ -66,96 +67,165 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final filters = ref.watch(carFiltersProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Padding(
-          padding: const EdgeInsets.only(right: Spacing.x4),
-          child: TextField(
-            controller: _query,
-            autofocus: true,
-            textInputAction: TextInputAction.search,
-            onChanged: _onQueryChanged,
-            decoration: InputDecoration(
-              hintText: 'Search cars, cities…',
-              prefixIcon: const Icon(Icons.search),
-              isDense: true,
-              suffixIcon: _query.text.isEmpty
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        _query.clear();
-                        _onQueryChanged('');
-                      },
-                    ),
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(icon: const Icon(Icons.tune), onPressed: _openFilters),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/map'),
-        icon: const Icon(Icons.map_outlined),
-        label: const Text('Map view'),
-      ),
-      body: Column(
-        children: [
-          if (filters.activeCount > 0)
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Top row: back + rounded search field + filter ──────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  Spacing.x5, Spacing.x2, Spacing.x5, 0),
+                  Spacing.x4, Spacing.x3, Spacing.x4, Spacing.x3),
               child: Row(
                 children: [
-                  Text(
-                    '${filters.activeCount} filter'
-                    '${filters.activeCount == 1 ? '' : 's'} applied',
-                    style: const TextStyle(color: BrandColors.mutedFg),
+                  _CircleButton(
+                    icon: Icons.arrow_back,
+                    onTap: () => context.pop(),
                   ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {
-                      // Reset everything except the free-text query.
-                      final next = CarFilters(query: filters.query);
-                      ref.read(carFiltersProvider.notifier).state = next;
-                      ref.read(carListProvider.notifier).load(next);
-                    },
-                    child: const Text('Clear all'),
+                  const SizedBox(width: Spacing.x3),
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: Spacing.x4),
+                      decoration: BoxDecoration(
+                        color: BrandColors.surface,
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                        border: Border.all(color: BrandColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search,
+                              color: BrandColors.mutedFg, size: 20),
+                          const SizedBox(width: Spacing.x2),
+                          Expanded(
+                            child: TextField(
+                              controller: _query,
+                              autofocus: true,
+                              textInputAction: TextInputAction.search,
+                              onChanged: _onQueryChanged,
+                              style: const TextStyle(
+                                  color: BrandColors.foreground),
+                              decoration: const InputDecoration(
+                                hintText: 'Search cars, cities…',
+                                isCollapsed: true,
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                filled: false,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                          if (_query.text.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                _query.clear();
+                                _onQueryChanged('');
+                              },
+                              child: const Icon(Icons.close,
+                                  color: BrandColors.mutedFg, size: 20),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: Spacing.x3),
+                  _CircleButton(icon: Icons.tune, onTap: _openFilters),
                 ],
               ),
             ),
-          Expanded(
-            child: cars.when(
-              loading: () => const LoadingView(),
-              error: (e, _) => ErrorView(
-                message: e.toString(),
-                onRetry: () => ref.read(carListProvider.notifier).load(filters),
+            if (filters.activeCount > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.x5, 0, Spacing.x5, Spacing.x2),
+                child: Row(
+                  children: [
+                    Text(
+                      '${filters.activeCount} filter'
+                      '${filters.activeCount == 1 ? '' : 's'} applied',
+                      style: const TextStyle(color: BrandColors.mutedFg),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        // Reset everything except the free-text query.
+                        final next = CarFilters(query: filters.query);
+                        ref.read(carFiltersProvider.notifier).state = next;
+                        ref.read(carListProvider.notifier).load(next);
+                      },
+                      child: const Text('Clear all'),
+                    ),
+                  ],
+                ),
               ),
-              data: (list) {
-                if (list.isEmpty) {
-                  return const EmptyView(
-                    icon: Icons.search_off,
-                    title: 'No cars match',
-                    subtitle: 'Try a different search or clear your filters.',
+            Expanded(
+              child: cars.when(
+                loading: () => const LoadingView(),
+                error: (e, _) => ErrorView(
+                  message: e.toString(),
+                  onRetry: () =>
+                      ref.read(carListProvider.notifier).load(filters),
+                ),
+                data: (list) {
+                  if (list.isEmpty) {
+                    return EmptyView(
+                      icon: _query.text.isEmpty
+                          ? Icons.travel_explore
+                          : Icons.search_off,
+                      title: _query.text.isEmpty
+                          ? 'Find your next drive'
+                          : 'No cars match',
+                      subtitle: _query.text.isEmpty
+                          ? 'Search by car, make or city to get started.'
+                          : 'Try a different search or clear your filters.',
+                    );
+                  }
+                  return ListView.separated(
+                    controller: _scroll,
+                    padding: const EdgeInsets.all(Spacing.x5),
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: Spacing.x4),
+                    itemBuilder: (_, i) => CarCard(
+                      car: list[i],
+                      onTap: () => context.push('/car/${list[i].id}'),
+                    ),
                   );
-                }
-                return ListView.separated(
-                  controller: _scroll,
-                  padding: const EdgeInsets.all(Spacing.x5),
-                  itemCount: list.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: Spacing.x4),
-                  itemBuilder: (_, i) => CarCard(
-                    car: list[i],
-                    onTap: () => context.push('/car/${list[i].id}'),
-                  ),
-                );
-              },
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/map'),
+        backgroundColor: BrandColors.primary,
+        foregroundColor: BrandColors.primaryFg,
+        icon: const Icon(Icons.map_outlined),
+        label: const Text('Map view'),
+      ),
+    );
+  }
+}
+
+/// 40px circular icon button on a surface tile.
+class _CircleButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _CircleButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BrandColors.surface,
+      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, color: BrandColors.foreground, size: 20),
+        ),
       ),
     );
   }

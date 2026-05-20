@@ -4,21 +4,37 @@ import '../../app/theme.dart';
 import '../../core/models/booking.dart';
 import '../../core/utils/formatters.dart';
 import 'app_network_image.dart';
-import 'status_chip.dart';
 
 /// Compact booking/trip row used on My Trips and Host Bookings.
+///
+/// When [featured] is true the card is rendered as a lime-gradient hero with
+/// dark text (used for the next/upcoming trip on the Trips screen).
 class TripCard extends StatelessWidget {
   final Booking booking;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final bool featured;
 
-  const TripCard({super.key, required this.booking, this.onTap, this.trailing});
+  const TripCard({
+    super.key,
+    required this.booking,
+    this.onTap,
+    this.trailing,
+    this.featured = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    return featured ? _featured(context) : _standard(context);
+  }
+
+  // ---- Standard dark row -------------------------------------------------
+  Widget _standard(BuildContext context) {
     final car = booking.car;
-    return Card(
+    final host = car?.host?.name;
+    return Material(
+      color: BrandColors.surface,
+      borderRadius: BorderRadius.circular(Radii.card),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(Radii.card),
@@ -28,8 +44,8 @@ class TripCard extends StatelessWidget {
             children: [
               AppNetworkImage(
                 url: car?.coverPhotoUrl,
-                width: 84,
-                height: 84,
+                width: 64,
+                height: 64,
                 borderRadius: BorderRadius.circular(Radii.md),
               ),
               const SizedBox(width: Spacing.x3),
@@ -37,62 +53,188 @@ class TripCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            car?.displayNameWithYear ?? booking.reference,
-                            style: text.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        StatusChip.booking(booking.status),
-                      ],
-                    ),
-                    const SizedBox(height: Spacing.x1),
                     Text(
-                      booking.reference,
+                      car?.displayNameWithYear ?? booking.reference,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: BrandColors.foreground,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _subtitle(host),
                       style: const TextStyle(
                         color: BrandColors.mutedFg,
                         fontSize: 12,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: Spacing.x2),
-                    if (booking.pickupAt != null && booking.returnAt != null)
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 13, color: BrandColors.mutedFg),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '${Formatters.dayMonth(booking.pickupAt!)} → '
-                              '${Formatters.dayMonth(booking.returnAt!)}',
-                              style: const TextStyle(
-                                color: BrandColors.mutedFg,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            Formatters.money(booking.pricing.totalAmount),
-                            style: text.titleSmall?.copyWith(
-                              color: BrandColors.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
                     if (trailing != null) ...[
-                      const SizedBox(height: Spacing.x3),
+                      const SizedBox(height: Spacing.x2),
                       trailing!,
                     ],
                   ],
                 ),
               ),
+              const SizedBox(width: Spacing.x2),
+              const Icon(Icons.chevron_right,
+                  color: BrandColors.mutedFg, size: 22),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // ---- Featured lime hero ------------------------------------------------
+  Widget _featured(BuildContext context) {
+    final car = booking.car;
+    final location = booking.pickupAddress ?? car?.city;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(Radii.card + 4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Radii.card + 4),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Radii.card + 4),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [BrandColors.primary, Color(0xFFB6D93C)],
+            ),
+          ),
+          padding: const EdgeInsets.all(Spacing.x4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  AppNetworkImage(
+                    url: car?.coverPhotoUrl,
+                    width: 68,
+                    height: 68,
+                    borderRadius: BorderRadius.circular(Radii.md),
+                  ),
+                  const SizedBox(width: Spacing.x3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _Tag(label: 'NEXT'),
+                        const SizedBox(height: 6),
+                        Text(
+                          car?.displayNameWithYear ?? booking.reference,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 17,
+                            color: BrandColors.primaryFg,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _pickupLine(),
+                          style: TextStyle(
+                            color: BrandColors.primaryFg.withValues(alpha: 0.8),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (location != null && location.isNotEmpty) ...[
+                const SizedBox(height: Spacing.x3),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.x3, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: BrandColors.primaryFg.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.location_on,
+                          size: 14, color: BrandColors.primaryFg),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: BrandColors.primaryFg,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _subtitle(String? host) {
+    final dates = (booking.pickupAt != null && booking.returnAt != null)
+        ? '${Formatters.dayMonth(booking.pickupAt!)} → '
+            '${Formatters.dayMonth(booking.returnAt!)}'
+        : booking.reference;
+    if (host != null && host.isNotEmpty) return '$dates · Host: $host';
+    return dates;
+  }
+
+  String _pickupLine() {
+    final pickup = booking.pickupAt;
+    if (pickup == null) return 'Upcoming trip';
+    final diff = pickup.difference(DateTime.now());
+    if (diff.isNegative) return 'Pickup ready';
+    if (diff.inDays >= 1) {
+      final hours = diff.inHours % 24;
+      return 'Pickup in ${Formatters.plural(diff.inDays, 'day')} · ${hours}h';
+    }
+    if (diff.inHours >= 1) {
+      final mins = diff.inMinutes % 60;
+      return 'Pickup in ${diff.inHours}h ${mins}m';
+    }
+    return 'Pickup in ${diff.inMinutes}m';
+  }
+}
+
+class _Tag extends StatelessWidget {
+  final String label;
+  const _Tag({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: BrandColors.primaryFg,
+        borderRadius: BorderRadius.circular(Radii.pill),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: BrandColors.primary,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.6,
         ),
       ),
     );

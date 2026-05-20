@@ -58,59 +58,271 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _pickLanguage() async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: Spacing.x4),
+            Text('Language', style: Theme.of(ctx).textTheme.titleLarge),
+            const SizedBox(height: Spacing.x2),
+            ..._languages.entries.map((e) => ListTile(
+                  title: Text(e.value),
+                  trailing: e.key == _language
+                      ? const Icon(Icons.check, color: BrandColors.primary)
+                      : null,
+                  onTap: () => Navigator.pop(ctx, e.key),
+                )),
+            const SizedBox(height: Spacing.x4),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && picked != _language) {
+      setState(() => _language = picked);
+      await _save();
+    }
+  }
+
+  void _soon() => ScaffoldMessenger.of(context)
+      .showSnackBar(const SnackBar(content: Text('Coming soon.')));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
+          children: [
+            Row(
+              children: [
+                _BackButton(),
+                const SizedBox(width: Spacing.x4),
+                Text('Settings',
+                    style: Theme.of(context).textTheme.headlineMedium),
+                const Spacer(),
+                if (_saving)
+                  const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save'),
-          ),
-        ],
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+            const SizedBox(height: Spacing.x6),
+            _section('ACCOUNT', [
+              _RowTile(
+                icon: Icons.shield_outlined,
+                label: 'Privacy & security',
+                onTap: _soon,
+              ),
+              _RowTile(
+                icon: Icons.lock_outline,
+                label: 'Change password',
+                onTap: _soon,
+              ),
+              _ToggleRow(
+                icon: Icons.notifications_none,
+                label: 'Notifications',
+                value: _channels['bookings']!,
+                onChanged: (v) {
+                  setState(() {
+                    _channels['bookings'] = v;
+                    _channels['messages'] = v;
+                    _channels['promotions'] = v;
+                  });
+                  _save();
+                },
+              ),
+            ]),
+            const SizedBox(height: Spacing.x5),
+            _section('PREFERENCES', [
+              _RowTile(
+                icon: Icons.language,
+                label: 'Language',
+                value: _languages[_language] ?? 'English',
+                onTap: _pickLanguage,
+              ),
+              _RowTile(
+                icon: Icons.attach_money,
+                label: 'Currency',
+                value: 'USD',
+                onTap: _soon,
+              ),
+              _ToggleRow(
+                icon: Icons.dark_mode_outlined,
+                label: 'Dark mode',
+                value: true,
+                onChanged: (_) => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Drivly is dark by design.')),
+                ),
+              ),
+            ]),
+            const SizedBox(height: Spacing.x5),
+            _section('SUPPORT', [
+              _RowTile(
+                icon: Icons.help_outline,
+                label: 'Help center',
+                onTap: _soon,
+              ),
+              _RowTile(
+                icon: Icons.description_outlined,
+                label: 'Terms & policies',
+                onTap: _soon,
+              ),
+              _RowTile(
+                icon: Icons.info_outline,
+                label: 'About Drivly',
+                onTap: _soon,
+              ),
+            ]),
+          ],
+        ),
       ),
-      body: ListView(
+    );
+  }
+
+  Widget _section(String title, List<Widget> rows) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: Spacing.x1, bottom: Spacing.x2),
+          child: Text(title,
+              style: const TextStyle(
+                color: BrandColors.mutedFg,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+                letterSpacing: 0.8,
+              )),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: BrandColors.surface,
+            borderRadius: BorderRadius.circular(Radii.card),
+            border: Border.all(color: BrandColors.border),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (var i = 0; i < rows.length; i++) ...[
+                rows[i],
+                if (i != rows.length - 1)
+                  const Divider(
+                      height: 1, indent: 60, color: BrandColors.border),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RowTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? value;
+  final VoidCallback onTap;
+  const _RowTile({
+    required this.icon,
+    required this.label,
+    this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.x4, vertical: Spacing.x3),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 28,
+              child: Icon(icon, color: BrandColors.primary, size: 22),
+            ),
+            const SizedBox(width: Spacing.x3),
+            Expanded(
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w500)),
+            ),
+            if (value != null) ...[
+              Text(value!,
+                  style: const TextStyle(
+                      color: BrandColors.mutedFg, fontSize: 13)),
+              const SizedBox(width: Spacing.x2),
+            ],
+            const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ToggleRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _ToggleRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.x4, vertical: Spacing.x1),
+      child: Row(
         children: [
-          _header('Push notifications'),
-          ..._channels.keys.map((key) => SwitchListTile(
-                title: Text(_channelLabel(key)),
-                value: _channels[key]!,
-                activeThumbColor: BrandColors.primary,
-                onChanged: (v) => setState(() => _channels[key] = v),
-              )),
-          _header('Language'),
-          ..._languages.entries.map((e) => RadioListTile<String>(
-                title: Text(e.value),
-                value: e.key,
-                // ignore: deprecated_member_use
-                groupValue: _language,
-                // ignore: deprecated_member_use
-                onChanged: (v) => setState(() => _language = v ?? 'en'),
-              )),
-          _header('Appearance'),
-          const ListTile(
-            title: Text('Theme'),
-            subtitle: Text('Dark (default)'),
-            trailing: Icon(Icons.dark_mode_outlined),
+          SizedBox(
+            width: 28,
+            child: Icon(icon, color: BrandColors.primary, size: 22),
+          ),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w500)),
+          ),
+          Switch(
+            value: value,
+            activeThumbColor: BrandColors.primaryFg,
+            activeTrackColor: BrandColors.primary,
+            onChanged: onChanged,
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _header(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-            Spacing.x5, Spacing.x5, Spacing.x5, Spacing.x2),
-        child: Text(text,
-            style: const TextStyle(
-                color: BrandColors.mutedFg, fontWeight: FontWeight.w600)),
-      );
-
-  String _channelLabel(String key) => key[0].toUpperCase() + key.substring(1);
+class _BackButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BrandColors.surface,
+      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      child: InkWell(
+        onTap: () => Navigator.of(context).maybePop(),
+        customBorder: const CircleBorder(),
+        child: const SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(Icons.arrow_back, color: BrandColors.foreground, size: 20),
+        ),
+      ),
+    );
+  }
 }

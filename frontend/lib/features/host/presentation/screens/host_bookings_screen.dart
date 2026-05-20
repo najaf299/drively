@@ -11,6 +11,7 @@ import '../../data/host_service.dart';
 import '../../domain/providers/host_provider.dart';
 
 /// Host reservations grouped into Requests / Upcoming / Active / History.
+/// Restyled to the Drivly dark premium system.
 class HostBookingsScreen extends ConsumerWidget {
   const HostBookingsScreen({super.key});
 
@@ -21,43 +22,76 @@ class HostBookingsScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Bookings'),
-          bottom: const TabBar(
-            isScrollable: true,
-            indicatorColor: BrandColors.primary,
-            labelColor: BrandColors.primary,
-            unselectedLabelColor: BrandColors.mutedFg,
-            tabs: [
-              Tab(text: 'Requests'),
-              Tab(text: 'Upcoming'),
-              Tab(text: 'Active'),
-              Tab(text: 'History'),
-            ],
-          ),
-        ),
-        body: AsyncValueView<List<Booking>>(
-          value: bookings,
-          onRetry: () => ref.invalidate(hostBookingsProvider),
-          data: (list) => TabBarView(
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Tab(
-                items: list.where((b) => b.isPending).toList(),
-                isRequests: true,
-                empty: 'No pending requests',
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x4),
+                child: Row(
+                  children: [
+                    _CircleBackButton(
+                      onTap: () => context.canPop()
+                          ? context.pop()
+                          : context.go('/host'),
+                    ),
+                    const SizedBox(width: Spacing.x4),
+                    Expanded(
+                      child: Text('Bookings',
+                          style: Theme.of(context).textTheme.headlineMedium),
+                    ),
+                  ],
+                ),
               ),
-              _Tab(
-                items: list.where((b) => b.isConfirmed).toList(),
-                empty: 'No upcoming bookings',
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: Spacing.x5),
+                child: TabBar(
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  padding: EdgeInsets.zero,
+                  indicatorColor: BrandColors.primary,
+                  indicatorWeight: 3,
+                  labelColor: BrandColors.primary,
+                  unselectedLabelColor: BrandColors.mutedFg,
+                  labelStyle: TextStyle(fontWeight: FontWeight.w700),
+                  tabs: [
+                    Tab(text: 'Requests'),
+                    Tab(text: 'Upcoming'),
+                    Tab(text: 'Active'),
+                    Tab(text: 'History'),
+                  ],
+                ),
               ),
-              _Tab(
-                items: list.where((b) => b.isActive).toList(),
-                empty: 'No active trips',
-              ),
-              _Tab(
-                items:
-                    list.where((b) => b.isCompleted || b.isCancelled).toList(),
-                empty: 'No past bookings',
+              const Divider(height: 1, color: BrandColors.border),
+              Expanded(
+                child: AsyncValueView<List<Booking>>(
+                  value: bookings,
+                  onRetry: () => ref.invalidate(hostBookingsProvider),
+                  data: (list) => TabBarView(
+                    children: [
+                      _Tab(
+                        items: list.where((b) => b.isPending).toList(),
+                        isRequests: true,
+                        empty: 'No pending requests',
+                      ),
+                      _Tab(
+                        items: list.where((b) => b.isConfirmed).toList(),
+                        empty: 'No upcoming bookings',
+                      ),
+                      _Tab(
+                        items: list.where((b) => b.isActive).toList(),
+                        empty: 'No active trips',
+                      ),
+                      _Tab(
+                        items: list
+                            .where((b) => b.isCompleted || b.isCancelled)
+                            .toList(),
+                        empty: 'No past bookings',
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -139,14 +173,15 @@ class _TabState extends ConsumerState<_Tab> {
   Widget build(BuildContext context) {
     if (widget.items.isEmpty) {
       return ListView(children: [
-        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+        SizedBox(height: MediaQuery.of(context).size.height * 0.18),
         EmptyView(icon: Icons.inbox_outlined, title: widget.empty),
       ]);
     }
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(hostBookingsProvider),
       child: ListView.separated(
-        padding: const EdgeInsets.all(Spacing.x5),
+        padding: const EdgeInsets.fromLTRB(
+            Spacing.x5, Spacing.x5, Spacing.x5, Spacing.x10),
         itemCount: widget.items.length,
         separatorBuilder: (_, __) => const SizedBox(height: Spacing.x3),
         itemBuilder: (_, i) {
@@ -164,6 +199,9 @@ class _TabState extends ConsumerState<_Tab> {
                             foregroundColor: BrandColors.destructive,
                             side: const BorderSide(
                                 color: BrandColors.destructive),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Radii.pill),
+                            ),
                           ),
                           child: const Text('Decline'),
                         ),
@@ -172,7 +210,15 @@ class _TabState extends ConsumerState<_Tab> {
                       Expanded(
                         child: FilledButton(
                           onPressed: _busyId == b.id ? null : () => _approve(b),
-                          child: const Text('Accept'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: BrandColors.primary,
+                            foregroundColor: BrandColors.primaryFg,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Radii.pill),
+                            ),
+                          ),
+                          child: const Text('Accept',
+                              style: TextStyle(fontWeight: FontWeight.w700)),
                         ),
                       ),
                     ],
@@ -180,6 +226,30 @@ class _TabState extends ConsumerState<_Tab> {
                 : null,
           );
         },
+      ),
+    );
+  }
+}
+
+class _CircleBackButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CircleBackButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: BrandColors.surface,
+          shape: BoxShape.circle,
+          border: Border.all(color: BrandColors.border),
+        ),
+        child: const Icon(Icons.chevron_left,
+            color: BrandColors.foreground, size: 26),
       ),
     );
   }

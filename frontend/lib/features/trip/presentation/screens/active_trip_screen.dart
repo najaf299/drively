@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,7 +12,6 @@ import '../../../../core/models/trip.dart';
 import '../../../../core/network/realtime_client.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/state_views.dart';
-import '../../../../shared/widgets/status_chip.dart';
 import '../../data/trip_service.dart';
 import '../../domain/providers/trip_provider.dart';
 
@@ -151,146 +151,363 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   @override
   Widget build(BuildContext context) {
     final trip = ref.watch(tripDetailProvider(widget.tripId));
-    return Scaffold(
-      appBar: AppBar(title: const Text('Your trip')),
-      body: AsyncValueView<Trip>(
-        value: trip,
-        onRetry: () => ref.invalidate(tripDetailProvider(widget.tripId)),
-        data: _content,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        body: SafeArea(
+          child: AsyncValueView<Trip>(
+            value: trip,
+            onRetry: () => ref.invalidate(tripDetailProvider(widget.tripId)),
+            data: _content,
+          ),
+        ),
       ),
     );
   }
 
   Widget _content(Trip trip) {
-    final returnAt = trip.booking?.returnAt;
-    final overdue = trip.isOverdue ||
-        (returnAt != null && returnAt.isBefore(DateTime.now()));
+    final car = trip.booking?.car;
+    final from = trip.booking?.pickupAddress ?? car?.city;
+    final to = car?.city;
 
     return Column(
       children: [
-        _mapPlaceholder(trip),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x2),
+          child: Row(
+            children: [
+              _circleBack(),
+              const SizedBox(width: Spacing.x3),
+              const Text(
+                'Active trip',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.4,
+                  color: BrandColors.foreground,
+                ),
+              ),
+            ],
+          ),
+        ),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(Spacing.x5),
+            padding: const EdgeInsets.fromLTRB(
+                Spacing.x5, Spacing.x2, Spacing.x5, Spacing.x4),
             children: [
+              _mapCard(trip),
+              const SizedBox(height: Spacing.x4),
+              _carCard(trip, from, to),
+              const SizedBox(height: Spacing.x4),
               Row(
                 children: [
-                  StatusChip.trip(trip.status),
-                  const Spacer(),
-                  if (trip.hasLocation)
-                    const Row(
-                      children: [
-                        Icon(Icons.gps_fixed,
-                            size: 14, color: BrandColors.success),
-                        SizedBox(width: 4),
-                        Text('Live',
-                            style: TextStyle(color: BrandColors.success)),
-                      ],
+                  Expanded(
+                    child: _actionTile(
+                      Icons.call_outlined,
+                      'Call host',
+                      onTap: () => _callHost(trip),
                     ),
+                  ),
+                  const SizedBox(width: Spacing.x3),
+                  Expanded(
+                    child: _actionTile(
+                      Icons.photo_camera_outlined,
+                      'Photos',
+                      onTap: () {},
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.x3),
+                  Expanded(
+                    child: _actionTile(
+                      Icons.support_agent_outlined,
+                      'Support',
+                      onTap: () {},
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: Spacing.x4),
-              if (returnAt != null) ...[
-                Text(overdue ? 'Trip overdue' : 'Return in',
-                    style: TextStyle(
-                      color: overdue
-                          ? BrandColors.destructive
-                          : BrandColors.mutedFg,
-                    )),
-                const SizedBox(height: Spacing.x1),
-                Text(
-                  Formatters.countdown(returnAt.difference(DateTime.now())),
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: overdue
-                        ? BrandColors.destructive
-                        : BrandColors.foreground,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                const SizedBox(height: Spacing.x6),
-              ],
-              if (trip.booking?.car?.host != null) _hostRow(trip),
-              const SizedBox(height: Spacing.x6),
               if (trip.isInProgress) ...[
-                FilledButton.icon(
-                  onPressed: _busy ? null : () => _endTrip(trip),
-                  icon: const Icon(Icons.flag_outlined),
-                  label: const Text('Return car'),
-                ),
-                const SizedBox(height: Spacing.x3),
+                const SizedBox(height: Spacing.x4),
                 OutlinedButton.icon(
                   onPressed: _busy ? null : () => _extend(trip),
                   icon: const Icon(Icons.more_time),
                   label: const Text('Extend trip'),
                 ),
               ],
-              if (trip.isCompleted)
+              if (trip.isCompleted) ...[
+                const SizedBox(height: Spacing.x4),
                 FilledButton.icon(
                   onPressed: () =>
                       context.go('/rate/${trip.booking?.id ?? ''}'),
                   icon: const Icon(Icons.star_outline),
                   label: const Text('Rate your trip'),
                 ),
+              ],
             ],
           ),
         ),
+        if (trip.isInProgress)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                Spacing.x5, 0, Spacing.x5, Spacing.x4),
+            child: SizedBox(
+              height: 56,
+              child: FilledButton(
+                onPressed: _busy ? null : () => _endTrip(trip),
+                style: FilledButton.styleFrom(
+                  backgroundColor: BrandColors.accent,
+                  foregroundColor: BrandColors.primaryFg,
+                  disabledBackgroundColor:
+                      BrandColors.accent.withValues(alpha: 0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                ),
+                child: _busy
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: BrandColors.primaryFg))
+                    : const Text(
+                        'End trip',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _hostRow(Trip trip) {
-    final host = trip.booking!.car!.host!;
+  Widget _circleBack() {
+    return InkWell(
+      onTap: () =>
+          context.canPop() ? context.pop() : context.go('/trips'),
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: const BoxDecoration(
+          color: BrandColors.surface,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.arrow_back,
+            size: 20, color: BrandColors.foreground),
+      ),
+    );
+  }
+
+  Widget _mapCard(Trip trip) {
+    final hasLoc = trip.hasLocation;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(Radii.card + 4),
+      child: Container(
+        height: 200,
+        color: BrandColors.surface2,
+        child: Stack(
+          children: [
+            // Lime route polyline.
+            Positioned.fill(
+              child: CustomPaint(painter: _RoutePainter()),
+            ),
+            Positioned(
+              left: Spacing.x4,
+              top: Spacing.x4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.x3, vertical: 8),
+                decoration: BoxDecoration(
+                  color: BrandColors.background.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.navigation,
+                        size: 14, color: BrandColors.primary),
+                    SizedBox(width: 6),
+                    Text(
+                      'Trip in progress · 12.4 km · ETA 18 min',
+                      style: TextStyle(
+                        color: BrandColors.foreground,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              right: Spacing.x4,
+              bottom: Spacing.x4,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: BrandColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.navigation_outlined,
+                    color: BrandColors.primaryFg),
+              ),
+            ),
+            if (!hasLoc)
+              const Positioned(
+                left: Spacing.x4,
+                bottom: Spacing.x4,
+                child: Text(
+                  'Live location unavailable',
+                  style:
+                      TextStyle(color: BrandColors.mutedFg, fontSize: 11),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _carCard(Trip trip, String? from, String? to) {
+    final car = trip.booking?.car;
+    final name = car?.displayNameWithYear ?? 'Your car';
+    final route = (from != null && to != null) ? '$from → $to' : (from ?? to);
     return Container(
-      padding: const EdgeInsets.all(Spacing.x3),
+      padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.card + 4),
         border: Border.all(color: BrandColors.border),
       ),
       child: Row(
         children: [
-          const Icon(Icons.support_agent, color: BrandColors.primary),
-          const SizedBox(width: Spacing.x3),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(host.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                const Text('Your host',
-                    style: TextStyle(color: BrandColors.mutedFg, fontSize: 12)),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: BrandColors.foreground,
+                  ),
+                ),
+                if (route != null && route.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    route,
+                    style: const TextStyle(
+                        color: BrandColors.mutedFg, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => _callHost(trip),
-            icon: const Icon(Icons.phone_outlined, color: BrandColors.primary),
+          const SizedBox(width: Spacing.x3),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: BrandColors.success.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(Radii.pill),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_open,
+                    size: 13, color: BrandColors.success),
+                SizedBox(width: 4),
+                Text(
+                  'UNLOCKED',
+                  style: TextStyle(
+                    color: BrandColors.success,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _mapPlaceholder(Trip trip) {
-    return Container(
-      height: 180,
-      width: double.infinity,
-      color: BrandColors.surface2,
-      alignment: Alignment.center,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.location_on, size: 40, color: BrandColors.primary),
-          const SizedBox(height: Spacing.x2),
-          Text(
-            trip.hasLocation
-                ? 'Last seen: ${trip.lastKnownLat!.toStringAsFixed(4)}, '
-                    '${trip.lastKnownLng!.toStringAsFixed(4)}'
-                : 'Live location unavailable',
-            style: const TextStyle(color: BrandColors.mutedFg, fontSize: 12),
+  Widget _actionTile(IconData icon, String label, {VoidCallback? onTap}) {
+    return Material(
+      color: BrandColors.surface,
+      borderRadius: BorderRadius.circular(Radii.card),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Radii.card),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: Spacing.x4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Radii.card),
+            border: Border.all(color: BrandColors.border),
           ),
-        ],
+          child: Column(
+            children: [
+              Icon(icon, color: BrandColors.primary, size: 24),
+              const SizedBox(height: Spacing.x2),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: BrandColors.foreground,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+/// Decorative lime route polyline drawn across the map card.
+class _RoutePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = BrandColors.primary
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path()
+      ..moveTo(size.width * 0.12, size.height * 0.82)
+      ..cubicTo(
+        size.width * 0.35, size.height * 0.6,
+        size.width * 0.45, size.height * 0.7,
+        size.width * 0.6, size.height * 0.45,
+      )
+      ..cubicTo(
+        size.width * 0.72, size.height * 0.26,
+        size.width * 0.8, size.height * 0.32,
+        size.width * 0.9, size.height * 0.2,
+      );
+    canvas.drawPath(path, paint);
+
+    final dot = Paint()..color = BrandColors.primary;
+    canvas.drawCircle(
+        Offset(size.width * 0.12, size.height * 0.82), 6, dot);
+    canvas.drawCircle(
+      Offset(size.width * 0.9, size.height * 0.2),
+      6,
+      Paint()..color = BrandColors.accent,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

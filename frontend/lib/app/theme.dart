@@ -8,18 +8,18 @@ import 'package:flutter/services.dart';
 class BrandColors {
   BrandColors._();
 
-  static const Color background = Color(0xFF1B1D2A);
-  static const Color surface = Color(0xFF262838);
-  static const Color surface2 = Color(0xFF2F3144);
+  static const Color background = Color(0xFF0B0D13); // near-black, slight blue
+  static const Color surface = Color(0xFF15171F); // cards
+  static const Color surface2 = Color(0xFF1F222C); // nested surfaces
   static const Color foreground = Color(0xFFF5F6FA);
-  static const Color mutedFg = Color(0xFFA2A6B8);
+  static const Color mutedFg = Color(0xFF9BA0AE);
   static const Color primary = Color(0xFFD6F25C); // Electric Lime
-  static const Color primaryFg = Color(0xFF1B1D2A);
-  static const Color accent = Color(0xFFE68A4D); // Warm Orange
+  static const Color primaryFg = Color(0xFF12141B);
+  static const Color accent = Color(0xFFFB6F5A); // Coral
   static const Color success = Color(0xFF7BE0A6);
   static const Color warning = Color(0xFFF0C75A);
   static const Color destructive = Color(0xFFE5604F);
-  static const Color border = Color(0xFF3A3D52);
+  static const Color border = Color(0xFF262A36);
 }
 
 /// Spacing scale (dp). Matches the design-system spacing tokens.
