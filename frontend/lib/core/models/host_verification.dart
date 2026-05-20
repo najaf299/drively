@@ -30,8 +30,9 @@ class HostVerification {
         HostVerificationStep('agreement', 'Host agreement', agreementStatus),
       ];
 
-  int get completedSteps =>
-      steps.where((s) => s.status == 'approved' || s.status == 'submitted').length;
+  int get completedSteps => steps
+      .where((s) => s.status == 'approved' || s.status == 'submitted')
+      .length;
 
   factory HostVerification.fromJson(Map<String, dynamic> json) {
     if (asString(json['status']) == 'not_started') {

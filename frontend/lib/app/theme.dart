@@ -99,7 +99,8 @@ class DrivlyTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: BrandColors.foreground,
           minimumSize: const Size.fromHeight(48),
-          side: BorderSide(color: BrandColors.foreground.withValues(alpha: 0.3)),
+          side:
+              BorderSide(color: BrandColors.foreground.withValues(alpha: 0.3)),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(Radii.md),
@@ -118,18 +119,19 @@ class DrivlyTheme {
           side: const BorderSide(color: BrandColors.border),
         ),
       ),
-      chipTheme: ChipThemeData(
+      chipTheme: const ChipThemeData(
         backgroundColor: BrandColors.surface,
         selectedColor: BrandColors.primary,
-        side: const BorderSide(color: BrandColors.border),
-        labelStyle: const TextStyle(color: BrandColors.foreground),
-        secondaryLabelStyle: const TextStyle(color: BrandColors.primaryFg),
-        shape: const StadiumBorder(),
+        side: BorderSide(color: BrandColors.border),
+        labelStyle: TextStyle(color: BrandColors.foreground),
+        secondaryLabelStyle: TextStyle(color: BrandColors.primaryFg),
+        shape: StadiumBorder(),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: BrandColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: const TextStyle(color: BrandColors.mutedFg),
         labelStyle: const TextStyle(color: BrandColors.mutedFg),
         prefixIconColor: BrandColors.mutedFg,
@@ -148,9 +150,11 @@ class DrivlyTheme {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Radii.md),
-          borderSide: const BorderSide(color: BrandColors.destructive, width: 2),
+          borderSide:
+              const BorderSide(color: BrandColors.destructive, width: 2),
         ),
-        errorStyle: const TextStyle(color: BrandColors.destructive, fontSize: 12),
+        errorStyle:
+            const TextStyle(color: BrandColors.destructive, fontSize: 12),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: BrandColors.surface,
@@ -195,15 +199,19 @@ class DrivlyTheme {
             fontWeight: FontWeight.w600,
             letterSpacing: -0.4,
           ),
-          titleLarge: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          titleMedium: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          titleLarge:
+              const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          titleMedium:
+              const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           bodyLarge: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          bodyMedium: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+          bodyMedium:
+              const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
           bodySmall: const TextStyle(
             fontSize: 12,
             color: BrandColors.mutedFg,
           ),
-          labelLarge: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          labelLarge:
+              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         );
   }
 }

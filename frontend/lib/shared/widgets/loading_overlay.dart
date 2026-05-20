@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
+/// Dims [child] and shows a centered spinner while [isLoading] is true.
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;
 
-  const LoadingOverlay({super.key, required this.isLoading, required this.child});
+  const LoadingOverlay({
+    super.key,
+    required this.isLoading,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,9 +17,11 @@ class LoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          Container(
-            color: Colors.black26,
-            child: const Center(child: CircularProgressIndicator()),
+          const Positioned.fill(
+            child: ColoredBox(
+              color: Color(0x99000000),
+              child: Center(child: CircularProgressIndicator()),
+            ),
           ),
       ],
     );

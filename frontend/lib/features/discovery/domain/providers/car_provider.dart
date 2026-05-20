@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/car.dart';
@@ -9,7 +8,8 @@ import '../../data/favorite_service.dart';
 import '../car_filters.dart';
 
 /// The active discovery filters (search bar + filter sheet write here).
-final carFiltersProvider = StateProvider<CarFilters>((ref) => const CarFilters());
+final carFiltersProvider =
+    StateProvider<CarFilters>((ref) => const CarFilters());
 
 /// Paginated, filter-driven car list backing the Home and Search screens.
 class CarListNotifier extends StateNotifier<AsyncValue<List<Car>>> {

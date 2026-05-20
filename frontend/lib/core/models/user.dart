@@ -77,7 +77,8 @@ class User {
         averageRating: asDouble(json['average_rating']),
         totalTrips: asInt(json['total_trips']),
         preferredLanguage: asString(json['preferred_language'], fallback: 'en'),
-        preferredCurrency: asString(json['preferred_currency'], fallback: 'USD'),
+        preferredCurrency:
+            asString(json['preferred_currency'], fallback: 'USD'),
         preferredUnits: asString(json['preferred_units'], fallback: 'km'),
         notificationSettings: asMap(json['notification_settings']),
         isSuspended: asBool(json['is_suspended']),
@@ -150,7 +151,8 @@ class OtpVerifyResult {
 
   const OtpVerifyResult({required this.isNew, this.user, this.token});
 
-  factory OtpVerifyResult.fromJson(Map<String, dynamic> json) => OtpVerifyResult(
+  factory OtpVerifyResult.fromJson(Map<String, dynamic> json) =>
+      OtpVerifyResult(
         isNew: asBool(json['is_new']),
         user: json['user'] is Map
             ? User.fromJson(Map<String, dynamic>.from(json['user']))

@@ -25,8 +25,7 @@ class AppNotification {
         fallback: 'Notification',
       );
 
-  String get body =>
-      asString(data['body'] ?? data['message'] ?? data['text']);
+  String get body => asString(data['body'] ?? data['message'] ?? data['text']);
 
   /// Optional in-app deep link, e.g. `/trip/123`.
   String? get deepLink => asStringOrNull(data['url'] ?? data['deep_link']);
@@ -44,7 +43,8 @@ class AppNotification {
     return 'system';
   }
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
+  factory AppNotification.fromJson(Map<String, dynamic> json) =>
+      AppNotification(
         id: asString(json['id']),
         type: asString(json['type']),
         data: asMap(json['data']) ?? const {},

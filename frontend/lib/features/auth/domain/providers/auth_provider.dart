@@ -24,7 +24,8 @@ class AuthState {
     this.error,
   });
 
-  bool get isAuthenticated => status == AuthStatus.authenticated && user != null;
+  bool get isAuthenticated =>
+      status == AuthStatus.authenticated && user != null;
   bool get isBusy => status == AuthStatus.authenticating;
 
   AuthState copyWith({AuthStatus? status, User? user, String? error}) {
@@ -135,7 +136,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState(status: AuthStatus.unauthenticated, error: e.message);
       return false;
     } catch (e) {
-      state = AuthState(status: AuthStatus.unauthenticated, error: e.toString());
+      state =
+          AuthState(status: AuthStatus.unauthenticated, error: e.toString());
       return false;
     }
   }

@@ -31,7 +31,8 @@ class AppException implements Exception {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return const NetworkException('Connection timed out. Please try again.');
+        return const NetworkException(
+            'Connection timed out. Please try again.');
       case DioExceptionType.connectionError:
         return const NetworkException('No internet connection.');
       case DioExceptionType.cancel:
@@ -87,7 +88,8 @@ class AppException implements Exception {
       return ServerException(message);
     }
 
-    return AppException(message, statusCode: code, validationErrors: validation);
+    return AppException(message,
+        statusCode: code, validationErrors: validation);
   }
 
   @override
@@ -96,14 +98,12 @@ class AppException implements Exception {
 
 /// No connectivity / transport failure.
 class NetworkException extends AppException {
-  const NetworkException([String message = 'No internet connection.'])
-      : super(message);
+  const NetworkException([super.message = 'No internet connection.']);
 }
 
 /// Server-side (5xx) failure.
 class ServerException extends AppException {
-  const ServerException([String message = 'Server error. Please try again.'])
-      : super(message, statusCode: 500);
+  const ServerException([super.message = 'Server error. Please try again.']);
 }
 
 extension _FirstOrNull<E> on List<E> {

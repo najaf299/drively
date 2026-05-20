@@ -102,9 +102,11 @@ class HostService {
     }
   }
 
-  Future<void> addPhotos(String carId, List<Map<String, dynamic>> photos) async {
+  Future<void> addPhotos(
+      String carId, List<Map<String, dynamic>> photos) async {
     try {
-      await _dio.post(ApiEndpoints.hostCarPhotos(carId), data: {'photos': photos});
+      await _dio
+          .post(ApiEndpoints.hostCarPhotos(carId), data: {'photos': photos});
     } catch (e) {
       throw mapError(e);
     }

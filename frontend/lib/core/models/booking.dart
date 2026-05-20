@@ -48,7 +48,8 @@ class Booking {
   final String reference;
   final String carId;
   final String customerId;
-  final String status; // pending | confirmed | active | completed | cancelled | declined
+  final String
+      status; // pending | confirmed | active | completed | cancelled | declined
   final String bookingType; // instant | request
   final DateTime? pickupAt;
   final DateTime? returnAt;
@@ -118,7 +119,8 @@ class Booking {
         returnAt: asDateTime(json['return_at']),
         pickupAddress: asStringOrNull(json['pickup_address']),
         pricing: json['pricing'] is Map
-            ? BookingPricing.fromJson(Map<String, dynamic>.from(json['pricing']))
+            ? BookingPricing.fromJson(
+                Map<String, dynamic>.from(json['pricing']))
             : const BookingPricing(),
         addons: json['addons'] is List ? json['addons'] as List : null,
         cancellationReason: asStringOrNull(json['cancellation_reason']),

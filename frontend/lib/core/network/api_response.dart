@@ -1,4 +1,4 @@
-import 'json_utils.dart';
+import '../utils/json_utils.dart';
 
 /// Helpers for unwrapping the backend's standard response envelope:
 ///

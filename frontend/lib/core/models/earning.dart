@@ -66,13 +66,14 @@ class EarningsSummary {
     this.raw = const {},
   });
 
-  factory EarningsSummary.fromJson(Map<String, dynamic> json) => EarningsSummary(
+  factory EarningsSummary.fromJson(Map<String, dynamic> json) =>
+      EarningsSummary(
         total: asDouble(json['total'] ?? json['total_earnings'] ?? json['net']),
         net: asDouble(json['net'] ?? json['net_amount'] ?? json['total']),
         gross: asDouble(json['gross'] ?? json['gross_amount']),
-        commission:
-            asDouble(json['commission'] ?? json['platform_commission']),
-        tripsCount: asInt(json['trips_count'] ?? json['trips'] ?? json['count']),
+        commission: asDouble(json['commission'] ?? json['platform_commission']),
+        tripsCount:
+            asInt(json['trips_count'] ?? json['trips'] ?? json['count']),
         period: asString(json['period'], fallback: 'month'),
         raw: json,
       );

@@ -4,7 +4,8 @@ import '../../../../core/models/chat.dart';
 import '../../data/chat_service.dart';
 
 /// Conversation threads for the current user (newest activity first).
-final threadsProvider = FutureProvider.autoDispose<List<ChatThread>>((ref) async {
+final threadsProvider =
+    FutureProvider.autoDispose<List<ChatThread>>((ref) async {
   final result = await ref.watch(chatServiceProvider).threads();
   return result.items;
 });

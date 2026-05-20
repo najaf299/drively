@@ -33,7 +33,8 @@ class ChatService {
   }
 
   /// Messages for a thread, newest first (matching the API ordering).
-  Future<Paginated<ChatMessage>> messages(String threadId, {int page = 1}) async {
+  Future<Paginated<ChatMessage>> messages(String threadId,
+      {int page = 1}) async {
     try {
       final res = await _dio.get(
         ApiEndpoints.threadMessages(threadId),

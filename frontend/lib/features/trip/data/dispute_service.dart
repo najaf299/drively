@@ -38,7 +38,8 @@ class DisputeService {
     List<String>? evidenceUrls,
   }) async {
     try {
-      final res = await _dio.post(ApiEndpoints.bookingDispute(bookingId), data: {
+      final res =
+          await _dio.post(ApiEndpoints.bookingDispute(bookingId), data: {
         'type': type,
         'description': description,
         if (evidenceUrls != null) 'evidence_urls': evidenceUrls,

@@ -52,7 +52,8 @@ class ReviewService {
         ApiEndpoints.myReviews,
         queryParameters: {'page': page},
       );
-      return Paginated<Review>.from(ApiResponse.data(res.data), Review.fromJson);
+      return Paginated<Review>.from(
+          ApiResponse.data(res.data), Review.fromJson);
     } catch (e) {
       throw mapError(e);
     }

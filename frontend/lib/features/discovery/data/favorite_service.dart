@@ -20,7 +20,8 @@ class FavoriteService {
   Future<List<Car>> list() async {
     try {
       final res = await _dio.get(ApiEndpoints.favorites);
-      return Paginated<Car>.from(ApiResponse.data(res.data), Car.fromJson).items;
+      return Paginated<Car>.from(ApiResponse.data(res.data), Car.fromJson)
+          .items;
     } catch (e) {
       throw mapError(e);
     }

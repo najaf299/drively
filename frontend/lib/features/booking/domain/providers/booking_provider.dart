@@ -11,7 +11,6 @@ final bookingsProvider = FutureProvider.autoDispose<List<Booking>>((ref) async {
 });
 
 /// A single booking with full detail (car, host, payment, trip, reviews).
-final bookingDetailProvider =
-    FutureProvider.family<Booking, String>((ref, id) {
+final bookingDetailProvider = FutureProvider.family<Booking, String>((ref, id) {
   return ref.watch(bookingServiceProvider).get(id);
 });
