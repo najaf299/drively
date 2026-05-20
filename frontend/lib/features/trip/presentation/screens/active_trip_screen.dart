@@ -12,6 +12,7 @@ import '../../../../core/models/trip.dart';
 import '../../../../core/network/realtime_client.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/state_views.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../data/trip_service.dart';
 import '../../domain/providers/trip_provider.dart';
 
@@ -179,14 +180,9 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
             children: [
               _circleBack(),
               const SizedBox(width: Spacing.x3),
-              const Text(
+              Text(
                 'Active trip',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.4,
-                  color: BrandColors.foreground,
-                ),
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
             ],
           ),
@@ -251,31 +247,21 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 Spacing.x5, 0, Spacing.x5, Spacing.x4),
-            child: SizedBox(
-              height: 56,
-              child: FilledButton(
-                onPressed: _busy ? null : () => _endTrip(trip),
-                style: FilledButton.styleFrom(
-                  backgroundColor: BrandColors.accent,
-                  foregroundColor: BrandColors.primaryFg,
-                  disabledBackgroundColor:
-                      BrandColors.accent.withValues(alpha: 0.4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                ),
-                child: _busy
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: BrandColors.primaryFg))
-                    : const Text(
-                        'End trip',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700),
-                      ),
+            child: FilledButton(
+              onPressed: _busy ? null : () => _endTrip(trip),
+              style: FilledButton.styleFrom(
+                backgroundColor: BrandColors.accent,
+                foregroundColor: BrandColors.primaryFg,
+                disabledBackgroundColor:
+                    BrandColors.accent.withValues(alpha: 0.4),
               ),
+              child: _busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: BrandColors.primaryFg))
+                  : const Text('End trip'),
             ),
           ),
       ],
@@ -303,7 +289,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   Widget _mapCard(Trip trip) {
     final hasLoc = trip.hasLocation;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(Radii.card + 4),
+      borderRadius: BorderRadius.circular(Radii.xl),
       child: Container(
         height: 200,
         color: BrandColors.surface2,
@@ -316,29 +302,34 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
             Positioned(
               left: Spacing.x4,
               top: Spacing.x4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.x3, vertical: 8),
-                decoration: BoxDecoration(
-                  color: BrandColors.background.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.navigation,
-                        size: 14, color: BrandColors.primary),
-                    SizedBox(width: 6),
-                    Text(
-                      'Trip in progress · 12.4 km · ETA 18 min',
-                      style: TextStyle(
-                        color: BrandColors.foreground,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const StatusBadge('LIVE',
+                      tone: BadgeTone.live, icon: Icons.navigation),
+                  const SizedBox(height: Spacing.x2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.x3, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: BrandColors.background.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(Radii.lg),
                     ),
-                  ],
-                ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ETA 18 min',
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
+                        Text(
+                          'Trip in progress · 12.4 km',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
             Positioned(
@@ -379,7 +370,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card + 4),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Row(
@@ -388,20 +379,12 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: BrandColors.foreground,
-                  ),
-                ),
+                Text(name, style: Theme.of(context).textTheme.titleLarge),
                 if (route != null && route.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     route,
-                    style: const TextStyle(
-                        color: BrandColors.mutedFg, fontSize: 13),
+                    style: Theme.of(context).textTheme.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -410,31 +393,8 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
             ),
           ),
           const SizedBox(width: Spacing.x3),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: BrandColors.success.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(Radii.pill),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.lock_open,
-                    size: 13, color: BrandColors.success),
-                SizedBox(width: 4),
-                Text(
-                  'UNLOCKED',
-                  style: TextStyle(
-                    color: BrandColors.success,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const StatusBadge('UNLOCKED',
+              tone: BadgeTone.success, icon: Icons.lock_open),
         ],
       ),
     );

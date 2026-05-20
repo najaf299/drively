@@ -54,6 +54,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final auth = ref.watch(authProvider);
 
     ref.listen<AuthState>(authProvider, (prev, next) {
@@ -76,12 +77,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: Spacing.x6),
                 Text(
                   'Create\nyour account',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w800,
-                        height: 1.1,
-                        letterSpacing: -0.8,
-                      ),
+                  style: textTheme.displayMedium?.copyWith(height: 1.1),
                 ),
                 const SizedBox(height: Spacing.x6),
                 _RoleToggle(
@@ -146,25 +142,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
-                      height: 24,
-                      width: 24,
+                      height: Sizes.icon,
+                      width: Sizes.icon,
                       child: Checkbox(
                         value: _agreed,
                         onChanged: (v) => setState(() => _agreed = v ?? false),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(Radii.sm),
-                        ),
                       ),
                     ),
                     const SizedBox(width: Spacing.x3),
-                    const Expanded(
+                    Expanded(
                       child: Padding(
-                        padding: EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: 2),
                         child: Text.rich(
                           TextSpan(
                             text: 'I agree to the ',
-                            style: TextStyle(color: BrandColors.mutedFg),
-                            children: [
+                            style: textTheme.bodyMedium
+                                ?.copyWith(color: BrandColors.mutedFg),
+                            children: const [
                               TextSpan(
                                 text: 'Terms',
                                 style: TextStyle(
@@ -189,19 +183,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: Spacing.x5),
                 // Primary CTA wired to the existing register flow with busy state.
-                SizedBox(
+                Container(
                   width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(Radii.xxl),
+                    boxShadow: BrandShadows.glow,
+                  ),
                   child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
                     onPressed: auth.isBusy ? null : _submit,
                     child: auth.isBusy
                         ? const SizedBox(
@@ -219,11 +207,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Center(
                   child: GestureDetector(
                     onTap: () => context.go('/login'),
-                    child: const Text.rich(
+                    child: Text.rich(
                       TextSpan(
                         text: 'Have an account?  ',
-                        style: TextStyle(color: BrandColors.mutedFg),
-                        children: [
+                        style: textTheme.bodyMedium
+                            ?.copyWith(color: BrandColors.mutedFg),
+                        children: const [
                           TextSpan(
                             text: 'Sign in',
                             style: TextStyle(
@@ -262,21 +251,21 @@ class _RoleToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _segment('I want to rent', 'customer'),
-          _segment('I want to host', 'host'),
+          _segment(context, 'I want to rent', 'customer'),
+          _segment(context, 'I want to host', 'host'),
         ],
       ),
     );
   }
 
-  Widget _segment(String label, String value) {
+  Widget _segment(BuildContext context, String label, String value) {
     final selected = role == value;
     return Expanded(
       child: GestureDetector(
         onTap: () => onChanged(value),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: Spacing.x3),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected ? BrandColors.primary : Colors.transparent,
@@ -284,10 +273,10 @@ class _RoleToggle extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(
-              color: selected ? BrandColors.primaryFg : BrandColors.mutedFg,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color:
+                      selected ? BrandColors.primaryFg : BrandColors.mutedFg,
+                ),
           ),
         ),
       ),
@@ -325,7 +314,11 @@ class _StrengthMeter extends StatelessWidget {
           ),
         ),
         const SizedBox(width: Spacing.x3),
-        Text(label, style: TextStyle(color: color, fontSize: 12)),
+        Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(color: color)),
       ],
     );
   }
@@ -346,25 +339,24 @@ class _StepHeader extends StatelessWidget {
               context.canPop() ? context.pop() : context.go('/onboarding'),
           customBorder: const CircleBorder(),
           child: Container(
-            width: 44,
-            height: 44,
+            width: Sizes.avatar,
+            height: Sizes.avatar,
             decoration: BoxDecoration(
               color: BrandColors.surface,
               shape: BoxShape.circle,
               border: Border.all(color: BrandColors.border),
             ),
             child: const Icon(Icons.chevron_left,
-                color: BrandColors.foreground, size: 26),
+                color: BrandColors.foreground, size: Sizes.iconLg),
           ),
         ),
         const SizedBox(width: Spacing.x4),
         Text(
           label,
-          style: const TextStyle(
-            color: BrandColors.mutedFg,
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge
+              ?.copyWith(color: BrandColors.mutedFg),
         ),
       ],
     );

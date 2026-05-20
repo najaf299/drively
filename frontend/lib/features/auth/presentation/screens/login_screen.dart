@@ -78,6 +78,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final auth = ref.watch(authProvider);
 
     // Surface auth errors as a snackbar.
@@ -98,16 +99,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: Spacing.x4),
                 // Wordmark with a lime period.
-                const Text.rich(
+                Text.rich(
                   TextSpan(
                     text: 'drivly',
-                    style: TextStyle(
-                      color: BrandColors.foreground,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                    children: [
+                    style: textTheme.headlineMedium,
+                    children: const [
                       TextSpan(
                         text: '.',
                         style: TextStyle(color: BrandColors.primary),
@@ -118,18 +114,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: Spacing.x10),
                 Text(
                   'Welcome back.',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.8,
-                      ),
+                  style: textTheme.displayMedium,
                 ),
                 const SizedBox(height: Spacing.x2),
-                const Text(
+                Text(
                   'Sign in to continue your journey',
-                  style: TextStyle(color: BrandColors.mutedFg, fontSize: 15),
+                  style: textTheme.bodyLarge
+                      ?.copyWith(color: BrandColors.mutedFg),
                 ),
                 const SizedBox(height: Spacing.x8),
+                if (auth.error != null) ...[
+                  _ErrorBanner(message: auth.error!),
+                  const SizedBox(height: Spacing.x5),
+                ],
                 TextFormField(
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
@@ -169,19 +166,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: Spacing.x2),
                 // Primary CTA wired to the existing login flow with busy state.
-                SizedBox(
+                Container(
                   width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(Radii.xxl),
+                    boxShadow: BrandShadows.glow,
+                  ),
                   child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
                     onPressed: auth.isBusy ? null : _submit,
                     child: auth.isBusy
                         ? const SizedBox(
@@ -196,15 +187,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: Spacing.x6),
-                const Row(
+                Row(
                   children: [
-                    Expanded(child: Divider(color: BrandColors.border)),
+                    const Expanded(child: Divider(color: BrandColors.border)),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: Spacing.x3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.x3),
                       child: Text('or continue with',
-                          style: TextStyle(color: BrandColors.mutedFg)),
+                          style: textTheme.bodyMedium
+                              ?.copyWith(color: BrandColors.mutedFg)),
                     ),
-                    Expanded(child: Divider(color: BrandColors.border)),
+                    const Expanded(child: Divider(color: BrandColors.border)),
                   ],
                 ),
                 const SizedBox(height: Spacing.x5),
@@ -213,10 +206,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Expanded(
                       child: _SocialButton(
                         onTap: _google,
-                        child: const Text(
+                        child: Text(
                           'G',
-                          style: TextStyle(
-                            color: BrandColors.foreground,
+                          style: textTheme.titleLarge?.copyWith(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
                           ),
@@ -228,7 +220,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: _SocialButton(
                         onTap: _apple,
                         child: const Icon(Icons.apple,
-                            size: 28, color: BrandColors.foreground),
+                            size: Sizes.iconLg, color: BrandColors.foreground),
                       ),
                     ),
                   ],
@@ -237,11 +229,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Center(
                   child: GestureDetector(
                     onTap: () => context.go('/register'),
-                    child: const Text.rich(
+                    child: Text.rich(
                       TextSpan(
                         text: 'New here?  ',
-                        style: TextStyle(color: BrandColors.mutedFg),
-                        children: [
+                        style: textTheme.bodyMedium
+                            ?.copyWith(color: BrandColors.mutedFg),
+                        children: const [
                           TextSpan(
                             text: 'Sign up',
                             style: TextStyle(
@@ -264,7 +257,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-/// A rounded dark square used for the social sign-in providers.
+/// Inline error banner shown when `auth.error != null`.
+class _ErrorBanner extends StatelessWidget {
+  final String message;
+  const _ErrorBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.x4, vertical: Spacing.x3),
+      decoration: BoxDecoration(
+        color: BrandColors.destructiveBg,
+        borderRadius: BorderRadius.circular(Radii.md),
+        border: Border.all(color: BrandColors.destructive),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline,
+              color: BrandColors.destructive, size: Sizes.icon),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: BrandColors.destructive),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A rounded outlined square used for the social sign-in providers.
 class _SocialButton extends StatelessWidget {
   final Widget child;
   final VoidCallback onTap;
@@ -274,13 +304,13 @@ class _SocialButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(Radii.card),
+      borderRadius: BorderRadius.circular(Radii.lg),
       child: Container(
-        height: 56,
+        height: Sizes.secondaryHeight,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: BrandColors.surface,
-          borderRadius: BorderRadius.circular(Radii.card),
+          borderRadius: BorderRadius.circular(Radii.lg),
           border: Border.all(color: BrandColors.border),
         ),
         child: child,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/models/host_verification.dart';
 import '../../../../shared/widgets/state_views.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/host_service.dart';
 import '../../domain/providers/host_provider.dart';
@@ -109,10 +110,13 @@ class _HostVerificationScreenState
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: Spacing.x3),
-          const Text(
+          Text(
             'Complete a quick 4-step verification to list your first car.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: BrandColors.mutedFg, height: 1.4),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: BrandColors.mutedFg),
           ),
           const SizedBox(height: Spacing.x8),
           _PrimaryButton(
@@ -142,14 +146,11 @@ class _HostVerificationScreenState
           isComplete: v.isComplete,
         ),
         const SizedBox(height: Spacing.x6),
-        const Text(
+        Text(
           'VERIFICATION STEPS',
-          style: TextStyle(
-            color: BrandColors.mutedFg,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: BrandColors.mutedFg,
+              ),
         ),
         const SizedBox(height: Spacing.x3),
         for (final step in v.steps) ...[
@@ -165,21 +166,21 @@ class _HostVerificationScreenState
           Container(
             padding: const EdgeInsets.all(Spacing.x4),
             decoration: BoxDecoration(
-              color: BrandColors.success.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(Radii.card),
+              color: BrandColors.successBg,
+              borderRadius: BorderRadius.circular(Radii.xl),
               border:
                   Border.all(color: BrandColors.success.withValues(alpha: 0.4)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.verified, color: BrandColors.success),
-                SizedBox(width: Spacing.x3),
+                const Icon(Icons.verified, color: BrandColors.success),
+                const SizedBox(width: Spacing.x3),
                 Expanded(
                   child: Text(
                     'Verification complete — you can list cars now!',
-                    style: TextStyle(
-                        color: BrandColors.success,
-                        fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: BrandColors.success,
+                        ),
                   ),
                 ),
               ],
@@ -211,7 +212,7 @@ class _CompletionHeader extends StatelessWidget {
       padding: const EdgeInsets.all(Spacing.x5),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Column(
@@ -226,41 +227,26 @@ class _CompletionHeader extends StatelessWidget {
                   children: [
                     Text(
                       '$percent%',
-                      style: const TextStyle(
-                        color: BrandColors.primary,
-                        fontSize: 44,
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -1,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .displayMedium
+                          ?.copyWith(color: BrandColors.primary),
                     ),
                     const SizedBox(height: Spacing.x1),
-                    const Text(
+                    Text(
                       'Verification complete',
-                      style: TextStyle(color: BrandColors.mutedFg),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: BrandColors.mutedFg),
                     ),
                   ],
                 ),
               ),
               if (!isComplete)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: BrandColors.warning.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(Radii.pill),
-                    border: Border.all(
-                        color: BrandColors.warning.withValues(alpha: 0.5)),
-                  ),
-                  child: Text(
-                    '$stepsLeft STEP${stepsLeft == 1 ? '' : 'S'} LEFT',
-                    style: const TextStyle(
-                      color: BrandColors.warning,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                StatusBadge(
+                  '$stepsLeft STEP${stepsLeft == 1 ? '' : 'S'} LEFT',
+                  tone: BadgeTone.warning,
                 ),
             ],
           ),
@@ -300,7 +286,7 @@ class _StepCard extends StatelessWidget {
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(
           color: step.isApproved
               ? BrandColors.success.withValues(alpha: 0.35)
@@ -325,15 +311,15 @@ class _StepCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  step.label,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 15),
-                ),
+                Text(step.label,
+                    style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 3),
                 Text(
                   statusLabel,
-                  style: TextStyle(color: statusColor, fontSize: 12),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: statusColor),
                 ),
               ],
             ),
@@ -346,7 +332,8 @@ class _StepCard extends StatelessWidget {
 
   Widget _trailing() {
     if (step.isApproved) {
-      return const Icon(Icons.check_circle, color: BrandColors.success);
+      return const StatusBadge('DONE',
+          tone: BadgeTone.success, icon: Icons.check);
     }
     if (step.isRejected) {
       return TextButton(
@@ -356,28 +343,12 @@ class _StepCard extends StatelessWidget {
       );
     }
     if (step.isSubmitted) {
-      // Pending review → amber "REVIEW" pill.
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: BrandColors.warning.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(Radii.pill),
-        ),
-        child: const Text(
-          'REVIEW',
-          style: TextStyle(
-            color: BrandColors.warning,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-      );
+      // Pending review → amber "REVIEW" badge.
+      return const StatusBadge('REVIEW', tone: BadgeTone.warning);
     }
     // Pending → "Start →" lime action.
     return TextButton(
       onPressed: busy ? null : onSubmit,
-      style: TextButton.styleFrom(foregroundColor: BrandColors.primary),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -449,13 +420,13 @@ class _CircleBackButton extends StatelessWidget {
           border: Border.all(color: BrandColors.border),
         ),
         child: const Icon(Icons.chevron_left,
-            color: BrandColors.foreground, size: 26),
+            color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );
   }
 }
 
-/// Full-width lime pill primary button (~56 tall, radius 28).
+/// Full-width lime pill primary button (relies on the FilledButton theme).
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final bool loading;
@@ -469,28 +440,16 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: FilledButton(
-        onPressed: loading ? null : onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: BrandColors.primary,
-          foregroundColor: BrandColors.primaryFg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-        child: loading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: BrandColors.primaryFg),
-              )
-            : Text(label),
-      ),
+    return FilledButton(
+      onPressed: loading ? null : onPressed,
+      child: loading
+          ? const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: BrandColors.primaryFg),
+            )
+          : Text(label),
     );
   }
 }

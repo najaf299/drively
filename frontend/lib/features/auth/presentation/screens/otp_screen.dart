@@ -104,6 +104,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -115,18 +116,15 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               const SizedBox(height: Spacing.x6),
               Text(
                 'Verify your phone',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.8,
-                    ),
+                style: textTheme.displaySmall,
               ),
               const SizedBox(height: Spacing.x2),
               Text(
                 _phone.text.isEmpty
                     ? 'We\'ll text you a 6-digit verification code.'
                     : 'We sent a 6-digit code to ${_phone.text}',
-                style: const TextStyle(color: BrandColors.mutedFg, fontSize: 15),
+                style: textTheme.bodyLarge
+                    ?.copyWith(color: BrandColors.mutedFg),
               ),
               const SizedBox(height: Spacing.x8),
               if (!_codeSent) ...[
@@ -146,9 +144,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   onPressed: _send,
                 ),
               ] else ...[
-                // Six digit circles backed by a single hidden field so the
+                // Six digit boxes backed by a single hidden field so the
                 // existing verify logic is unchanged.
-                _OtpCircles(
+                _OtpBoxes(
                   controller: _code,
                   focusNode: _codeFocus,
                   onCompleted: _verify,
@@ -160,13 +158,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       ? Text(
                           'Didn\'t receive code? Resend in '
                           '0:${_resendIn.toString().padLeft(2, '0')}',
-                          style: const TextStyle(color: BrandColors.mutedFg),
+                          style: textTheme.bodyMedium
+                              ?.copyWith(color: BrandColors.mutedFg),
                         )
                       : Text.rich(
                           TextSpan(
                             text: 'Didn\'t receive code?  ',
-                            style:
-                                const TextStyle(color: BrandColors.mutedFg),
+                            style: textTheme.bodyMedium
+                                ?.copyWith(color: BrandColors.mutedFg),
                             children: [
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
@@ -213,14 +212,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 }
 
-/// A row of six circular digit slots backed by a single hidden [TextField].
-class _OtpCircles extends StatelessWidget {
+/// A row of six rounded digit slots backed by a single hidden [TextField].
+class _OtpBoxes extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final VoidCallback onChanged;
   final VoidCallback onCompleted;
 
-  const _OtpCircles({
+  const _OtpBoxes({
     required this.controller,
     required this.focusNode,
     required this.onChanged,
@@ -240,28 +239,22 @@ class _OtpCircles extends StatelessWidget {
               final filled = i < digits.length;
               final active = i == digits.length;
               return Container(
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: filled ? BrandColors.primary : BrandColors.surface,
-                  shape: BoxShape.circle,
+                  color: BrandColors.surface2,
+                  borderRadius: BorderRadius.circular(Radii.md),
                   border: Border.all(
-                    color: active
+                    color: (active || filled)
                         ? BrandColors.primary
-                        : filled
-                            ? BrandColors.primary
-                            : BrandColors.border,
-                    width: active ? 2 : 1,
+                        : BrandColors.border,
+                    width: (active || filled) ? 1.6 : 1,
                   ),
                 ),
                 child: Text(
                   filled ? digits[i] : '',
-                  style: const TextStyle(
-                    color: BrandColors.primaryFg,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
               );
             }),
@@ -292,7 +285,7 @@ class _OtpCircles extends StatelessWidget {
   }
 }
 
-/// Full-width lime pill button with an inline busy spinner.
+/// Full-width lime CTA (theme-driven) with an inline busy spinner.
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final bool busy;
@@ -308,13 +301,6 @@ class _PrimaryButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: FilledButton(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
         onPressed: busy ? null : onPressed,
         child: busy
             ? const SizedBox(
@@ -344,25 +330,24 @@ class _StepHeader extends StatelessWidget {
           onTap: () => context.canPop() ? context.pop() : context.go('/login'),
           customBorder: const CircleBorder(),
           child: Container(
-            width: 44,
-            height: 44,
+            width: Sizes.avatar,
+            height: Sizes.avatar,
             decoration: BoxDecoration(
               color: BrandColors.surface,
               shape: BoxShape.circle,
               border: Border.all(color: BrandColors.border),
             ),
             child: const Icon(Icons.chevron_left,
-                color: BrandColors.foreground, size: 26),
+                color: BrandColors.foreground, size: Sizes.iconLg),
           ),
         ),
         const SizedBox(width: Spacing.x4),
         Text(
           label,
-          style: const TextStyle(
-            color: BrandColors.mutedFg,
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge
+              ?.copyWith(color: BrandColors.mutedFg),
         ),
       ],
     );

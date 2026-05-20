@@ -63,11 +63,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         const SizedBox(width: Spacing.x3),
                         Expanded(
                           child: Container(
-                            height: 48,
+                            height: Sizes.secondaryHeight,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: Spacing.x4),
                             decoration: BoxDecoration(
-                              color: BrandColors.surface,
+                              color: BrandColors.surface2,
                               borderRadius: BorderRadius.circular(Radii.pill),
                               border: Border.all(color: BrandColors.border),
                             ),
@@ -237,7 +237,7 @@ class _MapCanvas extends StatelessWidget {
   }
 }
 
-/// Lime price pill marker; coral when selected.
+/// Price pill marker: active = lime with a lime glow, inactive = surface2.
 class _PriceMarker extends StatelessWidget {
   final double price;
   final bool selected;
@@ -250,8 +250,8 @@ class _PriceMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? BrandColors.accent : BrandColors.primary;
-    final fg = selected ? Colors.white : BrandColors.primaryFg;
+    final bg = selected ? BrandColors.primary : BrandColors.surface2;
+    final fg = selected ? BrandColors.primaryFg : BrandColors.foreground;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -259,13 +259,10 @@ class _PriceMarker extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(Radii.pill),
-          boxShadow: [
-            BoxShadow(
-              color: bg.withValues(alpha: 0.4),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: selected
+              ? null
+              : Border.all(color: BrandColors.border),
+          boxShadow: selected ? BrandShadows.glow : null,
         ),
         child: Text(
           Formatters.moneyCompact(price),
@@ -293,15 +290,9 @@ class _SelectedCarCard extends StatelessWidget {
       padding: const EdgeInsets.all(Spacing.x3),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        boxShadow: BrandShadows.card,
       ),
       child: Row(
         children: [
@@ -328,12 +319,11 @@ class _SelectedCarCard extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(Icons.star_rounded,
-                        size: 14, color: BrandColors.primary),
+                        size: 14, color: BrandColors.warning),
                     const SizedBox(width: 2),
                     Text(
                       car.averageRating.toStringAsFixed(1),
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600),
+                      style: text.titleSmall,
                     ),
                     const SizedBox(width: 4),
                     Flexible(
@@ -343,8 +333,7 @@ class _SelectedCarCard extends StatelessWidget {
                             : '· ${car.city}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: BrandColors.mutedFg, fontSize: 12),
+                        style: text.bodySmall,
                       ),
                     ),
                   ],
@@ -355,17 +344,12 @@ class _SelectedCarCard extends StatelessWidget {
                     children: [
                       TextSpan(
                         text: Formatters.money(car.dailyPrice),
-                        style: const TextStyle(
+                        style: text.titleMedium?.copyWith(
                           color: BrandColors.primary,
                           fontWeight: FontWeight.w700,
-                          fontSize: 14,
                         ),
                       ),
-                      const TextSpan(
-                        text: '/day',
-                        style: TextStyle(
-                            color: BrandColors.mutedFg, fontSize: 12),
-                      ),
+                      TextSpan(text: '/day', style: text.bodySmall),
                     ],
                   ),
                 ),
@@ -374,13 +358,11 @@ class _SelectedCarCard extends StatelessWidget {
           ),
           const SizedBox(width: Spacing.x2),
           SizedBox(
-            height: 40,
+            height: Sizes.secondaryHeight,
             child: FilledButton(
               onPressed: onView,
               style: FilledButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                ),
+                minimumSize: const Size(0, Sizes.secondaryHeight),
                 padding:
                     const EdgeInsets.symmetric(horizontal: Spacing.x5),
               ),
@@ -476,7 +458,7 @@ class _MapControl extends StatelessWidget {
   }
 }
 
-/// Lime locate FAB.
+/// Recenter FAB: 48px surface circle with a lime icon.
 class _LocateFab extends StatelessWidget {
   final VoidCallback onTap;
   const _LocateFab({required this.onTap});
@@ -484,15 +466,15 @@ class _LocateFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BrandColors.primary,
-      shape: const CircleBorder(),
+      color: BrandColors.surface,
+      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: const SizedBox(
-          width: 48,
-          height: 48,
-          child: Icon(Icons.my_location, color: BrandColors.primaryFg),
+          width: Sizes.secondaryHeight,
+          height: Sizes.secondaryHeight,
+          child: Icon(Icons.my_location, color: BrandColors.primary),
         ),
       ),
     );

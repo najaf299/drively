@@ -68,10 +68,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           .markAllRead();
                       ref.invalidate(notificationsProvider);
                     },
-                    style: TextButton.styleFrom(
-                        foregroundColor: BrandColors.primary),
-                    child: const Text('Mark all read',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    child: const Text('Mark all read'),
                   ),
                 ],
               ),
@@ -86,12 +83,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 data: (all) {
                   final list = all.where(_matches).toList();
                   if (list.isEmpty) {
-                    return const EmptyView(
-                      icon: Icons.notifications_none,
-                      title: 'All caught up!',
-                      subtitle:
-                          'We\'ll let you know about bookings, trips and more.',
-                    );
+                    return const _EmptyNotifications();
                   }
                   return RefreshIndicator(
                     onRefresh: () async =>
@@ -144,12 +136,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
               child: Text(
                 label,
-                style: TextStyle(
-                  color:
-                      selected ? BrandColors.primaryFg : BrandColors.foreground,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: selected
+                          ? BrandColors.primaryFg
+                          : BrandColors.foreground,
+                    ),
               ),
             ),
           );
@@ -162,9 +153,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final (icon, color) = _style(n.category);
     return Material(
       color: BrandColors.surface,
-      borderRadius: BorderRadius.circular(Radii.card),
+      borderRadius: BorderRadius.circular(Radii.xl),
       child: InkWell(
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         onTap: () async {
           final router = GoRouter.of(context);
           if (!n.isRead) {
@@ -179,15 +170,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         child: Container(
           padding: const EdgeInsets.all(Spacing.x3),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Radii.card),
+            borderRadius: BorderRadius.circular(Radii.xl),
             border: Border.all(color: BrandColors.border),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
@@ -200,15 +191,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(n.title,
-                        style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w700)),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700)),
                     if (n.body.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(n.body,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: BrandColors.mutedFg, fontSize: 13)),
+                          style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ],
                 ),
@@ -219,8 +211,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 children: [
                   if (n.createdAt != null)
                     Text(Formatters.timeAgo(n.createdAt!),
-                        style: const TextStyle(
-                            color: BrandColors.mutedFg, fontSize: 11)),
+                        style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: Spacing.x2),
                   if (!n.isRead)
                     Container(
@@ -235,6 +226,47 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "All caught up" empty state: a lime bell chip and a [headlineSmall] title.
+class _EmptyNotifications extends StatelessWidget {
+  const _EmptyNotifications();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.x6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: BrandColors.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.notifications_active_outlined,
+                  size: 44, color: BrandColors.primary),
+            ),
+            const SizedBox(height: Spacing.x5),
+            Text('All caught up',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: Spacing.x2),
+            Text(
+              'We\'ll let you know about bookings, trips and more.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: BrandColors.mutedFg,
+                  ),
+            ),
+          ],
         ),
       ),
     );

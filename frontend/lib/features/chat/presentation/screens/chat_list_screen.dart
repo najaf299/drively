@@ -23,18 +23,11 @@ class ChatListScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
                   Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x4),
-              child: Text(
-                'Messages',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.6,
-                  color: BrandColors.foreground,
-                ),
-              ),
+              child: Text('Messages',
+                  style: Theme.of(context).textTheme.displaySmall),
             ),
             Expanded(
               child: AsyncValueView<List<ChatThread>>(
@@ -123,11 +116,7 @@ class _ThreadTile extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: BrandColors.foreground,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -136,15 +125,14 @@ class _ThreadTile extends StatelessWidget {
                       last?.content ?? 'Tap to chat',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: thread.hasUnread
-                            ? BrandColors.foreground
-                            : BrandColors.mutedFg,
-                        fontSize: 13,
-                        fontWeight: thread.hasUnread
-                            ? FontWeight.w500
-                            : FontWeight.w400,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: thread.hasUnread
+                                ? BrandColors.foreground
+                                : BrandColors.mutedFg,
+                            fontWeight: thread.hasUnread
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
                     ),
                   ],
                 ),
@@ -157,8 +145,7 @@ class _ThreadTile extends StatelessWidget {
                   if (last?.createdAt != null)
                     Text(
                       Formatters.timeAgo(last!.createdAt!),
-                      style: const TextStyle(
-                          color: BrandColors.mutedFg, fontSize: 11),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   const SizedBox(height: 6),
                   if (thread.hasUnread)

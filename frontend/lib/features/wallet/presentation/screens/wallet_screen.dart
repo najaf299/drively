@@ -153,33 +153,19 @@ class _BalanceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(Spacing.x5),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            BrandColors.primary,
-            Color.lerp(BrandColors.primary, BrandColors.primaryFg, 0.18)!,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(Radii.card + 4),
-        boxShadow: [
-          BoxShadow(
-            color: BrandColors.primary.withValues(alpha: 0.25),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        gradient: BrandGradients.primary,
+        borderRadius: BorderRadius.circular(Radii.xxl),
+        boxShadow: BrandShadows.glow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('Drivly Balance',
-                  style: TextStyle(
-                    color: BrandColors.primaryFg,
-                    fontWeight: FontWeight.w600,
-                  )),
+              Text('Drivly Balance',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: BrandColors.primaryFg,
+                      )),
               const Spacer(),
               Icon(Icons.account_balance_wallet,
                   color: BrandColors.primaryFg.withValues(alpha: 0.6),
@@ -189,12 +175,9 @@ class _BalanceCard extends StatelessWidget {
           const SizedBox(height: Spacing.x4),
           Text(
             balance,
-            style: const TextStyle(
+            style: Theme.of(context).textTheme.displayMedium?.copyWith(
               color: BrandColors.primaryFg,
-              fontSize: 40,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1,
-              fontFeatures: [FontFeature.tabularFigures()],
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
           const SizedBox(height: Spacing.x6),
@@ -206,23 +189,17 @@ class _BalanceCard extends StatelessWidget {
                   '${name.toUpperCase()}  ••••  8492',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: BrandColors.primaryFg.withValues(alpha: 0.85),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: BrandColors.primaryFg.withValues(alpha: 0.85),
+                      ),
                 ),
               ),
               const SizedBox(width: Spacing.x3),
-              const Text(
+              Text(
                 'drivly.',
-                style: TextStyle(
-                  color: BrandColors.primaryFg,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: BrandColors.primaryFg,
+                    ),
               ),
             ],
           ),
@@ -243,14 +220,14 @@ class _ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      borderRadius: BorderRadius.circular(Radii.card),
+      borderRadius: BorderRadius.circular(Radii.xl),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: Spacing.x4),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Radii.card),
+            borderRadius: BorderRadius.circular(Radii.xl),
             border: Border.all(color: BrandColors.border),
           ),
           child: Column(
@@ -265,9 +242,7 @@ class _ActionTile extends StatelessWidget {
                 child: Icon(icon, color: BrandColors.primary, size: 20),
               ),
               const SizedBox(height: Spacing.x2),
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(label, style: Theme.of(context).textTheme.titleSmall),
             ],
           ),
         ),
@@ -306,11 +281,7 @@ class _TxnTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final credit = txn.isCredit || txn.isRefund;
-    final color = txn.isRefund
-        ? BrandColors.success
-        : credit
-            ? BrandColors.success
-            : BrandColors.foreground;
+    final color = credit ? BrandColors.success : BrandColors.destructive;
     final icon = txn.isRefund
         ? Icons.replay
         : credit
@@ -320,14 +291,14 @@ class _TxnTile extends StatelessWidget {
       padding: const EdgeInsets.all(Spacing.x3),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: Sizes.avatar,
+            height: Sizes.avatar,
             decoration: const BoxDecoration(
               color: BrandColors.surface2,
               shape: BoxShape.circle,
@@ -343,14 +314,12 @@ class _TxnTile extends StatelessWidget {
                   txn.description ?? _humanise(txn.type),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
                 if (txn.createdAt != null) ...[
                   const SizedBox(height: 2),
                   Text(Formatters.date(txn.createdAt!),
-                      style: const TextStyle(
-                          color: BrandColors.mutedFg, fontSize: 12)),
+                      style: Theme.of(context).textTheme.bodySmall),
                 ],
               ],
             ),
@@ -358,12 +327,11 @@ class _TxnTile extends StatelessWidget {
           const SizedBox(width: Spacing.x3),
           Text(
             '${credit ? '+' : '−'}${Formatters.money(txn.amount)}',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
           ),
         ],
       ),

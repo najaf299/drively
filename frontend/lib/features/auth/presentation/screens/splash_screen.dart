@@ -10,36 +10,42 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BrandColors.background,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: const BoxDecoration(
-                color: BrandColors.primary,
-                shape: BoxShape.circle,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: BrandGradients.hero),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: Sizes.avatarLg + 24,
+                height: Sizes.avatarLg + 24,
+                decoration: const BoxDecoration(
+                  color: BrandColors.primary,
+                  shape: BoxShape.circle,
+                  boxShadow: BrandShadows.glow,
+                ),
+                child: const Icon(Icons.directions_car_rounded,
+                    size: 48, color: BrandColors.primaryFg),
               ),
-              child: const Icon(Icons.directions_car_rounded,
-                  size: 48, color: BrandColors.primaryFg),
-            ),
-            const SizedBox(height: Spacing.x5),
-            Text(
-              'drivly',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: BrandColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: Spacing.x8),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ],
+              const SizedBox(height: Spacing.x5),
+              Text(
+                'drivly',
+                style: Theme.of(context)
+                    .textTheme
+                    .displayLarge
+                    ?.copyWith(color: BrandColors.primary),
+              ),
+              const SizedBox(height: Spacing.x8),
+              const SizedBox(
+                width: Sizes.icon,
+                height: Sizes.icon,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: BrandColors.primary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

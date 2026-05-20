@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/models/user.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -58,7 +59,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: Spacing.x6),
             _ProfileHeader(user: user),
             const SizedBox(height: Spacing.x6),
-            _statsRow(user),
+            _statsRow(context, user),
             const SizedBox(height: Spacing.x6),
             _MenuCard(
               tiles: [
@@ -71,7 +72,7 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.badge_outlined,
                   label: 'Driver\'s license',
                   onTap: () => context.push('/kyc'),
-                  trailing: _kycChip(user.kycStatus),
+                  trailing: _kycBadge(user.kycStatus),
                 ),
                 _MenuTile(
                   icon: Icons.history,
@@ -111,54 +112,47 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _statsRow(User user) {
+  Widget _statsRow(BuildContext context, User user) {
     final saved = (user.totalTrips * 23).toDouble();
     return Row(
       children: [
-        _stat('${user.totalTrips}', 'Trips'),
+        _stat(context, '${user.totalTrips}', 'Trips'),
         const SizedBox(width: Spacing.x3),
-        _stat('${user.totalTrips}', 'Cars rented'),
+        _stat(context, '${user.totalTrips}', 'Cars rented'),
         const SizedBox(width: Spacing.x3),
-        _stat('\$${saved.toStringAsFixed(0)}', 'Saved'),
+        _stat(context, '\$${saved.toStringAsFixed(0)}', 'Saved'),
       ],
     );
   }
 
-  Widget _stat(String value, String label) {
+  Widget _stat(BuildContext context, String value, String label) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(
             vertical: Spacing.x4, horizontal: Spacing.x2),
         decoration: BoxDecoration(
           color: BrandColors.surface,
-          borderRadius: BorderRadius.circular(Radii.card),
+          borderRadius: BorderRadius.circular(Radii.xl),
           border: Border.all(color: BrandColors.border),
         ),
         child: Column(
           children: [
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w700)),
+            Text(value, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 2),
             Text(label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: BrandColors.mutedFg, fontSize: 12)),
+                style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ),
     );
   }
 
-  Widget _kycChip(String status) {
+  Widget _kycBadge(String status) {
     final approved = status == 'approved';
-    return Text(
+    return StatusBadge(
       approved ? 'Verified' : 'Verify',
-      style: TextStyle(
-        color: approved ? BrandColors.success : BrandColors.warning,
-        fontWeight: FontWeight.w600,
-        fontSize: 13,
-      ),
+      tone: approved ? BadgeTone.success : BadgeTone.warning,
     );
   }
 }
@@ -173,8 +167,8 @@ class _ProfileHeader extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 96,
-          height: 96,
+          width: Sizes.avatarLg,
+          height: Sizes.avatarLg,
           decoration: const BoxDecoration(
             color: BrandColors.primary,
             shape: BoxShape.circle,
@@ -185,56 +179,33 @@ class _ProfileHeader extends StatelessWidget {
               : Center(
                   child: Text(
                     user.initials,
-                    style: const TextStyle(
-                      color: BrandColors.primaryFg,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 34,
-                    ),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: BrandColors.primaryFg,
+                        ),
                   ),
                 ),
         ),
         const SizedBox(height: Spacing.x4),
-        Text(user.name,
-            style: Theme.of(context).textTheme.headlineMedium),
+        Text(user.name, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 4),
         Text(
           year != null ? 'Member since $year' : 'Member',
-          style: const TextStyle(color: BrandColors.mutedFg, fontSize: 13),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: Spacing.x3),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (user.isKycApproved) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.x3, vertical: 5),
-                decoration: BoxDecoration(
-                  color: BrandColors.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.verified, color: BrandColors.primary, size: 14),
-                    SizedBox(width: 4),
-                    Text('VERIFIED',
-                        style: TextStyle(
-                          color: BrandColors.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                          letterSpacing: 0.5,
-                        )),
-                  ],
-                ),
-              ),
+              const StatusBadge('VERIFIED',
+                  tone: BadgeTone.success, icon: Icons.verified),
               const SizedBox(width: Spacing.x3),
             ],
             const Icon(Icons.star, color: BrandColors.warning, size: 16),
             const SizedBox(width: 4),
             Text(
               user.averageRating.toStringAsFixed(1),
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              style: Theme.of(context).textTheme.titleSmall,
             ),
           ],
         ),
@@ -252,7 +223,7 @@ class _MenuCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       clipBehavior: Clip.antiAlias,
@@ -293,13 +264,13 @@ class _MenuTile extends StatelessWidget {
           children: [
             SizedBox(
               width: 28,
-              child: Icon(icon, color: BrandColors.foreground, size: 22),
+              child:
+                  Icon(icon, color: BrandColors.foreground, size: Sizes.icon),
             ),
             const SizedBox(width: Spacing.x3),
             Expanded(
               child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w500)),
+                  style: Theme.of(context).textTheme.titleMedium),
             ),
             if (trailing != null) ...[
               trailing!,

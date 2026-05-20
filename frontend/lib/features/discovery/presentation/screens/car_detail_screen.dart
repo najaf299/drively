@@ -93,7 +93,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
             Row(
               children: [
                 const Icon(Icons.star_rounded,
-                    size: 18, color: BrandColors.primary),
+                    size: 18, color: BrandColors.warning),
                 const SizedBox(width: 4),
                 Text(
                   car.averageRating.toStringAsFixed(2),
@@ -154,7 +154,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     );
   }
 
-  // ── Image gallery with overlaid controls + page dots ───────────────────────
+  // ── Image gallery with a bottom scrim + overlaid controls + page dots ──────
   Widget _gallery(Car car, List<String> photos) {
     return SizedBox(
       height: 320,
@@ -171,6 +171,24 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                   for (final url in photos)
                     AppNetworkImage(url: url, fit: BoxFit.cover),
                 ],
+              ),
+            ),
+          ),
+          // Bottom gradient scrim so overlaid controls/dots stay legible.
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 120,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Color(0xCC0B0D14), Color(0x000B0D14)],
+                  ),
+                ),
               ),
             ),
           ),
@@ -251,7 +269,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
             padding: const EdgeInsets.symmetric(
                 horizontal: Spacing.x3, vertical: 10),
             decoration: BoxDecoration(
-              color: BrandColors.surface,
+              color: BrandColors.surface2,
               borderRadius: BorderRadius.circular(Radii.pill),
               border: Border.all(color: BrandColors.border),
             ),
@@ -277,8 +295,8 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
-        color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        color: BrandColors.surface2,
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Row(
@@ -315,7 +333,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
           ),
           const SizedBox(width: Spacing.x2),
           Material(
-            color: BrandColors.surface2,
+            color: BrandColors.surface3,
             shape: const CircleBorder(
                 side: BorderSide(color: BrandColors.border)),
             child: InkWell(
@@ -356,7 +374,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                   padding: const EdgeInsets.all(Spacing.x4),
                   decoration: BoxDecoration(
                     color: BrandColors.surface,
-                    borderRadius: BorderRadius.circular(Radii.card),
+                    borderRadius: BorderRadius.circular(Radii.xl),
                     border: Border.all(color: BrandColors.border),
                   ),
                   child: Column(
@@ -402,6 +420,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
 
   // ── Sticky bottom bar ──────────────────────────────────────────────────────
   Widget _bottomBar(Car car) {
+    final text = Theme.of(context).textTheme;
     return Container(
       decoration: const BoxDecoration(
         color: BrandColors.surface,
@@ -422,12 +441,10 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                       children: [
                         TextSpan(
                           text: Formatters.money(car.dailyPrice),
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(
-                                  color: BrandColors.primary,
-                                  fontWeight: FontWeight.w700),
+                          style: text.headlineMedium?.copyWith(
+                            color: BrandColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const TextSpan(
                           text: '/day',
@@ -445,17 +462,9 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
               ),
               const SizedBox(width: Spacing.x4),
               Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: FilledButton(
-                    onPressed: () => context.push('/datetime', extra: car),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(Radii.pill),
-                      ),
-                    ),
-                    child: const Text('Continue'),
-                  ),
+                child: FilledButton(
+                  onPressed: () => context.push('/datetime', extra: car),
+                  child: const Text('Continue'),
                 ),
               ),
             ],

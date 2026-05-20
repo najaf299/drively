@@ -110,14 +110,10 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                 const SizedBox(height: Spacing.x6),
                 Text(
                   'Verify license',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.8,
-                      ),
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: Spacing.x6),
-                // Large camera capture frame with a dashed lime border.
+                // Large camera capture frame with lime corner brackets.
                 _CaptureFrame(
                   file: _front,
                   onTap: () => _pick((f) => _front = f),
@@ -176,8 +172,8 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   }
 }
 
-/// A tall capture area with a dashed lime border and a centred camera prompt,
-/// or a preview of the captured front-of-licence image.
+/// A 16:10 capture area framed by four lime L-shaped corner brackets with a
+/// centred camera prompt, or a preview of the captured front-of-licence image.
 class _CaptureFrame extends StatelessWidget {
   final XFile? file;
   final VoidCallback onTap;
@@ -187,44 +183,52 @@ class _CaptureFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(Radii.card),
-      child: CustomPaint(
-        painter: file == null
-            ? const _DashedBorderPainter(
-                color: BrandColors.primary, radius: Radii.card)
-            : null,
-        child: Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: BrandColors.surface,
-            borderRadius: BorderRadius.circular(Radii.card),
-            border: file != null
-                ? Border.all(color: BrandColors.primary)
-                : null,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: file != null
-              ? Image.file(File(file!.path), fit: BoxFit.cover)
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: const BoxDecoration(
-                        color: BrandColors.surface2,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.photo_camera_outlined,
-                          color: BrandColors.primary, size: 30),
+      borderRadius: BorderRadius.circular(Radii.xl),
+      child: AspectRatio(
+        aspectRatio: 16 / 10,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: BrandColors.surface,
+                borderRadius: BorderRadius.circular(Radii.xl),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: file != null
+                  ? Image.file(File(file!.path), fit: BoxFit.cover)
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: const BoxDecoration(
+                            color: BrandColors.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: BrandShadows.glow,
+                          ),
+                          child: const Icon(Icons.photo_camera_outlined,
+                              color: BrandColors.primaryFg, size: 32),
+                        ),
+                        const SizedBox(height: Spacing.x3),
+                        Text(
+                          'Position license in frame',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: BrandColors.mutedFg),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: Spacing.x3),
-                    const Text(
-                      'Position license in frame',
-                      style: TextStyle(color: BrandColors.mutedFg),
-                    ),
-                  ],
-                ),
+            ),
+            // Lime corner brackets drawn on top.
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: _CornerBracketsPainter()),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -253,21 +257,22 @@ class _ChecklistCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
             if (i > 0) const Divider(height: 1, color: BrandColors.border),
-            _row(items[i]),
+            _row(context, items[i]),
           ],
         ],
       ),
     );
   }
 
-  Widget _row(_ChecklistItem item) {
+  Widget _row(BuildContext context, _ChecklistItem item) {
+    final textTheme = Theme.of(context).textTheme;
     return InkWell(
       onTap: item.onTap,
       child: Padding(
@@ -278,34 +283,28 @@ class _ChecklistCard extends StatelessWidget {
             Icon(
               item.done ? Icons.check_circle : Icons.radio_button_unchecked,
               color: item.done ? BrandColors.primary : BrandColors.mutedFg,
+              size: Sizes.icon,
             ),
             const SizedBox(width: Spacing.x3),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.title,
-                      style: const TextStyle(
-                        color: BrandColors.foreground,
-                        fontWeight: FontWeight.w600,
-                      )),
+                  Text(item.title, style: textTheme.titleMedium),
                   const SizedBox(height: 2),
                   Text(item.subtitle,
-                      style: const TextStyle(
-                          color: BrandColors.mutedFg, fontSize: 12)),
+                      style: textTheme.bodySmall
+                          ?.copyWith(color: BrandColors.mutedFg)),
                 ],
               ),
             ),
             if (item.done)
-              const Text('DONE',
-                  style: TextStyle(
-                    color: BrandColors.primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                  ))
+              Text('DONE',
+                  style: textTheme.labelMedium
+                      ?.copyWith(color: BrandColors.primary))
             else
-              const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
+              const Icon(Icons.chevron_right,
+                  color: BrandColors.mutedFg, size: Sizes.icon),
           ],
         ),
       ),
@@ -323,19 +322,22 @@ class _InfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.shield_outlined, color: BrandColors.primary),
+          const Icon(Icons.shield_outlined,
+              color: BrandColors.primary, size: Sizes.icon),
           const SizedBox(width: Spacing.x3),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                  color: BrandColors.mutedFg, fontSize: 13, height: 1.4),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: BrandColors.mutedFg),
             ),
           ),
         ],
@@ -344,7 +346,7 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-/// Full-width lime pill button with an inline busy spinner.
+/// Full-width lime CTA (theme-driven) with an inline busy spinner.
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final bool busy;
@@ -360,13 +362,6 @@ class _PrimaryButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: FilledButton(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
         onPressed: busy ? null : onPressed,
         child: busy
             ? const SizedBox(
@@ -396,65 +391,70 @@ class _StepHeader extends StatelessWidget {
           onTap: () => context.canPop() ? context.pop() : context.go('/home'),
           customBorder: const CircleBorder(),
           child: Container(
-            width: 44,
-            height: 44,
+            width: Sizes.avatar,
+            height: Sizes.avatar,
             decoration: BoxDecoration(
               color: BrandColors.surface,
               shape: BoxShape.circle,
               border: Border.all(color: BrandColors.border),
             ),
             child: const Icon(Icons.chevron_left,
-                color: BrandColors.foreground, size: 26),
+                color: BrandColors.foreground, size: Sizes.iconLg),
           ),
         ),
         const SizedBox(width: Spacing.x4),
         Text(
           label,
-          style: const TextStyle(
-            color: BrandColors.mutedFg,
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge
+              ?.copyWith(color: BrandColors.mutedFg),
         ),
       ],
     );
   }
 }
 
-/// Paints a rounded-rectangle dashed border (used by [_CaptureFrame]).
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double radius;
-  const _DashedBorderPainter({required this.color, required this.radius});
+/// Paints four lime L-shaped corner brackets inset from the frame edges.
+class _CornerBracketsPainter extends CustomPainter {
+  const _CornerBracketsPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.6
+      ..color = BrandColors.primary
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    final rrect = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      Radius.circular(radius),
-    );
-    final path = Path()..addRRect(rrect);
+    const inset = 14.0; // padding from the frame edge
+    const len = 24.0; // bracket arm length
 
-    const dash = 7.0;
-    const gap = 5.0;
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        canvas.drawPath(
-          metric.extractPath(distance, distance + dash),
-          paint,
-        );
-        distance += dash + gap;
-      }
-    }
+    // Top-left.
+    canvas.drawLine(
+        const Offset(inset, inset + len), const Offset(inset, inset), paint);
+    canvas.drawLine(
+        const Offset(inset, inset), const Offset(inset + len, inset), paint);
+
+    // Top-right.
+    canvas.drawLine(Offset(size.width - inset - len, inset),
+        Offset(size.width - inset, inset), paint);
+    canvas.drawLine(Offset(size.width - inset, inset),
+        Offset(size.width - inset, inset + len), paint);
+
+    // Bottom-left.
+    canvas.drawLine(Offset(inset, size.height - inset - len),
+        Offset(inset, size.height - inset), paint);
+    canvas.drawLine(Offset(inset, size.height - inset),
+        Offset(inset + len, size.height - inset), paint);
+
+    // Bottom-right.
+    canvas.drawLine(Offset(size.width - inset - len, size.height - inset),
+        Offset(size.width - inset, size.height - inset), paint);
+    canvas.drawLine(Offset(size.width - inset, size.height - inset - len),
+        Offset(size.width - inset, size.height - inset), paint);
   }
 
   @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.radius != radius;
+  bool shouldRepaint(_CornerBracketsPainter oldDelegate) => false;
 }

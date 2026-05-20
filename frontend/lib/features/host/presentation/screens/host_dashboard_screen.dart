@@ -25,6 +25,11 @@ class HostDashboardScreen extends ConsumerWidget {
       orElse: () => false,
     );
 
+    final earningsTotal = earnings.maybeWhen(
+      data: (e) => e.total,
+      orElse: () => null,
+    );
+
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/host/add-car'),
@@ -52,8 +57,11 @@ class HostDashboardScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Welcome back',
-                            style: TextStyle(color: BrandColors.mutedFg)),
+                        Text('Welcome back',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: BrandColors.mutedFg)),
                         const SizedBox(height: 2),
                         Text(
                           user?.name.split(' ').first ?? 'Host',
@@ -63,60 +71,79 @@ class HostDashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   CircleAvatar(
-                    radius: 22,
+                    radius: Sizes.avatar / 2,
                     backgroundColor: BrandColors.surface2,
                     child: Text(
                       (user?.name.isNotEmpty ?? false)
                           ? user!.name[0].toUpperCase()
                           : 'H',
-                      style: const TextStyle(
-                          color: BrandColors.primary,
-                          fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: BrandColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: Spacing.x5),
               if (needsVerification) _verificationBanner(context),
-              _earningsHero(
-                  context,
-                  earnings.maybeWhen(
-                    data: (e) => e.total,
-                    orElse: () => null,
-                  )),
+              _earningsHero(context, earningsTotal),
               const SizedBox(height: Spacing.x4),
+              // 2x2 stat grid.
               Row(
                 children: [
-                  _statCard(
-                    'Cars',
-                    cars.maybeWhen(
-                        data: (c) => '${c.length}', orElse: () => '—'),
-                    Icons.directions_car_outlined,
+                  Expanded(
+                    child: _statTile(
+                      context,
+                      'Cars',
+                      cars.maybeWhen(
+                          data: (c) => '${c.length}', orElse: () => '—'),
+                      Icons.directions_car_outlined,
+                    ),
                   ),
                   const SizedBox(width: Spacing.x3),
-                  _statCard(
-                    'Bookings',
-                    bookings.maybeWhen(
-                        data: (b) => '${b.length}', orElse: () => '—'),
-                    Icons.event_note_outlined,
+                  Expanded(
+                    child: _statTile(
+                      context,
+                      'Bookings',
+                      bookings.maybeWhen(
+                          data: (b) => '${b.length}', orElse: () => '—'),
+                      Icons.event_note_outlined,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.x3),
+              Row(
+                children: [
+                  Expanded(
+                    child: _statTile(
+                      context,
+                      'Rating',
+                      (user?.averageRating ?? 0).toStringAsFixed(1),
+                      Icons.star_rounded,
+                    ),
                   ),
                   const SizedBox(width: Spacing.x3),
-                  _statCard(
-                    'Rating',
-                    (user?.averageRating ?? 0).toStringAsFixed(1),
-                    Icons.star_rounded,
+                  Expanded(
+                    child: _statTile(
+                      context,
+                      'Earnings',
+                      earningsTotal != null
+                          ? Formatters.money(earningsTotal)
+                          : '—',
+                      Icons.payments_outlined,
+                      accent: true,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: Spacing.x6),
-              const Text(
+              Text(
                 'MANAGE',
-                style: TextStyle(
-                  color: BrandColors.mutedFg,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: BrandColors.mutedFg,
+                    ),
               ),
               const SizedBox(height: Spacing.x3),
               _navTile(context, Icons.directions_car_outlined, 'My cars',
@@ -139,8 +166,8 @@ class HostDashboardScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: Spacing.x4),
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
-        color: BrandColors.warning.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(Radii.card),
+        color: BrandColors.warningBg,
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.warning.withValues(alpha: 0.4)),
       ),
       child: Row(
@@ -164,22 +191,19 @@ class HostDashboardScreen extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(Spacing.x5),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [BrandColors.primary, BrandColors.accent],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(Radii.card),
+        gradient: BrandGradients.primary,
+        borderRadius: BorderRadius.circular(Radii.xl),
+        boxShadow: BrandShadows.glow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('Earnings this month',
-                  style: TextStyle(
-                      color: BrandColors.primaryFg,
-                      fontWeight: FontWeight.w600)),
+              Text('Earnings this month',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: BrandColors.primaryFg,
+                      )),
               const Spacer(),
               Container(
                 padding:
@@ -188,56 +212,50 @@ class HostDashboardScreen extends ConsumerWidget {
                   color: BrandColors.primaryFg.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(Radii.pill),
                 ),
-                child: const Text('THIS MONTH',
-                    style: TextStyle(
-                      color: BrandColors.primaryFg,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    )),
+                child: Text('THIS MONTH',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: BrandColors.primaryFg,
+                        )),
               ),
             ],
           ),
           const SizedBox(height: Spacing.x3),
           Text(
             total != null ? Formatters.money(total) : '—',
-            style: const TextStyle(
-              color: BrandColors.primaryFg,
-              fontSize: 36,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1,
-            ),
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: BrandColors.primaryFg,
+                ),
           ),
         ],
       ),
     );
   }
 
-  Widget _statCard(String label, String value, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-            vertical: Spacing.x4, horizontal: Spacing.x2),
-        decoration: BoxDecoration(
-          color: BrandColors.surface,
-          borderRadius: BorderRadius.circular(Radii.card),
-          border: Border.all(color: BrandColors.border),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: BrandColors.primary, size: 22),
-            const SizedBox(height: Spacing.x2),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: BrandColors.primary)),
-            const SizedBox(height: 2),
-            Text(label,
-                style:
-                    const TextStyle(color: BrandColors.mutedFg, fontSize: 12)),
-          ],
-        ),
+  Widget _statTile(
+      BuildContext context, String label, String value, IconData icon,
+      {bool accent = false}) {
+    final color = accent ? BrandColors.accent : BrandColors.primary;
+    return Container(
+      padding: const EdgeInsets.all(Spacing.x4),
+      decoration: BoxDecoration(
+        color: BrandColors.surface,
+        borderRadius: BorderRadius.circular(Radii.xl),
+        border: Border.all(color: BrandColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: Sizes.icon),
+          const SizedBox(height: Spacing.x3),
+          Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: color,
+                  )),
+          const SizedBox(height: 2),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ],
       ),
     );
   }
@@ -250,7 +268,7 @@ class HostDashboardScreen extends ConsumerWidget {
         color: BrandColors.surface,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Radii.card),
+          borderRadius: BorderRadius.circular(Radii.xl),
           side: const BorderSide(color: BrandColors.border),
         ),
         child: InkWell(
@@ -260,13 +278,14 @@ class HostDashboardScreen extends ConsumerWidget {
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: Sizes.avatar,
+                  height: Sizes.avatar,
                   decoration: BoxDecoration(
                     color: BrandColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(Radii.md),
                   ),
-                  child: Icon(icon, color: BrandColors.primary, size: 22),
+                  child:
+                      Icon(icon, color: BrandColors.primary, size: Sizes.icon),
                 ),
                 const SizedBox(width: Spacing.x4),
                 Expanded(
@@ -274,12 +293,10 @@ class HostDashboardScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title,
-                          style:
-                              const TextStyle(fontWeight: FontWeight.w600)),
+                          style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 2),
                       Text(subtitle,
-                          style: const TextStyle(
-                              color: BrandColors.mutedFg, fontSize: 12)),
+                          style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
                 ),

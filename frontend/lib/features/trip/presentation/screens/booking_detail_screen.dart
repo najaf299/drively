@@ -12,7 +12,7 @@ import '../../../../core/models/booking.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/state_views.dart';
-import '../../../../shared/widgets/status_chip.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../../booking/data/booking_service.dart';
 import '../../../booking/domain/providers/booking_provider.dart';
 import '../../data/trip_service.dart';
@@ -132,17 +132,9 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
             children: [
               _circleBack(),
               const SizedBox(width: Spacing.x3),
-              const Text(
-                'Booking',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.4,
-                  color: BrandColors.foreground,
-                ),
-              ),
+              Text('Booking', style: Theme.of(context).textTheme.headlineMedium),
               const Spacer(),
-              StatusChip.booking(b.status),
+              _statusBadge(b),
             ],
           ),
         ),
@@ -151,11 +143,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
             padding: const EdgeInsets.fromLTRB(
                 Spacing.x5, 0, Spacing.x5, Spacing.x5),
             children: [
-              Text(
-                b.reference,
-                style: const TextStyle(
-                    color: BrandColors.mutedFg, fontSize: 13),
-              ),
+              Text(b.reference, style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: Spacing.x4),
               if (car != null)
                 Container(
@@ -179,14 +167,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(car.displayNameWithYear,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                    color: BrandColors.foreground)),
+                                style: Theme.of(context).textTheme.titleMedium),
                             const SizedBox(height: 2),
                             Text(car.city,
-                                style: const TextStyle(
-                                    color: BrandColors.mutedFg, fontSize: 12)),
+                                style: Theme.of(context).textTheme.bodySmall),
                           ],
                         ),
                       ),
@@ -204,6 +188,22 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         ),
       ],
     );
+  }
+
+  StatusBadge _statusBadge(Booking b) {
+    if (b.isActive) {
+      return const StatusBadge('Active', tone: BadgeTone.live);
+    }
+    if (b.isCompleted) {
+      return const StatusBadge('Completed', tone: BadgeTone.success);
+    }
+    if (b.isCancelled) {
+      return const StatusBadge('Cancelled', tone: BadgeTone.error);
+    }
+    if (b.isPending) {
+      return const StatusBadge('Pending', tone: BadgeTone.warning);
+    }
+    return const StatusBadge('Confirmed', tone: BadgeTone.neutral);
   }
 
   Widget _detailsCard(Booking b) {
@@ -244,11 +244,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Price',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: BrandColors.foreground)),
+          Text('Price', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: Spacing.x3),
           _priceRow('Subtotal', b.pricing.subtotal),
           if (b.pricing.serviceFee > 0)
@@ -256,7 +252,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           if (b.pricing.tax > 0) _priceRow('Tax', b.pricing.tax),
           if (b.pricing.discount > 0)
             _priceRow('Discount', -b.pricing.discount),
-          const Divider(color: BrandColors.border, height: Spacing.x6),
+          const Divider(height: Spacing.x6),
           _priceRow('Total', b.pricing.totalAmount, bold: true),
         ],
       ),
@@ -318,8 +314,8 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       widgets.add(const SizedBox(height: Spacing.x2));
       widgets.add(TextButton(
         onPressed: _busy ? null : () => _cancel(b),
-        child: const Text('Cancel booking',
-            style: TextStyle(color: BrandColors.destructive)),
+        style: TextButton.styleFrom(foregroundColor: BrandColors.destructive),
+        child: const Text('Cancel booking'),
       ));
     }
 
@@ -332,34 +328,24 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     bool loading = false,
     VoidCallback? onPressed,
   }) {
-    return SizedBox(
-      height: 56,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-        ),
-        child: loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: BrandColors.primaryFg))
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 18),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(label,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
+    return FilledButton(
+      onPressed: onPressed,
+      child: loading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: BrandColors.primaryFg))
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 18),
+                  const SizedBox(width: 8),
                 ],
-              ),
-      ),
+                Text(label),
+              ],
+            ),
     );
   }
 
@@ -370,14 +356,16 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         children: [
           Icon(icon, size: 18, color: BrandColors.mutedFg),
           const SizedBox(width: Spacing.x3),
-          Text(label, style: const TextStyle(color: BrandColors.mutedFg)),
+          Text(label,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: BrandColors.mutedFg)),
           const Spacer(),
           Flexible(
             child: Text(value,
                 textAlign: TextAlign.end,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: BrandColors.foreground)),
+                style: Theme.of(context).textTheme.titleSmall),
           ),
         ],
       ),
@@ -385,11 +373,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   }
 
   Widget _priceRow(String label, double amount, {bool bold = false}) {
-    final style = TextStyle(
-      fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
-      color: bold ? BrandColors.foreground : BrandColors.mutedFg,
-      fontSize: bold ? 17 : 14,
-    );
+    final t = Theme.of(context).textTheme;
+    final style = bold
+        ? t.titleMedium
+        : t.bodyMedium?.copyWith(color: BrandColors.mutedFg);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

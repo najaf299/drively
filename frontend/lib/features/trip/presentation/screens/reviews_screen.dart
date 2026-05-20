@@ -101,12 +101,7 @@ class ReviewsScreen extends ConsumerWidget {
           const SizedBox(width: Spacing.x3),
           Text(
             'Reviews · $total',
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.4,
-              color: BrandColors.foreground,
-            ),
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
         ],
       ),
@@ -124,7 +119,7 @@ class ReviewsScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card + 4),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Column(
@@ -135,12 +130,10 @@ class ReviewsScreen extends ConsumerWidget {
             children: [
               Text(
                 avg.toStringAsFixed(2),
-                style: const TextStyle(
-                  fontSize: 44,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                  color: BrandColors.primary,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .displayMedium
+                    ?.copyWith(color: BrandColors.primary),
               ),
               const SizedBox(width: Spacing.x3),
               Padding(
@@ -152,7 +145,7 @@ class ReviewsScreen extends ConsumerWidget {
                           ? Icons.star_rounded
                           : Icons.star_outline_rounded,
                       size: 20,
-                      color: BrandColors.primary,
+                      color: BrandColors.warning,
                     );
                   }),
                 ),
@@ -259,7 +252,7 @@ class _ReviewTile extends StatelessWidget {
                                 ? Icons.star_rounded
                                 : Icons.star_outline_rounded,
                             size: 14,
-                            color: BrandColors.primary,
+                            color: BrandColors.warning,
                           );
                         }),
                         if (review.createdAt != null) ...[

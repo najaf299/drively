@@ -51,11 +51,15 @@ class StarRatingInput extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final double size;
 
+  /// Fill colour for selected stars. Defaults to the brand [BrandColors.warning].
+  final Color fillColor;
+
   const StarRatingInput({
     super.key,
     required this.value,
     required this.onChanged,
     this.size = 40,
+    this.fillColor = BrandColors.warning,
   });
 
   @override
@@ -71,7 +75,7 @@ class StarRatingInput extends StatelessWidget {
           constraints: const BoxConstraints(),
           icon: Icon(
             filled ? Icons.star_rounded : Icons.star_outline_rounded,
-            color: filled ? BrandColors.warning : BrandColors.mutedFg,
+            color: filled ? fillColor : BrandColors.mutedFg,
           ),
         );
       }),

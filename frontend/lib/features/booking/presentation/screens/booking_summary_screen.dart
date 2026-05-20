@@ -156,15 +156,8 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
         children: [
           _CircleBackButton(onTap: () => context.pop()),
           const SizedBox(width: Spacing.x3),
-          const Text(
-            'Confirm trip',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.4,
-              color: BrandColors.foreground,
-            ),
-          ),
+          Text('Confirm trip',
+              style: Theme.of(context).textTheme.headlineMedium),
         ],
       ),
     );
@@ -194,22 +187,11 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  car.displayName,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: BrandColors.foreground,
-                  ),
-                ),
+                Text(car.displayName,
+                    style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: Spacing.x1),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: BrandColors.mutedFg,
-                  ),
-                ),
+                Text(subtitle,
+                    style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: Spacing.x2),
                 Row(
                   children: [
@@ -257,7 +239,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
             label: 'Trip dates',
             value: dateRange,
           ),
-          const Divider(color: BrandColors.border, height: Spacing.x5),
+          const Divider(height: Spacing.x5),
           _infoRow(
             icon: Icons.place_rounded,
             label: 'Pickup',
@@ -290,22 +272,9 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: BrandColors.mutedFg,
-                ),
-              ),
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: BrandColors.foreground,
-                ),
-              ),
+              Text(value, style: Theme.of(context).textTheme.titleSmall),
             ],
           ),
         ),
@@ -318,14 +287,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Add-ons',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: BrandColors.foreground,
-            ),
-          ),
+          Text('Add-ons', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: Spacing.x1),
           for (final entry in _addonOptions.entries)
             _AddonTile(
@@ -350,14 +312,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Promo code',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: BrandColors.foreground,
-            ),
-          ),
+          Text('Promo code', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: Spacing.x3),
           Row(
             children: [
@@ -372,7 +327,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                 ),
               ),
               const SizedBox(width: Spacing.x3),
-              OutlinedButton(
+              TextButton(
                 onPressed: _applyPromo,
                 child: const Text('Apply'),
               ),
@@ -388,14 +343,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Price breakdown',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: BrandColors.foreground,
-            ),
-          ),
+          Text('Price breakdown', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: Spacing.x3),
           if (_loadingPrice)
             const Padding(
@@ -403,17 +351,19 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (p != null) ...[
-            _priceRow(
-              '${Formatters.money(p.dailyRate > 0 ? p.dailyRate : car.dailyPrice)}'
-              ' × ${Formatters.plural(p.totalDays > 0 ? p.totalDays : days, 'day')}',
-              p.subtotal,
-            ),
-            if (p.addonsTotal > 0) _priceRow('Add-ons', p.addonsTotal),
-            if (p.serviceFee > 0) _priceRow('Service fee', p.serviceFee),
-            if (p.tax > 0) _priceRow('Insurance', p.tax),
-            if (p.discount > 0)
-              _priceRow('Discount', -p.discount, color: BrandColors.success),
-            const Divider(color: BrandColors.border, height: Spacing.x6),
+            ..._withDividers([
+              _priceRow(
+                '${Formatters.money(p.dailyRate > 0 ? p.dailyRate : car.dailyPrice)}'
+                ' × ${Formatters.plural(p.totalDays > 0 ? p.totalDays : days, 'day')}',
+                p.subtotal,
+              ),
+              if (p.addonsTotal > 0) _priceRow('Add-ons', p.addonsTotal),
+              if (p.serviceFee > 0) _priceRow('Service fee', p.serviceFee),
+              if (p.tax > 0) _priceRow('Insurance', p.tax),
+              if (p.discount > 0)
+                _priceRow('Discount', -p.discount, color: BrandColors.success),
+            ]),
+            const Divider(height: Spacing.x6),
             _priceRow('Total', p.totalAmount, total: true),
           ],
         ],
@@ -421,18 +371,30 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
     );
   }
 
+  /// Interleaves a hairline divider between visible line items.
+  List<Widget> _withDividers(List<Widget> rows) {
+    final out = <Widget>[];
+    for (var i = 0; i < rows.length; i++) {
+      out.add(rows[i]);
+      if (i != rows.length - 1) {
+        out.add(const Divider(height: Spacing.x4));
+      }
+    }
+    return out;
+  }
+
   Widget _priceRow(String label, double amount,
       {bool total = false, Color? color}) {
-    final labelStyle = TextStyle(
-      fontSize: total ? 16 : 14,
-      fontWeight: total ? FontWeight.w700 : FontWeight.w400,
-      color: total ? BrandColors.foreground : BrandColors.mutedFg,
-    );
-    final valueStyle = TextStyle(
-      fontSize: total ? 18 : 14,
-      fontWeight: total ? FontWeight.w700 : FontWeight.w500,
-      color: color ?? (total ? BrandColors.primary : BrandColors.foreground),
-    );
+    final t = Theme.of(context).textTheme;
+    final labelStyle = total
+        ? t.titleMedium
+        : t.bodyMedium?.copyWith(color: BrandColors.mutedFg);
+    final valueStyle = total
+        ? t.headlineMedium?.copyWith(color: BrandColors.primary)
+        : t.bodyMedium?.copyWith(
+            color: color ?? BrandColors.foreground,
+            fontWeight: FontWeight.w500,
+          );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -576,13 +538,7 @@ class _AddonTile extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: Spacing.x3),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: BrandColors.foreground,
-              ),
-            ),
+            Text(label, style: Theme.of(context).textTheme.bodyMedium),
           ],
         ),
       ),

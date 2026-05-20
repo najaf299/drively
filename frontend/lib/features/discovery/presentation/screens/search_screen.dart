@@ -65,6 +65,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final cars = ref.watch(carListProvider);
     final filters = ref.watch(carFiltersProvider);
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
       body: SafeArea(
@@ -83,11 +84,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   const SizedBox(width: Spacing.x3),
                   Expanded(
                     child: Container(
-                      height: 48,
+                      height: Sizes.secondaryHeight,
                       padding:
                           const EdgeInsets.symmetric(horizontal: Spacing.x4),
                       decoration: BoxDecoration(
-                        color: BrandColors.surface,
+                        color: BrandColors.surface2,
                         borderRadius: BorderRadius.circular(Radii.pill),
                         border: Border.all(color: BrandColors.border),
                       ),
@@ -102,8 +103,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               autofocus: true,
                               textInputAction: TextInputAction.search,
                               onChanged: _onQueryChanged,
-                              style: const TextStyle(
-                                  color: BrandColors.foreground),
+                              style: text.bodyLarge,
                               decoration: const InputDecoration(
                                 hintText: 'Search cars, cities…',
                                 isCollapsed: true,
@@ -207,7 +207,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 }
 
-/// 40px circular icon button on a surface tile.
+/// 44px circular icon button on a surface tile.
 class _CircleButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;

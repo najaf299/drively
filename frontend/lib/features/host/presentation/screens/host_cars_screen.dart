@@ -103,11 +103,9 @@ class _CountPill extends StatelessWidget {
       ),
       child: Text(
         '$count active',
-        style: const TextStyle(
-          color: BrandColors.primary,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: BrandColors.primary,
+            ),
       ),
     );
   }
@@ -131,7 +129,7 @@ class _CircleBackButton extends StatelessWidget {
           border: Border.all(color: BrandColors.border),
         ),
         child: const Icon(Icons.chevron_left,
-            color: BrandColors.foreground, size: 26),
+            color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );
   }

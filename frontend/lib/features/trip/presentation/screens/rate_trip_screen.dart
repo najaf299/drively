@@ -106,15 +106,8 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
                       ),
                     ),
                     const SizedBox(width: Spacing.x3),
-                    const Text(
-                      'Rate your trip',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.4,
-                        color: BrandColors.foreground,
-                      ),
-                    ),
+                    Text('Rate your trip',
+                        style: Theme.of(context).textTheme.headlineMedium),
                   ],
                 ),
               ),
@@ -133,6 +126,7 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
                     StarRatingInput(
                       value: _rating,
                       onChanged: (v) => setState(() => _rating = v),
+                      fillColor: BrandColors.primary,
                     ),
                     const SizedBox(height: Spacing.x6),
                     Container(
@@ -213,28 +207,15 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                     Spacing.x5, 0, Spacing.x5, Spacing.x4),
-                child: SizedBox(
-                  height: 56,
-                  child: FilledButton(
-                    onPressed: _rating == 0 || _busy ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: _busy
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: BrandColors.primaryFg))
-                        : const Text(
-                            'Submit review',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-                  ),
+                child: FilledButton(
+                  onPressed: _rating == 0 || _busy ? null : _submit,
+                  child: _busy
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: BrandColors.primaryFg))
+                      : const Text('Submit review'),
                 ),
               ),
             ],
@@ -251,7 +232,7 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
         children: [
           Expanded(
               child: Text(label,
-                  style: const TextStyle(color: BrandColors.foreground))),
+                  style: Theme.of(context).textTheme.bodyMedium)),
           Row(
             children: List.generate(5, (i) {
               final filled = i < value;

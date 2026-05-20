@@ -80,7 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: CustomScrollView(
           controller: _scroll,
           slivers: [
-            // ── Header: location + avatar ──────────────────────────────────
+            // ── Header: greeting + location + avatar ───────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -91,16 +91,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Pickup in',
-                            style: TextStyle(
-                                color: BrandColors.mutedFg, fontSize: 13),
+                          // Greeting: muted line with the user's name in lime.
+                          Text.rich(
+                            TextSpan(
+                              style: text.headlineSmall
+                                  ?.copyWith(color: BrandColors.mutedFg),
+                              children: [
+                                const TextSpan(text: 'Hi, '),
+                                TextSpan(
+                                  text: (user?.name.trim().isNotEmpty ?? false)
+                                      ? user!.name.trim().split(' ').first
+                                      : 'there',
+                                  style: const TextStyle(
+                                      color: BrandColors.primary),
+                                ),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Row(
                             children: [
                               const Icon(Icons.location_on,
-                                  color: BrandColors.primary, size: 20),
+                                  color: BrandColors.primary,
+                                  size: Sizes.icon),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
@@ -145,11 +160,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: GestureDetector(
                         onTap: () => context.push('/search'),
                         child: Container(
-                          height: 52,
+                          height: Sizes.secondaryHeight,
                           padding: const EdgeInsets.symmetric(
                               horizontal: Spacing.x4),
                           decoration: BoxDecoration(
-                            color: BrandColors.surface,
+                            color: BrandColors.surface2,
                             borderRadius: BorderRadius.circular(Radii.pill),
                             border: Border.all(color: BrandColors.border),
                           ),
@@ -270,7 +285,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// Stadium category pill: active = lime + dark text, inactive = surface.
+/// Selectable category chip backed by the theme's [ChipThemeData].
 class _CategoryChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -283,27 +298,11 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.x4),
-        decoration: BoxDecoration(
-          color: selected ? BrandColors.primary : BrandColors.surface,
-          borderRadius: BorderRadius.circular(Radii.pill),
-          border: Border.all(
-            color: selected ? BrandColors.primary : BrandColors.border,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? BrandColors.primaryFg : BrandColors.mutedFg,
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-        ),
-      ),
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      showCheckmark: false,
     );
   }
 }
@@ -328,8 +327,8 @@ class _FilterButton extends StatelessWidget {
             customBorder: const CircleBorder(),
             onTap: onTap,
             child: const SizedBox(
-              width: 48,
-              height: 48,
+              width: Sizes.secondaryHeight,
+              height: Sizes.secondaryHeight,
               child: Icon(Icons.tune, color: BrandColors.foreground),
             ),
           ),

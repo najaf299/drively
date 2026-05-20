@@ -6,6 +6,7 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/earning.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/state_views.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../domain/providers/host_provider.dart';
 
 /// Host earnings: period summary + per-booking payout history.
@@ -122,28 +123,23 @@ class _HostEarningsScreenState extends ConsumerState<HostEarningsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(Spacing.x5),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [BrandColors.primary, BrandColors.accent],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(Radii.card),
+        gradient: BrandGradients.primary,
+        borderRadius: BorderRadius.circular(Radii.xl),
+        boxShadow: BrandShadows.glow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Net earnings · ${_periods[_period]}',
-              style: const TextStyle(
-                  color: BrandColors.primaryFg, fontWeight: FontWeight.w600)),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: BrandColors.primaryFg,
+                  )),
           const SizedBox(height: Spacing.x3),
           Text(
             Formatters.money(s.total),
-            style: const TextStyle(
-              color: BrandColors.primaryFg,
-              fontSize: 36,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1,
-            ),
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: BrandColors.primaryFg,
+                ),
           ),
           if (s.gross > 0) ...[
             const SizedBox(height: Spacing.x4),
@@ -157,10 +153,10 @@ class _HostEarningsScreenState extends ConsumerState<HostEarningsScreen> {
               child: Text(
                 'Gross ${Formatters.money(s.gross)}  ·  '
                 'Commission ${Formatters.money(s.commission)}',
-                style: TextStyle(
-                    color: BrandColors.primaryFg.withValues(alpha: 0.9),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: BrandColors.primaryFg.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
           ],
@@ -175,14 +171,14 @@ class _HostEarningsScreenState extends ConsumerState<HostEarningsScreen> {
       padding: const EdgeInsets.all(Spacing.x3),
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: Sizes.avatar,
+            height: Sizes.avatar,
             decoration: BoxDecoration(
               color: statusColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
@@ -202,25 +198,33 @@ class _HostEarningsScreenState extends ConsumerState<HostEarningsScreen> {
                   e.booking?.car?.displayNameWithYear ?? 'Trip earning',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  e.createdAt != null
-                      ? Formatters.date(e.createdAt!)
-                      : e.status,
-                  style: const TextStyle(
-                      color: BrandColors.mutedFg, fontSize: 12),
+                const SizedBox(height: 4),
+                StatusBadge(
+                  e.isPaid ? 'PAID' : 'PENDING',
+                  tone: e.isPaid ? BadgeTone.success : BadgeTone.warning,
                 ),
               ],
             ),
           ),
-          Text(
-            Formatters.money(e.netAmount),
-            style: const TextStyle(
-                color: BrandColors.success,
-                fontWeight: FontWeight.w700,
-                fontSize: 15),
+          const SizedBox(width: Spacing.x3),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                Formatters.money(e.netAmount),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: BrandColors.success,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              if (e.createdAt != null) ...[
+                const SizedBox(height: 2),
+                Text(Formatters.date(e.createdAt!),
+                    style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ],
           ),
         ],
       ),
@@ -265,12 +269,12 @@ class _PeriodSelector extends StatelessWidget {
                 ),
                 child: Text(
                   e.value,
-                  style: TextStyle(
-                    color:
-                        active ? BrandColors.primaryFg : BrandColors.mutedFg,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: active
+                            ? BrandColors.primaryFg
+                            : BrandColors.mutedFg,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
             ),
@@ -299,7 +303,7 @@ class _CircleBackButton extends StatelessWidget {
           border: Border.all(color: BrandColors.border),
         ),
         child: const Icon(Icons.chevron_left,
-            color: BrandColors.foreground, size: 26),
+            color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );
   }

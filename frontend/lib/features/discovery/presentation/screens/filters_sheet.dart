@@ -91,27 +91,21 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: BrandColors.border,
+              color: BrandColors.borderStrong,
               borderRadius: BorderRadius.circular(Radii.pill),
             ),
           ),
-          // Header: Filters + Reset (lime).
+          // Header: Filters + Reset.
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 Spacing.x5, Spacing.x4, Spacing.x3, 0),
             child: Row(
               children: [
-                Text('Filters',
-                    style: text.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
+                Text('Filters', style: text.headlineSmall),
                 const Spacer(),
                 TextButton(
                   onPressed: _reset,
-                  child: const Text('Reset',
-                      style: TextStyle(
-                        color: BrandColors.primary,
-                        fontWeight: FontWeight.w600,
-                      )),
+                  child: const Text('Reset'),
                 ),
               ],
             ),
@@ -128,8 +122,6 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                   min: 0,
                   max: _maxPrice,
                   divisions: 50,
-                  activeColor: BrandColors.primary,
-                  inactiveColor: BrandColors.surface2,
                   labels: RangeLabels(
                     '\$${_price.start.round()}',
                     '\$${_price.end.round()}',
@@ -188,33 +180,23 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                 ),
                 const SizedBox(height: Spacing.x5),
                 _label('Features'),
-                _InstantBookingToggle(
+                _FeatureToggle(
+                  icon: Icons.bolt,
+                  label: 'Instant booking',
                   value: _instantBooking,
                   onChanged: (v) => setState(() => _instantBooking = v),
                 ),
               ],
             ),
           ),
-          // Bottom full-width lime "Show N cars" button.
+          // Bottom full-width "Show N cars" primary CTA.
           SafeArea(
             top: false,
             child: Padding(
               padding: const EdgeInsets.all(Spacing.x4),
-              child: SizedBox(
-                height: 56,
-                child: FilledButton(
-                  onPressed: _apply,
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(Radii.pill),
-                    ),
-                  ),
-                  child: Text(
-                    count == null ? 'Show cars' : 'Show $count cars',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                ),
+              child: FilledButton(
+                onPressed: _apply,
+                child: Text(count == null ? 'Show cars' : 'Show $count cars'),
               ),
             ),
           ),
@@ -225,11 +207,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
 
   Widget _label(String text) => Padding(
         padding: const EdgeInsets.only(bottom: Spacing.x3),
-        child: Text(text,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600)),
+        child: Text(text, style: Theme.of(context).textTheme.titleMedium),
       );
 
   /// A wrap of selectable stadium pills (active = lime + dark text).
@@ -270,11 +248,18 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   }
 }
 
-/// "Instant booking" row with a lime toggle (cosmetic).
-class _InstantBookingToggle extends StatelessWidget {
+/// A feature row on a nested surface with a real [Switch] (theme-styled).
+class _FeatureToggle extends StatelessWidget {
+  final IconData icon;
+  final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
-  const _InstantBookingToggle({required this.value, required this.onChanged});
+  const _FeatureToggle({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -283,23 +268,18 @@ class _InstantBookingToggle extends StatelessWidget {
           horizontal: Spacing.x4, vertical: Spacing.x2),
       decoration: BoxDecoration(
         color: BrandColors.surface2,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
       child: Row(
         children: [
-          const Icon(Icons.bolt, color: BrandColors.primary, size: 20),
+          Icon(icon, color: BrandColors.primary, size: Sizes.icon),
           const SizedBox(width: Spacing.x3),
-          const Expanded(
-            child: Text('Instant booking',
-                style: TextStyle(fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(label,
+                style: Theme.of(context).textTheme.titleMedium),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: BrandColors.primaryFg,
-            activeTrackColor: BrandColors.primary,
-          ),
+          Switch(value: value, onChanged: onChanged),
         ],
       ),
     );

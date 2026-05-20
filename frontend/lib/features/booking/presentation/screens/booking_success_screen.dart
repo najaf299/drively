@@ -7,7 +7,6 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/booking.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../features/auth/domain/providers/auth_provider.dart';
-import '../../../../shared/widgets/loading_button.dart';
 
 /// Post-payment confirmation screen.
 class BookingSuccessScreen extends ConsumerWidget {
@@ -45,35 +44,28 @@ class BookingSuccessScreen extends ConsumerWidget {
                 const SizedBox(height: Spacing.x6),
                 Text(
                   "You're all set!",
-                  style: Theme.of(context).textTheme.headlineLarge,
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: Spacing.x3),
                 Text(
                   'Your $carName is booked for $dateRange.'
                   '${email != null ? ' We sent a confirmation to $email.' : ''}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: BrandColors.mutedFg,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: BrandColors.mutedFg),
                 ),
                 const SizedBox(height: Spacing.x6),
-                _detailsCard(pickup: pickup, location: location),
+                _detailsCard(context, pickup: pickup, location: location),
                 const Spacer(),
-                _PillButtonTheme(
-                  child: LoadingButton(
-                    label: 'View trip details',
-                    onPressed: () => context.go('/trips'),
-                  ),
+                FilledButton(
+                  onPressed: () => context.go('/trips'),
+                  child: const Text('View trip details'),
                 ),
-                const SizedBox(height: Spacing.x2),
-                TextButton(
+                const SizedBox(height: Spacing.x3),
+                OutlinedButton(
                   onPressed: () => context.go('/home'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: BrandColors.mutedFg,
-                    minimumSize: const Size.fromHeight(44),
-                  ),
                   child: const Text('Back to home'),
                 ),
               ],
@@ -84,7 +76,8 @@ class BookingSuccessScreen extends ConsumerWidget {
     );
   }
 
-  Widget _detailsCard({required String pickup, required String location}) {
+  Widget _detailsCard(BuildContext context,
+      {required String pickup, required String location}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(Spacing.x5),
@@ -96,79 +89,44 @@ class BookingSuccessScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'BOOKING ID',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-              color: BrandColors.mutedFg,
-            ),
-          ),
+          Text('BOOKING ID',
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: BrandColors.mutedFg)),
           const SizedBox(height: Spacing.x1),
           Text(
             booking.reference,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: BrandColors.foreground,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
           ),
-          const Divider(color: BrandColors.border, height: Spacing.x6),
-          _row('Pickup', pickup),
+          const Divider(height: Spacing.x6),
+          _row(context, 'Pickup', pickup),
           const SizedBox(height: Spacing.x3),
-          _row('Location', location),
+          _row(context, 'Location', location),
         ],
       ),
     );
   }
 
-  Widget _row(String label, String value) {
+  Widget _row(BuildContext context, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, color: BrandColors.mutedFg),
-        ),
+        Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: BrandColors.mutedFg)),
         const SizedBox(width: Spacing.x4),
         Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: BrandColors.foreground,
-            ),
-          ),
+          child: Text(value,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.titleSmall),
         ),
       ],
-    );
-  }
-}
-
-/// Wraps a [FilledButton]/[LoadingButton] so it renders as a ~56-tall lime pill.
-class _PillButtonTheme extends StatelessWidget {
-  final Widget child;
-  const _PillButtonTheme({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButtonTheme(
-      data: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: BrandColors.primary,
-          foregroundColor: BrandColors.primaryFg,
-          disabledBackgroundColor: BrandColors.primary.withValues(alpha: 0.4),
-          minimumSize: const Size.fromHeight(56),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-          shape: const StadiumBorder(),
-        ),
-      ),
-      child: child,
     );
   }
 }
@@ -193,22 +151,16 @@ class _GlowCheck extends StatelessWidget {
         ),
       ),
       child: Container(
-        width: 104,
-        height: 104,
-        decoration: BoxDecoration(
+        width: 96,
+        height: 96,
+        decoration: const BoxDecoration(
           shape: BoxShape.circle,
           color: BrandColors.primary,
-          boxShadow: [
-            BoxShadow(
-              color: BrandColors.primary.withValues(alpha: 0.4),
-              blurRadius: 32,
-              spreadRadius: 4,
-            ),
-          ],
+          boxShadow: BrandShadows.glow,
         ),
         child: const Icon(
           Icons.check_rounded,
-          size: 56,
+          size: 52,
           color: BrandColors.primaryFg,
         ),
       ),

@@ -192,17 +192,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         Padding(
           padding: const EdgeInsets.only(left: Spacing.x1, bottom: Spacing.x2),
           child: Text(title,
-              style: const TextStyle(
-                color: BrandColors.mutedFg,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-                letterSpacing: 0.8,
-              )),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: BrandColors.mutedFg,
+                  )),
         ),
         Container(
           decoration: BoxDecoration(
             color: BrandColors.surface,
-            borderRadius: BorderRadius.circular(Radii.card),
+            borderRadius: BorderRadius.circular(Radii.xl),
             border: Border.all(color: BrandColors.border),
           ),
           clipBehavior: Clip.antiAlias,
@@ -245,18 +242,18 @@ class _RowTile extends StatelessWidget {
           children: [
             SizedBox(
               width: 28,
-              child: Icon(icon, color: BrandColors.primary, size: 22),
+              child: Icon(icon, color: BrandColors.primary, size: Sizes.icon),
             ),
             const SizedBox(width: Spacing.x3),
             Expanded(
-              child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w500)),
+              child:
+                  Text(label, style: Theme.of(context).textTheme.titleMedium),
             ),
             if (value != null) ...[
               Text(value!,
-                  style: const TextStyle(
-                      color: BrandColors.mutedFg, fontSize: 13)),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: BrandColors.mutedFg,
+                      )),
               const SizedBox(width: Spacing.x2),
             ],
             const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
@@ -288,20 +285,13 @@ class _ToggleRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 28,
-            child: Icon(icon, color: BrandColors.primary, size: 22),
+            child: Icon(icon, color: BrandColors.primary, size: Sizes.icon),
           ),
           const SizedBox(width: Spacing.x3),
           Expanded(
-            child: Text(label,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w500)),
+            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
           ),
-          Switch(
-            value: value,
-            activeThumbColor: BrandColors.primaryFg,
-            activeTrackColor: BrandColors.primary,
-            onChanged: onChanged,
-          ),
+          Switch(value: value, onChanged: onChanged),
         ],
       ),
     );

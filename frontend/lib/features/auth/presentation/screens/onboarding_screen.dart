@@ -30,14 +30,9 @@ class OnboardingScreen extends StatelessWidget {
                 children: [
                   const SizedBox(height: Spacing.x4),
                   // Wordmark.
-                  const Text(
+                  Text(
                     'drivly',
-                    style: TextStyle(
-                      color: BrandColors.foreground,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
+                    style: textTheme.headlineMedium,
                   ),
                   const Spacer(),
                   // Three-line hero headline; "Anytime." in the lime accent.
@@ -52,38 +47,27 @@ class OnboardingScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    style: textTheme.headlineLarge?.copyWith(
-                      fontSize: 46,
-                      fontWeight: FontWeight.w800,
-                      height: 1.05,
-                      letterSpacing: -1,
-                    ),
+                    style: textTheme.displayMedium,
                   ),
                   const SizedBox(height: Spacing.x5),
-                  const Text(
+                  Text(
                     'Skip the rental counter. Unlock thousands of cars '
                     'from real owners with your phone.',
-                    style: TextStyle(
+                    style: textTheme.bodyLarge?.copyWith(
                       color: BrandColors.mutedFg,
-                      fontSize: 16,
-                      height: 1.5,
                     ),
                   ),
+                  const SizedBox(height: Spacing.x6),
+                  const _PageIndicator(active: 0),
                   const Spacer(),
-                  // Primary CTA -> registration.
-                  SizedBox(
+                  // Primary CTA -> registration with a soft lime halo.
+                  Container(
                     width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(Radii.xxl),
+                      boxShadow: BrandShadows.glow,
+                    ),
                     child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(58),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
                       onPressed: () => _finish(context, '/register'),
                       child: const Text('Get Started'),
                     ),
@@ -92,11 +76,12 @@ class OnboardingScreen extends StatelessWidget {
                   Center(
                     child: GestureDetector(
                       onTap: () => _finish(context, '/login'),
-                      child: const Text.rich(
+                      child: Text.rich(
                         TextSpan(
                           text: 'Already have an account?  ',
-                          style: TextStyle(color: BrandColors.mutedFg),
-                          children: [
+                          style: textTheme.bodyMedium
+                              ?.copyWith(color: BrandColors.mutedFg),
+                          children: const [
                             TextSpan(
                               text: 'Sign in',
                               style: TextStyle(
@@ -116,6 +101,33 @@ class OnboardingScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Three rounded page-indicator pills; the active one is a wide lime bar.
+class _PageIndicator extends StatelessWidget {
+  final int active;
+  const _PageIndicator({required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(3, (i) {
+        final isActive = i == active;
+        return Padding(
+          padding: const EdgeInsets.only(right: Spacing.x2),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: isActive ? 24 : 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: isActive ? BrandColors.primary : BrandColors.border,
+              borderRadius: BorderRadius.circular(Radii.pill),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

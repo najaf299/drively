@@ -50,11 +50,7 @@ class HostBookingsScreen extends ConsumerWidget {
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
                   padding: EdgeInsets.zero,
-                  indicatorColor: BrandColors.primary,
                   indicatorWeight: 3,
-                  labelColor: BrandColors.primary,
-                  unselectedLabelColor: BrandColors.mutedFg,
-                  labelStyle: TextStyle(fontWeight: FontWeight.w700),
                   tabs: [
                     Tab(text: 'Requests'),
                     Tab(text: 'Upcoming'),
@@ -211,8 +207,8 @@ class _TabState extends ConsumerState<_Tab> {
                         child: FilledButton(
                           onPressed: _busyId == b.id ? null : () => _approve(b),
                           style: FilledButton.styleFrom(
-                            backgroundColor: BrandColors.primary,
-                            foregroundColor: BrandColors.primaryFg,
+                            minimumSize: const Size.fromHeight(
+                                Sizes.secondaryHeight),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(Radii.pill),
                             ),
@@ -249,7 +245,7 @@ class _CircleBackButton extends StatelessWidget {
           border: Border.all(color: BrandColors.border),
         ),
         child: const Icon(Icons.chevron_left,
-            color: BrandColors.foreground, size: 26),
+            color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );
   }

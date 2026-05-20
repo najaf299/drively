@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/models/booking.dart';
 import '../../../../shared/widgets/state_views.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../../../shared/widgets/trip_card.dart';
 import '../../../booking/domain/providers/booking_provider.dart';
 
@@ -24,28 +25,21 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
   @override
   Widget build(BuildContext context) {
     final bookings = ref.watch(bookingsProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
                   Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x4),
-              child: Text(
-                'Trips',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.6,
-                  color: BrandColors.foreground,
-                ),
-              ),
+              child: Text('Trips', style: theme.textTheme.displaySmall),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
-              child: _segments(),
+              child: _segments(theme),
             ),
             const SizedBox(height: Spacing.x4),
             Expanded(
@@ -89,7 +83,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
     );
   }
 
-  Widget _segments() {
+  Widget _segments(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -114,9 +108,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
                 ),
                 child: Text(
                   _tabs[i],
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                  style: theme.textTheme.titleSmall?.copyWith(
                     color: selected
                         ? BrandColors.primaryFg
                         : BrandColors.mutedFg,
@@ -128,6 +120,20 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
         }),
       ),
     );
+  }
+
+  /// Status badge for a booking, mapped per the v2 spec.
+  StatusBadge _badge(Booking b) {
+    if (b.isActive) {
+      return const StatusBadge('Active', tone: BadgeTone.live);
+    }
+    if (b.isCompleted) {
+      return const StatusBadge('Completed', tone: BadgeTone.success);
+    }
+    if (b.isCancelled) {
+      return const StatusBadge('Cancelled', tone: BadgeTone.error);
+    }
+    return const StatusBadge('Upcoming', tone: BadgeTone.neutral);
   }
 
   Widget _list(
@@ -156,11 +162,15 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
           Spacing.x5, 0, Spacing.x5, Spacing.x5),
       itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: Spacing.x3),
-      itemBuilder: (_, i) => TripCard(
-        booking: items[i],
-        featured: featureFirst && i == 0,
-        onTap: () => context.push('/bookings/${items[i].id}'),
-      ),
+      itemBuilder: (_, i) {
+        final featured = featureFirst && i == 0;
+        return TripCard(
+          booking: items[i],
+          featured: featured,
+          trailing: featured ? null : _badge(items[i]),
+          onTap: () => context.push('/bookings/${items[i].id}'),
+        );
+      },
     );
   }
 }

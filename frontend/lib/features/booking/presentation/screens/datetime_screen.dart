@@ -115,15 +115,8 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
         children: [
           _CircleBackButton(onTap: () => context.pop()),
           const SizedBox(width: Spacing.x3),
-          const Text(
-            'Select dates',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.4,
-              color: BrandColors.foreground,
-            ),
-          ),
+          Text('Select dates',
+              style: Theme.of(context).textTheme.headlineMedium),
         ],
       ),
     );
@@ -158,6 +151,7 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: BrandColors.foreground,
+            letterSpacing: -0.2,
           ),
         ),
         daysOfWeekStyle: const DaysOfWeekStyle(
@@ -173,7 +167,7 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
           ),
         ),
         calendarStyle: CalendarStyle(
-          rangeHighlightColor: BrandColors.primary.withValues(alpha: 0.14),
+          rangeHighlightColor: BrandColors.primary.withValues(alpha: 0.20),
           rangeStartDecoration: const BoxDecoration(
             color: BrandColors.primary,
             shape: BoxShape.circle,
@@ -220,47 +214,33 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
   }
 
   Widget _timeTile(String label, TimeOfDay time, VoidCallback onTap) {
+    final t = Theme.of(context).textTheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(Radii.card),
+      borderRadius: BorderRadius.circular(Radii.pill),
       child: Container(
-        padding: const EdgeInsets.all(Spacing.x4),
+        padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.x4, vertical: Spacing.x3),
         decoration: BoxDecoration(
-          color: BrandColors.surface,
-          borderRadius: BorderRadius.circular(Radii.card),
+          color: BrandColors.surface2,
+          borderRadius: BorderRadius.circular(Radii.pill),
           border: Border.all(color: BrandColors.border),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: BrandColors.surface2,
-                borderRadius: BorderRadius.circular(Radii.md),
-              ),
-              child: const Icon(Icons.access_time_rounded,
-                  size: 18, color: BrandColors.primary),
-            ),
+            const Icon(Icons.access_time_rounded,
+                size: 18, color: BrandColors.primary),
             const SizedBox(width: Spacing.x3),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                      color: BrandColors.mutedFg, fontSize: 11),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  time.format(context),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: BrandColors.foreground,
-                  ),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: t.bodySmall),
+                  const SizedBox(height: 2),
+                  Text(time.format(context), style: t.titleSmall),
+                ],
+              ),
             ),
           ],
         ),
@@ -289,15 +269,17 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
                   Text(
                     '${Formatters.money(widget.car.dailyPrice)} × '
                     '${Formatters.plural(_days, 'day')}',
-                    style: const TextStyle(color: BrandColors.mutedFg),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: BrandColors.mutedFg),
                   ),
                   Text(
                     Formatters.money(subtotal),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: BrandColors.primary,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(color: BrandColors.primary),
                   ),
                 ],
               ),

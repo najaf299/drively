@@ -11,10 +11,10 @@ import '../../domain/providers/host_provider.dart';
 
 /// Single-screen car listing form (covers the required `POST /host/cars` fields).
 ///
-/// Restyled to the Drivly "List your car" design: a step progress bar, a dashed
-/// photo-upload box, floating-label rounded fields, a smart-pricing block and a
-/// full-width lime "Continue" button. All form fields, controllers, validation
-/// and the submit payload are preserved.
+/// Restyled to the Drivly "List your car" design: a step progress bar, a 3x3
+/// photo-upload grid with a dashed add tile, floating-label rounded fields, a
+/// smart-pricing block and a full-width lime "Continue" button. All form
+/// fields, controllers, validation and the submit payload are preserved.
 class AddCarScreen extends ConsumerStatefulWidget {
   const AddCarScreen({super.key});
 
@@ -174,7 +174,7 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
                   padding: const EdgeInsets.fromLTRB(
                       Spacing.x5, Spacing.x5, Spacing.x5, Spacing.x6),
                   children: [
-                    const _PhotoUploadBox(),
+                    const _PhotoUploadGrid(),
                     const SizedBox(height: Spacing.x6),
                     _section('Basics'),
                     _field(_make, 'Make',
@@ -334,14 +334,6 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
         decoration: InputDecoration(
           labelText: label,
           floatingLabelBehavior: FloatingLabelBehavior.auto,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(Radii.card),
-            borderSide: const BorderSide(color: BrandColors.surface2, width: 1.2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(Radii.card),
-            borderSide: const BorderSide(color: BrandColors.primary, width: 2),
-          ),
         ),
       ),
     );
@@ -353,17 +345,7 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
       padding: const EdgeInsets.only(bottom: Spacing.x3),
       child: DropdownButtonFormField<String>(
         initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(Radii.card),
-            borderSide: const BorderSide(color: BrandColors.surface2, width: 1.2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(Radii.card),
-            borderSide: const BorderSide(color: BrandColors.primary, width: 2),
-          ),
-        ),
+        decoration: InputDecoration(labelText: label),
         dropdownColor: BrandColors.surface,
         items: options.entries
             .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
@@ -387,11 +369,10 @@ class _StepProgress extends StatelessWidget {
       children: [
         Text(
           'Step $step of $total',
-          style: const TextStyle(
-            color: BrandColors.mutedFg,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .titleSmall
+              ?.copyWith(color: BrandColors.mutedFg),
         ),
         const SizedBox(height: Spacing.x2),
         ClipRRect(
@@ -408,47 +389,78 @@ class _StepProgress extends StatelessWidget {
   }
 }
 
-/// Dashed photo-upload box with a camera icon.
-class _PhotoUploadBox extends StatelessWidget {
-  const _PhotoUploadBox();
+/// A 3x3 photo-upload grid: a dashed "add" tile followed by empty slots.
+class _PhotoUploadGrid extends StatelessWidget {
+  const _PhotoUploadGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: Spacing.x3,
+      mainAxisSpacing: Spacing.x3,
+      children: [
+        const _AddPhotoTile(),
+        for (var i = 0; i < 8; i++) const _EmptyPhotoTile(),
+      ],
+    );
+  }
+}
+
+/// The dashed "add photo" tile (first slot).
+class _AddPhotoTile extends StatelessWidget {
+  const _AddPhotoTile();
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: _DashedBorderPainter(
-        color: BrandColors.surface2,
-        radius: Radii.card,
+        color: BrandColors.borderStrong,
+        radius: Radii.lg,
       ),
       child: Container(
-        height: 168,
-        width: double.infinity,
         alignment: Alignment.center,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: Sizes.avatar,
+              height: Sizes.avatar,
               decoration: BoxDecoration(
                 color: BrandColors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.photo_camera_outlined,
-                  color: BrandColors.primary, size: 26),
+                  color: BrandColors.primary, size: Sizes.icon),
             ),
-            const SizedBox(height: Spacing.x3),
-            const Text(
-              'Add 6+ photos',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-            const SizedBox(height: 2),
-            const Text(
-              'High quality, daylight',
-              style: TextStyle(color: BrandColors.mutedFg, fontSize: 12),
-            ),
+            const SizedBox(height: Spacing.x2),
+            Text('Add',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: BrandColors.primary,
+                    )),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// An empty photo placeholder slot.
+class _EmptyPhotoTile extends StatelessWidget {
+  const _EmptyPhotoTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: BrandColors.surface2,
+        borderRadius: BorderRadius.circular(Radii.lg),
+        border: Border.all(color: BrandColors.border),
+      ),
+      child: const Icon(Icons.image_outlined,
+          color: BrandColors.subtleFg, size: Sizes.icon),
     );
   }
 }
@@ -522,7 +534,7 @@ class _SmartPricing extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(Radii.card),
+            borderRadius: BorderRadius.circular(Radii.xl),
             border:
                 Border.all(color: BrandColors.primary.withValues(alpha: 0.4)),
           ),
@@ -530,31 +542,27 @@ class _SmartPricing extends StatelessWidget {
             children: [
               const Icon(Icons.auto_awesome, color: BrandColors.primary),
               const SizedBox(width: Spacing.x3),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('AI dynamic pricing',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15)),
-                    SizedBox(height: 2),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
                     Text(
                       '+\$284 estimated this month',
-                      style: TextStyle(
-                        color: BrandColors.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: BrandColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ],
                 ),
               ),
-              Switch(
-                value: enabled,
-                onChanged: onToggle,
-                activeThumbColor: BrandColors.primaryFg,
-                activeTrackColor: BrandColors.primary,
-              ),
+              Switch(value: enabled, onChanged: onToggle),
             ],
           ),
         ),
@@ -564,7 +572,7 @@ class _SmartPricing extends StatelessWidget {
           padding: const EdgeInsets.all(Spacing.x4),
           decoration: BoxDecoration(
             color: BrandColors.surface,
-            borderRadius: BorderRadius.circular(Radii.card),
+            borderRadius: BorderRadius.circular(Radii.xl),
             border: Border.all(color: BrandColors.border),
           ),
           child: Column(
@@ -572,47 +580,36 @@ class _SmartPricing extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text('Base daily price',
-                      style: TextStyle(color: BrandColors.mutedFg)),
+                  Text('Base daily price',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: BrandColors.mutedFg,
+                          )),
                   const Spacer(),
                   Text(
                     '\$${basePrice.round()}/day',
-                    style: const TextStyle(
-                      color: BrandColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: BrandColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ],
               ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: BrandColors.primary,
-                  inactiveTrackColor: BrandColors.surface2,
-                  thumbColor: BrandColors.primary,
-                  overlayColor: BrandColors.primary.withValues(alpha: 0.2),
-                ),
-                child: Slider(
-                  value: basePrice.clamp(20, 300),
-                  min: 20,
-                  max: 300,
-                  onChanged: onPriceChanged,
-                ),
+              Slider(
+                value: basePrice.clamp(20, 300),
+                min: 20,
+                max: 300,
+                onChanged: onPriceChanged,
               ),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Low',
-                      style: TextStyle(
-                          color: BrandColors.mutedFg, fontSize: 11)),
+                  Text('Low', style: Theme.of(context).textTheme.bodySmall),
                   Text('Fair',
-                      style: TextStyle(
-                          color: BrandColors.success,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600)),
-                  Text('High',
-                      style: TextStyle(
-                          color: BrandColors.mutedFg, fontSize: 11)),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: BrandColors.success,
+                            fontWeight: FontWeight.w600,
+                          )),
+                  Text('High', style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ],
@@ -625,7 +622,7 @@ class _SmartPricing extends StatelessWidget {
               horizontal: Spacing.x4, vertical: Spacing.x2),
           decoration: BoxDecoration(
             color: BrandColors.surface,
-            borderRadius: BorderRadius.circular(Radii.card),
+            borderRadius: BorderRadius.circular(Radii.xl),
             border: Border.all(color: BrandColors.border),
           ),
           child: const Column(
@@ -665,7 +662,10 @@ class _RuleRow extends StatelessWidget {
           Expanded(child: Text(label)),
           Text(
             delta,
-            style: TextStyle(color: color, fontWeight: FontWeight.w700),
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(color: color, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -698,13 +698,13 @@ class _CircleBackButton extends StatelessWidget {
           border: Border.all(color: BrandColors.border),
         ),
         child: const Icon(Icons.chevron_left,
-            color: BrandColors.foreground, size: 26),
+            color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );
   }
 }
 
-/// Full-width lime pill primary button (~56 tall, radius 28).
+/// Full-width lime pill primary button (relies on the FilledButton theme).
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final bool loading;
@@ -718,28 +718,16 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: FilledButton(
-        onPressed: loading ? null : onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: BrandColors.primary,
-          foregroundColor: BrandColors.primaryFg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-        child: loading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: BrandColors.primaryFg),
-              )
-            : Text(label),
-      ),
+    return FilledButton(
+      onPressed: loading ? null : onPressed,
+      child: loading
+          ? const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: BrandColors.primaryFg),
+            )
+          : Text(label),
     );
   }
 }

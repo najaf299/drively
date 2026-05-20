@@ -8,7 +8,7 @@ import 'status_chip.dart';
 
 /// Standard car listing card used on Home, Search and Favourites.
 ///
-/// Layout: a rounded cover image with a category pill (top-left) and a heart
+/// Layout: a 16:10 cover image with a category pill (top-left) and a heart
 /// favourite button in a dark circle (top-right); below, the car name and a
 /// lime price, then a rating row and a location.
 class CarCard extends StatelessWidget {
@@ -39,150 +39,150 @@ class CarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Material(
-      color: BrandColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Radii.card),
-        side: const BorderSide(color: BrandColors.border),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(Radii.xl),
+        boxShadow: BrandShadows.card,
       ),
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Hero(
-                  tag: 'car-${car.id}',
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(Radii.card),
-                    ),
-                    child: AppNetworkImage(
-                      url: car.coverPhotoUrl,
-                      height: 168,
-                      width: double.infinity,
+      child: Material(
+        color: BrandColors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.xl),
+          side: const BorderSide(color: BrandColors.border),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  Hero(
+                    tag: 'car-${car.id}',
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(Radii.xl),
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 10,
+                        child: AppNetworkImage(
+                          url: car.coverPhotoUrl,
+                          width: double.infinity,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                // Category pill (or host status) over the image, top-left.
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: showStatus
-                      ? StatusChip.car(car.status)
-                      : _CategoryPill(label: _label(car.fuelType)),
-                ),
-                // Favourite heart in a dark circle, top-right.
-                if (onToggleFavorite != null)
+                  // Category pill (or host status) over the image, top-left.
                   Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Material(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: onToggleFavorite,
-                        child: SizedBox(
-                          width: 36,
-                          height: 36,
-                          child: Icon(
-                            isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            size: 18,
-                            color: isFavorite
-                                ? BrandColors.accent
-                                : Colors.white,
+                    top: Spacing.x3,
+                    left: Spacing.x3,
+                    child: showStatus
+                        ? StatusChip.car(car.status)
+                        : _CategoryPill(label: _label(car.fuelType)),
+                  ),
+                  // Favourite heart in a dark circle, top-right.
+                  if (onToggleFavorite != null)
+                    Positioned(
+                      top: Spacing.x3,
+                      right: Spacing.x3,
+                      child: Material(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: onToggleFavorite,
+                          child: SizedBox(
+                            width: Sizes.avatarSm,
+                            height: Sizes.avatarSm,
+                            child: Icon(
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 18,
+                              color: isFavorite
+                                  ? BrandColors.accent
+                                  : Colors.white,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(Spacing.x4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          car.displayName,
-                          style: text.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.x2),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: Formatters.money(car.dailyPrice),
-                              style: text.titleMedium?.copyWith(
-                                color: BrandColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const TextSpan(
-                              text: '/day',
-                              style: TextStyle(
-                                color: BrandColors.mutedFg,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Spacing.x2),
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded,
-                          size: 16, color: BrandColors.primary),
-                      const SizedBox(width: 3),
-                      Text(
-                        car.averageRating.toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '· ${car.totalReviews} trips',
-                        style: const TextStyle(
-                            color: BrandColors.mutedFg, fontSize: 12),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.location_on_outlined,
-                          size: 14, color: BrandColors.mutedFg),
-                      const SizedBox(width: 2),
-                      Flexible(
-                        child: Text(
-                          car.distance != null
-                              ? Formatters.distance(car.distance!)
-                              : car.city,
-                          textAlign: TextAlign.end,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: BrandColors.mutedFg, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(Spacing.x4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            car.displayName,
+                            style: text.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: Spacing.x2),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: Formatters.money(car.dailyPrice),
+                                style: text.titleMedium?.copyWith(
+                                  color: BrandColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '/day',
+                                style: text.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Spacing.x2),
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded,
+                            size: 16, color: BrandColors.warning),
+                        const SizedBox(width: 3),
+                        Text(
+                          car.averageRating.toStringAsFixed(1),
+                          style: text.titleSmall,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '· ${car.totalReviews} trips',
+                          style: text.bodySmall,
+                        ),
+                        const Spacer(),
+                        const Icon(Icons.location_on_outlined,
+                            size: 14, color: BrandColors.mutedFg),
+                        const SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            car.distance != null
+                                ? Formatters.distance(car.distance!)
+                                : car.city,
+                            textAlign: TextAlign.end,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -204,12 +204,10 @@ class _CategoryPill extends StatelessWidget {
       ),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
       ),
     );
   }

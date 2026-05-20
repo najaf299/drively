@@ -213,11 +213,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: BrandColors.foreground,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -233,10 +229,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
                     const SizedBox(width: 5),
-                    const Text(
+                    Text(
                       'Online',
-                      style: TextStyle(
-                          color: BrandColors.success, fontSize: 12),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: BrandColors.success),
                     ),
                   ],
                 ),
@@ -288,19 +286,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         padding: const EdgeInsets.fromLTRB(
             Spacing.x3, Spacing.x2, Spacing.x3, Spacing.x2),
         decoration: const BoxDecoration(
-          color: BrandColors.background,
+          color: BrandColors.surface,
           border: Border(top: BorderSide(color: BrandColors.border)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _circleIcon(Icons.add, BrandColors.surface, BrandColors.foreground,
+            _circleIcon(Icons.add, BrandColors.surface2, BrandColors.foreground,
                 onTap: canSend ? () {} : null),
             const SizedBox(width: Spacing.x2),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: BrandColors.surface,
+                  color: BrandColors.surface2,
                   borderRadius: BorderRadius.circular(Radii.pill),
                   border: Border.all(color: BrandColors.border),
                 ),
@@ -416,26 +414,23 @@ class _Bubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isMine ? BrandColors.primary : BrandColors.surface,
+          color: isMine ? BrandColors.primary : BrandColors.surface2,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isMine ? 18 : 4),
-            bottomRight: Radius.circular(isMine ? 4 : 18),
+            topLeft: const Radius.circular(Radii.lg),
+            topRight: const Radius.circular(Radii.lg),
+            bottomLeft: Radius.circular(isMine ? Radii.lg : Radii.xs / 2),
+            bottomRight: Radius.circular(isMine ? Radii.xs / 2 : Radii.lg),
           ),
-          border: isMine
-              ? null
-              : Border.all(color: BrandColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               message.content,
-              style: TextStyle(
-                color: isMine ? BrandColors.primaryFg : BrandColors.foreground,
-                height: 1.35,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color:
+                        isMine ? BrandColors.primaryFg : BrandColors.foreground,
+                  ),
             ),
             const SizedBox(height: 3),
             Row(
@@ -444,12 +439,11 @@ class _Bubble extends StatelessWidget {
                 if (message.createdAt != null)
                   Text(
                     Formatters.time(message.createdAt!),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isMine
-                          ? BrandColors.primaryFg.withValues(alpha: 0.7)
-                          : BrandColors.mutedFg,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isMine
+                              ? BrandColors.primaryFg.withValues(alpha: 0.7)
+                              : BrandColors.mutedFg,
+                        ),
                   ),
                 if (isMine) ...[
                   const SizedBox(width: 4),

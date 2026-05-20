@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../shared/widgets/status_badge.dart';
 
 /// Saved cards are managed by Stripe at checkout time; this build does not
 /// persist cards locally. The screen presents the configured methods.
@@ -31,13 +32,14 @@ class PaymentMethodsScreen extends StatelessWidget {
             const SizedBox(height: Spacing.x6),
             const _DefaultCard(),
             const SizedBox(height: Spacing.x6),
-            const Text('Other methods',
-                style: TextStyle(
-                    color: BrandColors.mutedFg,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13)),
+            Text('Other methods',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(color: BrandColors.mutedFg)),
             const SizedBox(height: Spacing.x3),
             _MethodRow(
+              stripe: BrandColors.warning,
               icon: Icons.credit_card,
               title: 'Mastercard',
               subtitle: '•••• 1245',
@@ -45,6 +47,7 @@ class PaymentMethodsScreen extends StatelessWidget {
             ),
             const SizedBox(height: Spacing.x3),
             _MethodRow(
+              stripe: BrandColors.foreground,
               icon: Icons.phone_iphone,
               title: 'Apple Pay',
               subtitle: 'Default device',
@@ -52,6 +55,7 @@ class PaymentMethodsScreen extends StatelessWidget {
             ),
             const SizedBox(height: Spacing.x3),
             _MethodRow(
+              stripe: BrandColors.success,
               icon: Icons.account_balance,
               title: 'Bank transfer',
               subtitle: 'ACH · 2–3 days',
@@ -93,62 +97,32 @@ class _DefaultCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(Spacing.x5),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            BrandColors.accent,
-            Color.lerp(BrandColors.accent, BrandColors.primaryFg, 0.18)!,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(Radii.card + 4),
-        boxShadow: [
-          BoxShadow(
-            color: BrandColors.accent.withValues(alpha: 0.3),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        gradient: BrandGradients.accent,
+        borderRadius: BorderRadius.circular(Radii.xxl),
+        boxShadow: BrandShadows.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('VISA · DEFAULT',
-                  style: TextStyle(
-                    color: BrandColors.foreground,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1,
-                    fontSize: 13,
-                  )),
+              Text('VISA · DEFAULT',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: BrandColors.foreground,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      )),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.x3, vertical: 4),
-                decoration: BoxDecoration(
-                  color: BrandColors.foreground.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                ),
-                child: const Text('DEFAULT',
-                    style: TextStyle(
-                      color: BrandColors.foreground,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                      letterSpacing: 0.5,
-                    )),
-              ),
+              const StatusBadge('DEFAULT', tone: BadgeTone.neutral),
             ],
           ),
           const SizedBox(height: Spacing.x6),
-          const Text(
+          Text(
             '••••  4829',
-            style: TextStyle(
-              color: BrandColors.foreground,
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 3,
-            ),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: BrandColors.foreground,
+                  letterSpacing: 3,
+                ),
           ),
           const SizedBox(height: Spacing.x5),
           const Row(
@@ -175,30 +149,28 @@ class _CardField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: TextStyle(
-              color: BrandColors.foreground.withValues(alpha: 0.7),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1,
-            )),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: BrandColors.foreground.withValues(alpha: 0.7),
+                  letterSpacing: 1,
+                )),
         const SizedBox(height: 2),
         Text(value,
-            style: const TextStyle(
-              color: BrandColors.foreground,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            )),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: BrandColors.foreground,
+                )),
       ],
     );
   }
 }
 
 class _MethodRow extends StatelessWidget {
+  final Color stripe;
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
   const _MethodRow({
+    required this.stripe,
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -209,39 +181,28 @@ class _MethodRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      borderRadius: BorderRadius.circular(Radii.card),
+      borderRadius: BorderRadius.circular(Radii.xl),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(Radii.card),
+        borderRadius: BorderRadius.circular(Radii.xl),
         child: Container(
           padding: const EdgeInsets.all(Spacing.x3),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Radii.card),
+            borderRadius: BorderRadius.circular(Radii.xl),
             border: Border.all(color: BrandColors.border),
           ),
           child: Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: BrandColors.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(Radii.md),
-                ),
-                child: Icon(icon, color: BrandColors.accent, size: 22),
-              ),
+              _CardThumb(stripe: stripe, icon: icon),
               const SizedBox(width: Spacing.x3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text(title, style: Theme.of(context).textTheme.titleSmall),
                     const SizedBox(height: 2),
                     Text(subtitle,
-                        style: const TextStyle(
-                            color: BrandColors.mutedFg, fontSize: 12)),
+                        style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
               ),
@@ -249,6 +210,36 @@ class _MethodRow extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A ~56x40 card thumbnail with a brand-colour stripe along the bottom.
+class _CardThumb extends StatelessWidget {
+  final Color stripe;
+  final IconData icon;
+  const _CardThumb({required this.stripe, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 56,
+      height: 40,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: BrandColors.surface2,
+        borderRadius: BorderRadius.circular(Radii.xs),
+        border: Border.all(color: BrandColors.border),
+      ),
+      child: Stack(
+        children: [
+          Center(child: Icon(icon, color: stripe, size: 20)),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(height: 6, color: stripe),
+          ),
+        ],
       ),
     );
   }
@@ -262,7 +253,7 @@ class _AddMethodButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(Radii.card),
+      borderRadius: BorderRadius.circular(Radii.xl),
       child: const DottedBorderBox(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: Spacing.x4),
@@ -301,10 +292,10 @@ class _DashedRectPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = BrandColors.border
+      ..color = BrandColors.borderStrong
       ..strokeWidth = 1.4
       ..style = PaintingStyle.stroke;
-    const radius = Radii.card;
+    const radius = Radii.xl;
     final rrect = RRect.fromRectAndRadius(
       Offset.zero & size,
       const Radius.circular(radius),
