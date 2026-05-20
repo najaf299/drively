@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Brand colour tokens from the Drivly design system (dark-first).
 ///
@@ -38,9 +39,10 @@ class Spacing {
 /// Corner radii tokens.
 class Radii {
   Radii._();
-  static const double sm = 8;
-  static const double md = 12; // fields, buttons, default cards
-  static const double card = 16;
+  static const double sm = 10;
+  static const double md = 14; // fields
+  static const double btn = 18; // buttons
+  static const double card = 20; // cards
   static const double pill = 999;
 }
 
@@ -88,10 +90,11 @@ class DrivlyTheme {
           backgroundColor: BrandColors.primary,
           foregroundColor: BrandColors.primaryFg,
           disabledBackgroundColor: BrandColors.primary.withValues(alpha: 0.4),
-          minimumSize: const Size.fromHeight(52),
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          minimumSize: const Size.fromHeight(56),
+          elevation: 0,
+          textStyle: GoogleFonts.inter(fontSize: 15.5, fontWeight: FontWeight.w700),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Radii.md),
+            borderRadius: BorderRadius.circular(Radii.btn),
           ),
         ),
       ),
@@ -183,35 +186,54 @@ class DrivlyTheme {
   }
 
   static TextTheme _textTheme(TextTheme base) {
-    return base
-        .apply(
-          bodyColor: BrandColors.foreground,
-          displayColor: BrandColors.foreground,
-        )
-        .copyWith(
-          headlineLarge: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-          ),
-          headlineMedium: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.4,
-          ),
-          titleLarge:
-              const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          titleMedium:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          bodyLarge: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          bodyMedium:
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          bodySmall: const TextStyle(
-            fontSize: 12,
-            color: BrandColors.mutedFg,
-          ),
-          labelLarge:
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+    // Inter for body/labels; Space Grotesk for display/headlines/titles — the
+    // exact pairing from the product design, for a smoother, more premium feel.
+    final body = GoogleFonts.interTextTheme(base).apply(
+      bodyColor: BrandColors.foreground,
+      displayColor: BrandColors.foreground,
+    );
+
+    TextStyle grotesk(double size, FontWeight weight, double spacing) =>
+        GoogleFonts.spaceGrotesk(
+          fontSize: size,
+          fontWeight: weight,
+          letterSpacing: spacing,
+          color: BrandColors.foreground,
+          height: 1.05,
         );
+
+    return body.copyWith(
+      displayLarge: grotesk(34, FontWeight.w700, -0.8),
+      displayMedium: grotesk(30, FontWeight.w700, -0.6),
+      displaySmall: grotesk(26, FontWeight.w700, -0.5),
+      headlineLarge: grotesk(28, FontWeight.w700, -0.6),
+      headlineMedium: grotesk(23, FontWeight.w700, -0.4),
+      headlineSmall: grotesk(20, FontWeight.w600, -0.3),
+      titleLarge: grotesk(18, FontWeight.w600, -0.2),
+      titleMedium: GoogleFonts.inter(
+        fontSize: 15.5,
+        fontWeight: FontWeight.w600,
+        color: BrandColors.foreground,
+      ),
+      bodyLarge: GoogleFonts.inter(
+        fontSize: 14.5,
+        fontWeight: FontWeight.w400,
+        color: BrandColors.foreground,
+        height: 1.45,
+      ),
+      bodyMedium: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: BrandColors.foreground,
+        height: 1.45,
+      ),
+      bodySmall: GoogleFonts.inter(
+        fontSize: 12.5,
+        fontWeight: FontWeight.w400,
+        color: BrandColors.mutedFg,
+        height: 1.4,
+      ),
+      labelLarge: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+    );
   }
 }
