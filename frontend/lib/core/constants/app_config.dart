@@ -6,15 +6,19 @@ class AppConfig {
   AppConfig._();
 
   /// Base URL of the REST API, including the `/api/v1` prefix.
+  ///
+  /// Defaults to the dev Mac's LAN IP so the same value works on both the iOS
+  /// simulator and a physical iPhone on the same Wi-Fi. Override per-environment
+  /// with `--dart-define=API_URL=...`. (An Android emulator would use 10.0.2.2.)
   static const String apiBaseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://10.0.2.2:8000/api/v1',
+    defaultValue: 'http://192.168.100.8:8000/api/v1',
   );
 
   /// Reverb host (without scheme/port).
   static const String wsHost = String.fromEnvironment(
     'WS_HOST',
-    defaultValue: '10.0.2.2',
+    defaultValue: '192.168.100.8',
   );
 
   /// Reverb port.

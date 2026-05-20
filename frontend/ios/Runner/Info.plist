@@ -55,5 +55,14 @@
 	<string>Drivly needs photo library access so you can upload car photos and documents.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Drivly saves trip and receipt images to your photo library.</string>
+	<!-- DEV ONLY: allow plain-HTTP calls to the local LAN backend (http://192.168.x.x:8000).
+	     Tighten or remove for production (use HTTPS). -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
