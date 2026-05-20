@@ -22,23 +22,24 @@ dependencies:
   geocoding: ^3.0.0
   intl: ^0.19.0
   flutter_stripe: ^10.1.1
-  firebase_core: ^2.27.0
-  firebase_messaging: ^14.7.15
-  firebase_analytics: ^10.8.9
+  # NOTE: Firebase (core/messaging/analytics) was removed because it is unused in
+  # the Dart code and its current iOS SDK (11.x) requires Xcode 16+, which cannot
+  # run on this machine's macOS. Re-add when push/analytics are actually wired up
+  # on a toolchain with Xcode 16+.
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^6.1.0
   shimmer: ^3.0.0
   flutter_rating_bar: ^4.0.1
   photo_view: ^0.15.0
   url_launcher: ^6.2.5
-  share_plus: ^9.0.0
+  share_plus: ^10.0.0
   connectivity_plus: ^6.0.3
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1
   hive_flutter: ^1.1.0
   path_provider: ^2.1.2
   flutter_local_notifications: ^17.0.0
-  web_socket_channel: ^2.4.4
+  web_socket_channel: ^3.0.3
   lottie: ^3.1.0
   fl_chart: ^0.68.0
   table_calendar: ^3.1.1
@@ -52,6 +53,14 @@ dev_dependencies:
   json_serializable: ^6.7.1
   riverpod_generator: ^2.4.0
   mockito: ^5.4.4
+
+# Pin path_provider_foundation to the last release before it adopted the
+# `objective_c` native-assets package (2.5.0+). That native build hook triggers
+# Flutter's `install_code_assets` step, which fails to parse the device's
+# `arm64e` slice ("Unknown architecture in otool output: arm64e") on this
+# Flutter/Xcode toolchain. 2.4.4 keeps path_provider fully functional.
+dependency_overrides:
+  path_provider_foundation: 2.4.4
 
 flutter:
   uses-material-design: true
