@@ -1,57 +1,54 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../utils/json_utils.dart';
 
-part 'notification.g.dart';
-
-@JsonSerializable()
-class NotificationItem {
+/// An in-app notification (Laravel `DatabaseNotification` shape:
+/// `{ id, type, data, read_at, created_at }`). The display title/body and any
+/// deep-link live inside the free-form [data] payload.
+class AppNotification {
   final String id;
-  final String userId;
-  final String type; // 'booking', 'trip', 'chat', 'payment', 'system'
-  final String title;
-  final String body;
-  final Map<String, dynamic>? data;
-  final bool isRead;
+  final String type;
+  final Map<String, dynamic> data;
   final DateTime? readAt;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
 
-  NotificationItem({
+  const AppNotification({
     required this.id,
-    required this.userId,
     required this.type,
-    required this.title,
-    required this.body,
-    this.data,
-    required this.isRead,
+    this.data = const {},
     this.readAt,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt,
   });
 
-  factory NotificationItem.fromJson(Map<String, dynamic> json) => _$NotificationItemFromJson(json);
-  Map<String, dynamic> toJson() => _$NotificationItemToJson(this);
+  bool get isRead => readAt != null;
 
-  bool get isBooking => type == 'booking';
-  bool get isTrip => type == 'trip';
-  bool get isChat => type == 'chat';
-  bool get isPayment => type == 'payment';
-  bool get isSystem => type == 'system';
-}
+  String get title => asString(
+        data['title'] ?? data['heading'],
+        fallback: 'Notification',
+      );
 
-@JsonSerializable()
-class DeviceRegistration {
-  final String token;
-  final String platform; // 'ios', 'android'
-  final String? appId;
-  final String? deviceId;
+  String get body =>
+      asString(data['body'] ?? data['message'] ?? data['text']);
 
-  DeviceRegistration({
-    required this.token,
-    required this.platform,
-    this.appId,
-    this.deviceId,
-  });
+  /// Optional in-app deep link, e.g. `/trip/123`.
+  String? get deepLink => asStringOrNull(data['url'] ?? data['deep_link']);
 
-  factory DeviceRegistration.fromJson(Map<String, dynamic> json) => _$DeviceRegistrationFromJson(json);
-  Map<String, dynamic> toJson() => _$DeviceRegistrationToJson(this);
+  /// Short category derived from [type] or [data], used to pick an icon/colour.
+  String get category {
+    final t = (data['category'] ?? type).toString().toLowerCase();
+    if (t.contains('booking')) return 'booking';
+    if (t.contains('payment') || t.contains('payout') || t.contains('wallet')) {
+      return 'payment';
+    }
+    if (t.contains('trip') || t.contains('alert')) return 'alert';
+    if (t.contains('promo')) return 'promo';
+    if (t.contains('message') || t.contains('chat')) return 'message';
+    return 'system';
+  }
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
+        id: asString(json['id']),
+        type: asString(json['type']),
+        data: asMap(json['data']) ?? const {},
+        readAt: asDateTime(json['read_at']),
+        createdAt: asDateTime(json['created_at']),
+      );
 }

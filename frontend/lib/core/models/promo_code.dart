@@ -1,53 +1,49 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../utils/json_utils.dart';
 
-part 'promo_code.g.dart';
-
-@JsonSerializable()
+/// A promotional discount code (matches `PromoCodeResource`).
 class PromoCode {
   final String id;
   final String code;
-  final String? description;
-  final String type; // 'percentage', 'fixed'
+  final String type; // percentage | fixed
   final double value;
-  final double? minimumOrder;
-  final double? maximumDiscount;
-  final int? usageLimit;
-  final int usageCount;
+  final double? maxDiscount;
+  final double? minBookingAmount;
+  final int? maxUses;
+  final int? maxUsesPerUser;
+  final int timesUsed;
   final DateTime? validFrom;
   final DateTime? validUntil;
   final bool isActive;
-  final List<String>? applicableUserIds;
-  final List<String>? applicableCarIds;
-  final DateTime createdAt;
-  final DateTime updatedAt;
 
-  PromoCode({
+  const PromoCode({
     required this.id,
     required this.code,
-    this.description,
     required this.type,
     required this.value,
-    this.minimumOrder,
-    this.maximumDiscount,
-    this.usageLimit,
-    required this.usageCount,
+    this.maxDiscount,
+    this.minBookingAmount,
+    this.maxUses,
+    this.maxUsesPerUser,
+    this.timesUsed = 0,
     this.validFrom,
     this.validUntil,
-    required this.isActive,
-    this.applicableUserIds,
-    this.applicableCarIds,
-    required this.createdAt,
-    required this.updatedAt,
+    this.isActive = true,
   });
 
-  factory PromoCode.fromJson(Map<String, dynamic> json) => _$PromoCodeFromJson(json);
-  Map<String, dynamic> toJson() => _$PromoCodeToJson(this);
-
   bool get isPercentage => type == 'percentage';
-  bool get isFixed => type == 'fixed';
-  bool get isValid => isActive && 
-      (validFrom == null || DateTime.now().isAfter(validFrom!)) &&
-      (validUntil == null || DateTime.now().isBefore(validUntil!));
-  bool get isExpired => validUntil != null && DateTime.now().isAfter(validUntil!);
-  bool get usageLimitReached => usageLimit != null && usageCount >= usageLimit!;
+
+  factory PromoCode.fromJson(Map<String, dynamic> json) => PromoCode(
+        id: asString(json['id']),
+        code: asString(json['code']),
+        type: asString(json['type'], fallback: 'percentage'),
+        value: asDouble(json['value']),
+        maxDiscount: asDoubleOrNull(json['max_discount']),
+        minBookingAmount: asDoubleOrNull(json['min_booking_amount']),
+        maxUses: asIntOrNull(json['max_uses']),
+        maxUsesPerUser: asIntOrNull(json['max_uses_per_user']),
+        timesUsed: asInt(json['times_used']),
+        validFrom: asDateTime(json['valid_from']),
+        validUntil: asDateTime(json['valid_until']),
+        isActive: asBool(json['is_active'], fallback: true),
+      );
 }

@@ -1,104 +1,111 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../utils/json_utils.dart';
+import 'user.dart';
 
-part 'chat.g.dart';
-
-@JsonSerializable()
-class ChatThread {
-  final String id;
-  final String? bookingId;
-  final List<String> participants;
-  final String? lastMessageId;
-  final String? lastMessageContent;
-  final DateTime? lastMessageAt;
-  final int unreadCount;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  // Nested relationships
-  final Map<String, dynamic>? participantsInfo;
-  final Booking? booking;
-
-  ChatThread({
-    required this.id,
-    this.bookingId,
-    required this.participants,
-    this.lastMessageId,
-    this.lastMessageContent,
-    this.lastMessageAt,
-    required this.unreadCount,
-    required this.createdAt,
-    required this.updatedAt,
-    this.participantsInfo,
-    this.booking,
-  });
-
-  factory ChatThread.fromJson(Map<String, dynamic> json) => _$ChatThreadFromJson(json);
-  Map<String, dynamic> toJson() => _$ChatThreadToJson(this);
-
-  String? get otherParticipantName {
-    if (participantsInfo != null && participantsInfo!.isNotEmpty) {
-      final firstKey = participantsInfo!.keys.first;
-      return participantsInfo![firstKey]?['name'];
-    }
-    return null;
-  }
-}
-
-@JsonSerializable()
+/// A single chat message (matches `ChatMessageResource` and the raw model
+/// embedded as a thread's `latest_message`).
 class ChatMessage {
   final String id;
   final String threadId;
   final String senderId;
   final String content;
-  final String messageType; // 'text', 'image', 'location', 'system'
-  final Map<String, dynamic>? metadata;
-  final bool isRead;
+  final String type; // text | image
+  final String? imageUrl;
   final DateTime? readAt;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? deliveredAt;
+  final UserSummary? sender;
+  final DateTime? createdAt;
 
-  // Nested relationships
-  final String? senderName;
-  final String? senderAvatar;
-
-  ChatMessage({
+  const ChatMessage({
     required this.id,
     required this.threadId,
     required this.senderId,
     required this.content,
-    required this.messageType,
-    this.metadata,
-    required this.isRead,
+    this.type = 'text',
+    this.imageUrl,
     this.readAt,
-    required this.createdAt,
-    required this.updatedAt,
-    this.senderName,
-    this.senderAvatar,
+    this.deliveredAt,
+    this.sender,
+    this.createdAt,
   });
 
-  factory ChatMessage.fromJson(Map<String, dynamic> json) => _$ChatMessageFromJson(json);
-  Map<String, dynamic> toJson() => _$ChatMessageToJson(this);
+  bool get isImage => type == 'image';
+  bool get isRead => readAt != null;
+  bool get isDelivered => deliveredAt != null;
+  bool isFromMe(String currentUserId) => senderId == currentUserId;
 
-  bool get isFromMe => senderId != null; // Will be set by auth context
-  bool get isText => messageType == 'text';
-  bool get isImage => messageType == 'image';
-  bool get isSystem => messageType == 'system';
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+        id: asString(json['id']),
+        threadId: asString(json['thread_id']),
+        senderId: asString(json['sender_id']),
+        content: asString(json['content']),
+        type: asString(json['type'], fallback: 'text'),
+        imageUrl: asStringOrNull(json['image_url']),
+        readAt: asDateTime(json['read_at']),
+        deliveredAt: asDateTime(json['delivered_at']),
+        sender: json['sender'] is Map
+            ? UserSummary.fromJson(Map<String, dynamic>.from(json['sender']))
+            : null,
+        createdAt: asDateTime(json['created_at']),
+      );
 }
 
-@JsonSerializable()
-class SendMessageRequest {
-  final String threadId;
-  final String content;
-  final String messageType;
-  final Map<String, dynamic>? metadata;
+/// A 1:1 conversation between two users (matches both the raw `ChatThread`
+/// model returned by the list endpoint and `ChatThreadResource`).
+class ChatThread {
+  final String id;
+  final String? bookingId;
+  final int unreadCount;
+  final UserSummary? participantOne;
+  final UserSummary? participantTwo;
+  final UserSummary? _resolvedOther; // from `other_participant`
+  final ChatMessage? latestMessage;
+  final DateTime? updatedAt;
 
-  SendMessageRequest({
-    required this.threadId,
-    required this.content,
-    this.messageType = 'text',
-    this.metadata,
-  });
+  const ChatThread({
+    required this.id,
+    this.bookingId,
+    this.unreadCount = 0,
+    this.participantOne,
+    this.participantTwo,
+    UserSummary? resolvedOther,
+    this.latestMessage,
+    this.updatedAt,
+  }) : _resolvedOther = resolvedOther;
 
-  factory SendMessageRequest.fromJson(Map<String, dynamic> json) => _$SendMessageRequestFromJson(json);
-  Map<String, dynamic> toJson() => _$SendMessageRequestToJson(this);
+  /// The participant who is *not* [currentUserId].
+  UserSummary? otherParticipant(String currentUserId) {
+    if (_resolvedOther != null) return _resolvedOther;
+    if (participantOne != null && participantOne!.id == currentUserId) {
+      return participantTwo;
+    }
+    if (participantTwo != null && participantTwo!.id == currentUserId) {
+      return participantOne;
+    }
+    return participantOne ?? participantTwo;
+  }
+
+  bool get hasUnread => unreadCount > 0;
+
+  factory ChatThread.fromJson(Map<String, dynamic> json) => ChatThread(
+        id: asString(json['id']),
+        bookingId: asStringOrNull(json['booking_id']),
+        unreadCount: asInt(json['unread_count']),
+        participantOne: json['participant_one'] is Map
+            ? UserSummary.fromJson(
+                Map<String, dynamic>.from(json['participant_one']))
+            : null,
+        participantTwo: json['participant_two'] is Map
+            ? UserSummary.fromJson(
+                Map<String, dynamic>.from(json['participant_two']))
+            : null,
+        resolvedOther: json['other_participant'] is Map
+            ? UserSummary.fromJson(
+                Map<String, dynamic>.from(json['other_participant']))
+            : null,
+        latestMessage: json['latest_message'] is Map
+            ? ChatMessage.fromJson(
+                Map<String, dynamic>.from(json['latest_message']))
+            : null,
+        updatedAt: asDateTime(json['updated_at']),
+      );
 }

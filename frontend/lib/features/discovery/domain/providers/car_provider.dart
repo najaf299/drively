@@ -1,125 +1,81 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/models/car.dart';
-import '../../../core/models/review.dart';
-import '../data/car_service.dart';
 
-class CarSearchParams {
-  final String? city;
-  final String? country;
-  final String? make;
-  final String? transmission;
-  final String? fuelType;
-  final int? minSeats;
-  final int? maxPrice;
-  final double? lat;
-  final double? lng;
-  final double? radius;
-  final String? startDate;
-  final String? endDate;
+import '../../../../core/models/car.dart';
+import '../../../../core/models/review.dart';
+import '../../../../core/network/api_response.dart';
+import '../../data/car_service.dart';
+import '../../data/favorite_service.dart';
+import '../car_filters.dart';
 
-  const CarSearchParams({
-    this.city,
-    this.country,
-    this.make,
-    this.transmission,
-    this.fuelType,
-    this.minSeats,
-    this.maxPrice,
-    this.lat,
-    this.lng,
-    this.radius,
-    this.startDate,
-    this.endDate,
-  });
+/// The active discovery filters (search bar + filter sheet write here).
+final carFiltersProvider = StateProvider<CarFilters>((ref) => const CarFilters());
 
-  CarSearchParams copyWith({
-    String? city,
-    String? country,
-    String? make,
-    String? transmission,
-    String? fuelType,
-    int? minSeats,
-    int? maxPrice,
-    double? lat,
-    double? lng,
-    double? radius,
-    String? startDate,
-    String? endDate,
-  }) {
-    return CarSearchParams(
-      city: city ?? this.city,
-      country: country ?? this.country,
-      make: make ?? this.make,
-      transmission: transmission ?? this.transmission,
-      fuelType: fuelType ?? this.fuelType,
-      minSeats: minSeats ?? this.minSeats,
-      maxPrice: maxPrice ?? this.maxPrice,
-      lat: lat ?? this.lat,
-      lng: lng ?? this.lng,
-      radius: radius ?? this.radius,
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
-    );
-  }
-}
-
+/// Paginated, filter-driven car list backing the Home and Search screens.
 class CarListNotifier extends StateNotifier<AsyncValue<List<Car>>> {
-  final CarService _carService;
+  final CarService _service;
+  CarListNotifier(this._service) : super(const AsyncValue.loading());
 
-  CarListNotifier(this._carService) : super(const AsyncValue.loading());
+  CarFilters _filters = const CarFilters();
+  int _page = 1;
+  bool _hasMore = true;
+  bool _loadingMore = false;
 
-  Future<void> loadCars(CarSearchParams params) async {
+  bool get hasMore => _hasMore;
+
+  /// Loads page 1 for [filters] (replaces the current list).
+  Future<void> load(CarFilters filters) async {
+    _filters = filters;
+    _page = 1;
+    _hasMore = true;
     state = const AsyncValue.loading();
     try {
-      final cars = await _carService.getCars(
-        city: params.city,
-        country: params.country,
-        make: params.make,
-        transmission: params.transmission,
-        fuelType: params.fuelType,
-        minSeats: params.minSeats,
-        maxPrice: params.maxPrice,
-        lat: params.lat,
-        lng: params.lng,
-        radius: params.radius,
-        startDate: params.startDate,
-        endDate: params.endDate,
-      );
-      state = AsyncValue.data(cars);
+      final result = await _service.search(filters, page: _page);
+      _hasMore = result.hasMore;
+      state = AsyncValue.data(result.items);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
-  Future<void> searchCars(String query) async {
-    state = const AsyncValue.loading();
-    try {
-      final cars = await _carService.searchCars(query);
-      state = AsyncValue.data(cars);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
-  }
+  Future<void> refresh() => load(_filters);
 
-  Future<void> loadNearbyCars(double lat, double lng, {double radius = 10}) async {
-    state = const AsyncValue.loading();
+  /// Appends the next page for infinite scroll.
+  Future<void> loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    final current = state.valueOrNull ?? const <Car>[];
+    _loadingMore = true;
     try {
-      final cars = await _carService.getNearbyCars(lat, lng, radius: radius);
-      state = AsyncValue.data(cars);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      final result = await _service.search(_filters, page: _page + 1);
+      _page += 1;
+      _hasMore = result.hasMore;
+      state = AsyncValue.data([...current, ...result.items]);
+    } catch (_) {
+      // Keep the existing page on a load-more failure.
+    } finally {
+      _loadingMore = false;
     }
   }
 }
 
-final carListProvider = StateNotifierProvider<CarListNotifier, AsyncValue<List<Car>>>((ref) {
+final carListProvider =
+    StateNotifierProvider<CarListNotifier, AsyncValue<List<Car>>>((ref) {
   return CarListNotifier(ref.watch(carServiceProvider));
 });
 
-final carDetailProvider = FutureProvider.family<Car, String>((ref, carId) {
-  return ref.watch(carServiceProvider).getCarDetail(carId);
+/// Full detail bundle for a single car.
+final carDetailProvider =
+    FutureProvider.family<CarDetailResult, String>((ref, id) {
+  return ref.watch(carServiceProvider).getCar(id);
 });
 
-final carReviewsProvider = FutureProvider.family<List<Review>, String>((ref, carId) {
-  return ref.watch(carServiceProvider).getCarReviews(carId);
+/// Paginated reviews for a car (first page).
+final carReviewsProvider =
+    FutureProvider.family<Paginated<Review>, String>((ref, id) {
+  return ref.watch(carServiceProvider).getReviews(id);
+});
+
+/// The current user's favourite cars.
+final favoritesProvider = FutureProvider.autoDispose<List<Car>>((ref) {
+  return ref.watch(favoriteServiceProvider).list();
 });

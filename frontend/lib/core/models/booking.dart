@@ -1,105 +1,141 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../utils/json_utils.dart';
 import 'car.dart';
+import 'review.dart';
+import 'trip.dart';
 import 'user.dart';
 
-part 'booking.g.dart';
+/// Price breakdown for a booking (matches `BookingResource.pricing` and the
+/// standalone `POST /customer/bookings/pricing` response).
+class BookingPricing {
+  final double dailyRate;
+  final int totalDays;
+  final double subtotal;
+  final double addonsTotal;
+  final double serviceFee;
+  final double tax;
+  final double discount;
+  final double totalAmount;
 
-@JsonSerializable()
-class Booking {
-  final String id;
-  final String customerId;
-  final String carId;
-  final String hostId;
-  final DateTime startDate;
-  final DateTime endDate;
-  final double totalPrice;
-  final String status;
-  final String? paymentIntentId;
-  final String? paymentStatus;
-  final DateTime? paidAt;
-  final DateTime? cancelledAt;
-  final String? cancellationReason;
-  final double? refundAmount;
-  final String? promoCodeId;
-  final double? discountAmount;
-  final List<String> specialRequests;
-  final String? tripId;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  // Nested relationships
-  final Car? car;
-  final User? customer;
-  final User? host;
-
-  Booking({
-    required this.id,
-    required this.customerId,
-    required this.carId,
-    required this.hostId,
-    required this.startDate,
-    required this.endDate,
-    required this.totalPrice,
-    required this.status,
-    this.paymentIntentId,
-    this.paymentStatus,
-    this.paidAt,
-    this.cancelledAt,
-    this.cancellationReason,
-    this.refundAmount,
-    this.promoCodeId,
-    this.discountAmount,
-    required this.specialRequests,
-    this.tripId,
-    required this.createdAt,
-    required this.updatedAt,
-    this.car,
-    this.customer,
-    this.host,
+  const BookingPricing({
+    this.dailyRate = 0,
+    this.totalDays = 0,
+    this.subtotal = 0,
+    this.addonsTotal = 0,
+    this.serviceFee = 0,
+    this.tax = 0,
+    this.discount = 0,
+    this.totalAmount = 0,
   });
 
-  factory Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
-  Map<String, dynamic> toJson() => _$BookingToJson(this);
+  factory BookingPricing.fromJson(Map<String, dynamic> json) => BookingPricing(
+        dailyRate: asDouble(json['daily_rate']),
+        totalDays: asInt(json['total_days']),
+        subtotal: asDouble(json['subtotal']),
+        addonsTotal: asDouble(json['addons_total']),
+        serviceFee: asDouble(json['service_fee']),
+        tax: asDouble(json['tax']),
+        discount: asDouble(json['discount']),
+        // Tolerate alternative keys from the pricing-preview endpoint.
+        totalAmount: asDouble(
+          json['total_amount'] ?? json['total'] ?? json['grand_total'],
+        ),
+      );
+}
+
+/// A rental booking (matches `BookingResource`).
+class Booking {
+  final String id;
+  final String reference;
+  final String carId;
+  final String customerId;
+  final String status; // pending | confirmed | active | completed | cancelled | declined
+  final String bookingType; // instant | request
+  final DateTime? pickupAt;
+  final DateTime? returnAt;
+  final String? pickupAddress;
+  final BookingPricing pricing;
+  final List<dynamic>? addons;
+  final String? cancellationReason;
+  final DateTime? confirmedAt;
+  final DateTime? cancelledAt;
+  final DateTime? hostResponseDeadline;
+  final Car? car;
+  final UserSummary? customer;
+  final Map<String, dynamic>? payment;
+  final Trip? trip;
+  final List<Review> reviews;
+  final DateTime? createdAt;
+
+  const Booking({
+    required this.id,
+    required this.reference,
+    required this.carId,
+    required this.customerId,
+    required this.status,
+    this.bookingType = 'instant',
+    this.pickupAt,
+    this.returnAt,
+    this.pickupAddress,
+    this.pricing = const BookingPricing(),
+    this.addons,
+    this.cancellationReason,
+    this.confirmedAt,
+    this.cancelledAt,
+    this.hostResponseDeadline,
+    this.car,
+    this.customer,
+    this.payment,
+    this.trip,
+    this.reviews = const [],
+    this.createdAt,
+  });
 
   bool get isPending => status == 'pending';
   bool get isConfirmed => status == 'confirmed';
   bool get isActive => status == 'active';
   bool get isCompleted => status == 'completed';
-  bool get isCancelled => status == 'cancelled';
-  bool get isPaid => paymentStatus == 'paid';
-  int get durationDays => endDate.difference(startDate).inDays + 1;
-}
+  bool get isCancelled => status == 'cancelled' || status == 'declined';
+  bool get canCancel => isPending || isConfirmed;
+  bool get canReview => isCompleted && reviews.isEmpty;
+  bool get isPaid => payment?['status'] == 'succeeded';
 
-@JsonSerializable()
-class BookingPricing {
-  final double dailyRate;
-  final double durationDays;
-  final double basePrice;
-  final double weeklyDiscount;
-  final double monthlyDiscount;
-  final double deliveryFee;
-  final double insuranceFee;
-  final double serviceFee;
-  final double taxes;
-  final double totalPrice;
-  final double? promoDiscount;
-  final double? discountedTotal;
+  int get totalDays {
+    if (pricing.totalDays > 0) return pricing.totalDays;
+    if (pickupAt != null && returnAt != null) {
+      return returnAt!.difference(pickupAt!).inDays.clamp(1, 365);
+    }
+    return 0;
+  }
 
-  BookingPricing({
-    required this.dailyRate,
-    required this.durationDays,
-    required this.basePrice,
-    required this.weeklyDiscount,
-    required this.monthlyDiscount,
-    required this.deliveryFee,
-    required this.insuranceFee,
-    required this.serviceFee,
-    required this.taxes,
-    required this.totalPrice,
-    this.promoDiscount,
-    this.discountedTotal,
-  });
-
-  factory BookingPricing.fromJson(Map<String, dynamic> json) => _$BookingPricingFromJson(json);
-  Map<String, dynamic> toJson() => _$BookingPricingToJson(this);
+  factory Booking.fromJson(Map<String, dynamic> json) => Booking(
+        id: asString(json['id']),
+        reference: asString(json['reference']),
+        carId: asString(json['car_id']),
+        customerId: asString(json['customer_id']),
+        status: asString(json['status'], fallback: 'pending'),
+        bookingType: asString(json['booking_type'], fallback: 'instant'),
+        pickupAt: asDateTime(json['pickup_at']),
+        returnAt: asDateTime(json['return_at']),
+        pickupAddress: asStringOrNull(json['pickup_address']),
+        pricing: json['pricing'] is Map
+            ? BookingPricing.fromJson(Map<String, dynamic>.from(json['pricing']))
+            : const BookingPricing(),
+        addons: json['addons'] is List ? json['addons'] as List : null,
+        cancellationReason: asStringOrNull(json['cancellation_reason']),
+        confirmedAt: asDateTime(json['confirmed_at']),
+        cancelledAt: asDateTime(json['cancelled_at']),
+        hostResponseDeadline: asDateTime(json['host_response_deadline']),
+        car: json['car'] is Map
+            ? Car.fromJson(Map<String, dynamic>.from(json['car']))
+            : null,
+        customer: json['customer'] is Map
+            ? UserSummary.fromJson(Map<String, dynamic>.from(json['customer']))
+            : null,
+        payment: asMap(json['payment']),
+        trip: json['trip'] is Map
+            ? Trip.fromJson(Map<String, dynamic>.from(json['trip']))
+            : null,
+        reviews: asList(json['reviews'], Review.fromJson),
+        createdAt: asDateTime(json['created_at']),
+      );
 }

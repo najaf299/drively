@@ -1,71 +1,61 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../utils/json_utils.dart';
+import 'user.dart';
 
-part 'dispute.g.dart';
-
-@JsonSerializable()
+/// A dispute raised against a booking (matches `DisputeResource`).
 class Dispute {
   final String id;
   final String bookingId;
-  final String raisedBy;
-  final String disputeType; // 'damage', 'late_return', 'cleaning', 'odometer', 'other'
+  final String reporterId;
+  final String type; // damage | late_return | no_show | fraud | other
   final String description;
-  final List<String>? evidencePhotos;
-  final double? claimedAmount;
-  final String status; // 'pending', 'under_review', 'resolved', 'escalated', 'rejected'
+  final List<String> evidenceUrls;
+  final String status; // open | investigating | resolved | escalated | ...
   final String? resolution;
-  final double? awardedAmount;
+  final double? refundAmount;
   final DateTime? resolvedAt;
-  final String? resolvedBy;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final UserSummary? reporter;
+  final UserSummary? resolver;
+  final Map<String, dynamic>? booking;
+  final DateTime? createdAt;
 
-  // Nested relationships
-  final Map<String, dynamic>? bookingInfo;
-
-  Dispute({
+  const Dispute({
     required this.id,
     required this.bookingId,
-    required this.raisedBy,
-    required this.disputeType,
+    required this.reporterId,
+    required this.type,
     required this.description,
-    this.evidencePhotos,
-    this.claimedAmount,
+    this.evidenceUrls = const [],
     required this.status,
     this.resolution,
-    this.awardedAmount,
+    this.refundAmount,
     this.resolvedAt,
-    this.resolvedBy,
-    required this.createdAt,
-    required this.updatedAt,
-    this.bookingInfo,
+    this.reporter,
+    this.resolver,
+    this.booking,
+    this.createdAt,
   });
 
-  factory Dispute.fromJson(Map<String, dynamic> json) => _$DisputeFromJson(json);
-  Map<String, dynamic> toJson() => _$DisputeToJson(this);
-
-  bool get isPending => status == 'pending';
-  bool get isUnderReview => status == 'under_review';
   bool get isResolved => status == 'resolved';
-  bool get isEscalated => status == 'escalated';
-  bool get isRejected => status == 'rejected';
-}
+  bool get isOpen => status == 'open' || status == 'investigating';
 
-@JsonSerializable()
-class DisputeSubmission {
-  final String bookingId;
-  final String disputeType;
-  final String description;
-  final List<String>? evidencePhotos;
-  final double? claimedAmount;
-
-  DisputeSubmission({
-    required this.bookingId,
-    required this.disputeType,
-    required this.description,
-    this.evidencePhotos,
-    this.claimedAmount,
-  });
-
-  factory DisputeSubmission.fromJson(Map<String, dynamic> json) => _$DisputeSubmissionFromJson(json);
-  Map<String, dynamic> toJson() => _$DisputeSubmissionToJson(this);
+  factory Dispute.fromJson(Map<String, dynamic> json) => Dispute(
+        id: asString(json['id']),
+        bookingId: asString(json['booking_id']),
+        reporterId: asString(json['reporter_id']),
+        type: asString(json['type'], fallback: 'other'),
+        description: asString(json['description']),
+        evidenceUrls: asStringList(json['evidence_urls']),
+        status: asString(json['status'], fallback: 'open'),
+        resolution: asStringOrNull(json['resolution']),
+        refundAmount: asDoubleOrNull(json['refund_amount']),
+        resolvedAt: asDateTime(json['resolved_at']),
+        reporter: json['reporter'] is Map
+            ? UserSummary.fromJson(Map<String, dynamic>.from(json['reporter']))
+            : null,
+        resolver: json['resolver'] is Map
+            ? UserSummary.fromJson(Map<String, dynamic>.from(json['resolver']))
+            : null,
+        booking: asMap(json['booking']),
+        createdAt: asDateTime(json['created_at']),
+      );
 }

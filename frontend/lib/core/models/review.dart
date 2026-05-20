@@ -1,73 +1,66 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../utils/json_utils.dart';
+import 'user.dart';
 
-part 'review.g.dart';
-
-@JsonSerializable()
+/// A review left after a completed booking (matches `ReviewResource`).
 class Review {
   final String id;
   final String bookingId;
-  final String reviewerId;
-  final String? reviewedUserId;
-  final String? carId;
-  final String reviewType; // 'host' or 'guest' or 'car'
-  final double rating;
+  final String type; // car | host | customer
+  final int rating;
+  final int? cleanlinessRating;
+  final int? communicationRating;
+  final int? accuracyRating;
+  final int? pickupRating;
   final String? comment;
-  final List<String>? photos;
-  final List<double>? subRatings; // [cleanliness, communication, accuracy, etc.]
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final List<String> tags;
+  final List<String> photoUrls;
+  final bool isPublic;
+  final UserSummary? reviewer;
+  final UserSummary? reviewee;
+  final Map<String, dynamic>? car;
+  final DateTime? createdAt;
 
-  // Nested relationships
-  final String? reviewerName;
-  final String? reviewerAvatar;
-  final String? reviewedUserName;
-  final String? reviewedUserAvatar;
-
-  Review({
+  const Review({
     required this.id,
     required this.bookingId,
-    required this.reviewerId,
-    this.reviewedUserId,
-    this.carId,
-    required this.reviewType,
+    required this.type,
     required this.rating,
+    this.cleanlinessRating,
+    this.communicationRating,
+    this.accuracyRating,
+    this.pickupRating,
     this.comment,
-    this.photos,
-    this.subRatings,
-    required this.createdAt,
-    required this.updatedAt,
-    this.reviewerName,
-    this.reviewerAvatar,
-    this.reviewedUserName,
-    this.reviewedUserAvatar,
+    this.tags = const [],
+    this.photoUrls = const [],
+    this.isPublic = true,
+    this.reviewer,
+    this.reviewee,
+    this.car,
+    this.createdAt,
   });
 
-  factory Review.fromJson(Map<String, dynamic> json) => _$ReviewFromJson(json);
-  Map<String, dynamic> toJson() => _$ReviewToJson(this);
+  bool get hasPhotos => photoUrls.isNotEmpty;
 
-  bool get isHostReview => reviewType == 'host';
-  bool get isGuestReview => reviewType == 'guest';
-  bool get isCarReview => reviewType == 'car';
-}
-
-@JsonSerializable()
-class ReviewSubmission {
-  final String bookingId;
-  final String reviewType;
-  final double rating;
-  final String? comment;
-  final List<String>? photos;
-  final List<double>? subRatings;
-
-  ReviewSubmission({
-    required this.bookingId,
-    required this.reviewType,
-    required this.rating,
-    this.comment,
-    this.photos,
-    this.subRatings,
-  });
-
-  factory ReviewSubmission.fromJson(Map<String, dynamic> json) => _$ReviewSubmissionFromJson(json);
-  Map<String, dynamic> toJson() => _$ReviewSubmissionToJson(this);
+  factory Review.fromJson(Map<String, dynamic> json) => Review(
+        id: asString(json['id']),
+        bookingId: asString(json['booking_id']),
+        type: asString(json['type'], fallback: 'car'),
+        rating: asInt(json['rating']),
+        cleanlinessRating: asIntOrNull(json['cleanliness_rating']),
+        communicationRating: asIntOrNull(json['communication_rating']),
+        accuracyRating: asIntOrNull(json['accuracy_rating']),
+        pickupRating: asIntOrNull(json['pickup_rating']),
+        comment: asStringOrNull(json['comment']),
+        tags: asStringList(json['tags']),
+        photoUrls: asStringList(json['photo_urls']),
+        isPublic: asBool(json['is_public'], fallback: true),
+        reviewer: json['reviewer'] is Map
+            ? UserSummary.fromJson(Map<String, dynamic>.from(json['reviewer']))
+            : null,
+        reviewee: json['reviewee'] is Map
+            ? UserSummary.fromJson(Map<String, dynamic>.from(json['reviewee']))
+            : null,
+        car: asMap(json['car']),
+        createdAt: asDateTime(json['created_at']),
+      );
 }

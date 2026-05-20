@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'router.dart';
 import 'theme.dart';
 
+/// Root application widget. Drivly is a dark-first product, so a single dark
+/// theme is applied regardless of system brightness.
 class DrivlyApp extends ConsumerWidget {
   const DrivlyApp({super.key});
 
@@ -13,9 +16,8 @@ class DrivlyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Drivly',
       debugShowCheckedModeBanner: false,
-      theme: DrivlyTheme.lightTheme,
-      darkTheme: DrivlyTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      theme: DrivlyTheme.dark,
+      themeMode: ThemeMode.dark,
       routerConfig: router,
     );
   }

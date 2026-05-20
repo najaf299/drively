@@ -1,87 +1,59 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../utils/json_utils.dart';
 
-part 'wallet.g.dart';
-
-@JsonSerializable()
+/// A user's prepaid wallet balance (matches `WalletResource`).
 class Wallet {
   final String id;
-  final String userId;
   final double balance;
-  final double availableBalance;
-  final double pendingBalance;
   final String currency;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final String? userId;
 
-  Wallet({
+  const Wallet({
     required this.id,
-    required this.userId,
     required this.balance,
-    required this.availableBalance,
-    required this.pendingBalance,
     required this.currency,
-    required this.createdAt,
-    required this.updatedAt,
+    this.userId,
   });
 
-  factory Wallet.fromJson(Map<String, dynamic> json) => _$WalletFromJson(json);
-  Map<String, dynamic> toJson() => _$WalletToJson(this);
+  factory Wallet.fromJson(Map<String, dynamic> json) => Wallet(
+        id: asString(json['id']),
+        balance: asDouble(json['balance']),
+        currency: asString(json['currency'], fallback: 'USD'),
+        userId: asStringOrNull(json['user_id']),
+      );
 }
 
-@JsonSerializable()
+/// A single credit/debit/refund movement (matches `WalletTransactionResource`).
 class WalletTransaction {
   final String id;
-  final String walletId;
-  final String userId;
-  final String type; // 'credit', 'debit', 'refund', 'payout'
+  final String type; // credit | debit | refund
   final double amount;
+  final double? balanceAfter;
   final String? description;
-  final String? referenceId;
-  final String? referenceType; // 'booking', 'trip', 'refund', etc.
-  final String status; // 'pending', 'completed', 'failed'
-  final Map<String, dynamic>? metadata;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final String? bookingId;
+  final DateTime? createdAt;
 
-  WalletTransaction({
+  const WalletTransaction({
     required this.id,
-    required this.walletId,
-    required this.userId,
     required this.type,
     required this.amount,
+    this.balanceAfter,
     this.description,
-    this.referenceId,
-    this.referenceType,
-    required this.status,
-    this.metadata,
-    required this.createdAt,
-    required this.updatedAt,
+    this.bookingId,
+    this.createdAt,
   });
-
-  factory WalletTransaction.fromJson(Map<String, dynamic> json) => _$WalletTransactionFromJson(json);
-  Map<String, dynamic> toJson() => _$WalletTransactionToJson(this);
 
   bool get isCredit => type == 'credit';
-  bool get isDebit => type == 'debit';
   bool get isRefund => type == 'refund';
-  bool get isPayout => type == 'payout';
-  bool get isPending => status == 'pending';
-  bool get isCompleted => status == 'completed';
-  bool get isFailed => status == 'failed';
-}
+  bool get isDebit => type == 'debit';
 
-@JsonSerializable()
-class TopUpRequest {
-  final double amount;
-  final String? paymentMethodId;
-  final String currency;
-
-  TopUpRequest({
-    required this.amount,
-    this.paymentMethodId,
-    this.currency = 'USD',
-  });
-
-  factory TopUpRequest.fromJson(Map<String, dynamic> json) => _$TopUpRequestFromJson(json);
-  Map<String, dynamic> toJson() => _$TopUpRequestToJson(this);
+  factory WalletTransaction.fromJson(Map<String, dynamic> json) =>
+      WalletTransaction(
+        id: asString(json['id']),
+        type: asString(json['type']),
+        amount: asDouble(json['amount']),
+        balanceAfter: asDoubleOrNull(json['balance_after']),
+        description: asStringOrNull(json['description']),
+        bookingId: asStringOrNull(json['booking_id']),
+        createdAt: asDateTime(json['created_at']),
+      );
 }

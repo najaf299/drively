@@ -1,138 +1,94 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/models/car.dart';
 import '../../../core/models/review.dart';
+import '../../../core/network/api_response.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/network/error_handler.dart';
+import '../../../core/utils/json_utils.dart';
+import '../domain/car_filters.dart';
 
 final carServiceProvider = Provider<CarService>((ref) {
   return CarService(ref.read(dioProvider));
 });
 
+/// Full car detail bundle returned by `GET /cars/{id}`:
+/// `{ car, suggested_price, total_reviews }`.
+class CarDetailResult {
+  final Car car;
+  final double? suggestedPrice;
+  final int totalReviews;
+
+  const CarDetailResult({
+    required this.car,
+    this.suggestedPrice,
+    this.totalReviews = 0,
+  });
+}
+
+/// Read access to the public car catalogue.
 class CarService {
   final Dio _dio;
-
   CarService(this._dio);
 
-  Future<List<Car>> getCars({
-    String? city,
-    String? country,
-    String? make,
-    String? transmission,
-    String? fuelType,
-    int? minSeats,
-    int? maxPrice,
-    double? lat,
-    double? lng,
-    double? radius,
-    String? startDate,
-    String? endDate,
+  /// Searches cars with [filters]. The free-text [CarFilters.query] (if any) is
+  /// applied client-side since the API has no text-search parameter.
+  Future<Paginated<Car>> search(
+    CarFilters filters, {
     int page = 1,
     int perPage = 20,
   }) async {
     try {
-      final response = await _dio.get(
+      final res = await _dio.get(
         ApiEndpoints.cars,
         queryParameters: {
-          if (city != null) 'city': city,
-          if (country != null) 'country': country,
-          if (make != null) 'make': make,
-          if (transmission != null) 'transmission': transmission,
-          if (fuelType != null) 'fuel_type': fuelType,
-          if (minSeats != null) 'min_seats': minSeats,
-          if (maxPrice != null) 'max_price': maxPrice,
-          if (lat != null) 'lat': lat,
-          if (lng != null) 'lng': lng,
-          if (radius != null) 'radius': radius,
-          if (startDate != null) 'start_date': startDate,
-          if (endDate != null) 'end_date': endDate,
+          ...filters.toQuery(),
           'page': page,
           'per_page': perPage,
         },
       );
-      
-      final cars = response.data['data'] as List;
-      return cars.map((car) => Car.fromJson(car)).toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
+      final result = Paginated<Car>.from(
+        ApiResponse.data(res.data),
+        Car.fromJson,
+      );
+      final q = filters.query?.trim().toLowerCase();
+      if (q == null || q.isEmpty) return result;
+
+      final filtered = result.items.where((c) {
+        return c.displayNameWithYear.toLowerCase().contains(q) ||
+            c.city.toLowerCase().contains(q);
+      }).toList();
+      return Paginated<Car>(items: filtered, total: filtered.length);
+    } catch (e) {
+      throw mapError(e);
     }
   }
 
-  Future<Car> getCarDetail(String carId) async {
+  Future<CarDetailResult> getCar(String id) async {
     try {
-      final response = await _dio.get(ApiEndpoints.carDetail(carId));
-      return Car.fromJson(response.data['data']);
-    } on DioException catch (e) {
-      throw _handleError(e);
+      final res = await _dio.get(ApiEndpoints.carDetail(id));
+      final data = asMap(ApiResponse.data(res.data)) ?? const {};
+      return CarDetailResult(
+        car: Car.fromJson(Map<String, dynamic>.from(data['car'])),
+        suggestedPrice: asDoubleOrNull(data['suggested_price']),
+        totalReviews: asInt(data['total_reviews']),
+      );
+    } catch (e) {
+      throw mapError(e);
     }
   }
 
-  Future<List<Review>> getCarReviews(String carId, {int page = 1, int perPage = 10}) async {
+  Future<Paginated<Review>> getReviews(String carId, {int page = 1}) async {
     try {
-      final response = await _dio.get(
+      final res = await _dio.get(
         ApiEndpoints.carReviews(carId),
-        queryParameters: {'page': page, 'per_page': perPage},
+        queryParameters: {'page': page},
       );
-      
-      final reviews = response.data['data'] as List;
-      return reviews.map((review) => Review.fromJson(review)).toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
+      return Paginated<Review>.from(ApiResponse.data(res.data), Review.fromJson);
+    } catch (e) {
+      throw mapError(e);
     }
-  }
-
-  Future<List<Car>> searchCars(String query, {int page = 1, int perPage = 20}) async {
-    try {
-      final response = await _dio.get(
-        ApiEndpoints.cars,
-        queryParameters: {
-          'search': query,
-          'page': page,
-          'per_page': perPage,
-        },
-      );
-      
-      final cars = response.data['data'] as List;
-      return cars.map((car) => Car.fromJson(car)).toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  Future<List<Car>> getNearbyCars(double lat, double lng, {double radius = 10}) async {
-    try {
-      final response = await _dio.get(
-        ApiEndpoints.cars,
-        queryParameters: {
-          'lat': lat,
-          'lng': lng,
-          'radius': radius,
-        },
-      );
-      
-      final cars = response.data['data'] as List;
-      return cars.map((car) => Car.fromJson(car)).toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  Exception _handleError(DioException error) {
-    if (error.response != null) {
-      final statusCode = error.response!.statusCode;
-      final message = error.response!.data['message'] ?? 'An error occurred';
-      
-      switch (statusCode) {
-        case 401:
-          return Exception('Unauthorized: $message');
-        case 404:
-          return Exception('Car not found');
-        case 422:
-          return Exception('Validation error: $message');
-        default:
-          return Exception(message);
-      }
-    }
-    return Exception('Network error: ${error.message}');
   }
 }

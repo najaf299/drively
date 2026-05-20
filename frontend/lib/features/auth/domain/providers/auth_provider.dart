@@ -1,26 +1,33 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/models/user.dart';
-import '../../../core/storage/secure_storage.dart';
-import '../data/auth_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-enum AuthStatus { initial, authenticated, unauthenticated, loading }
+import '../../../../core/errors/app_exception.dart';
+import '../../../../core/models/user.dart';
+import '../../../../core/network/auth_interceptor.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../../core/storage/secure_storage.dart';
+import '../../data/auth_service.dart';
 
+enum AuthStatus { unknown, authenticated, unauthenticated, authenticating }
+
+/// Immutable auth state consumed by the router and screens.
+@immutable
 class AuthState {
   final AuthStatus status;
   final User? user;
   final String? error;
 
   const AuthState({
-    this.status = AuthStatus.initial,
+    this.status = AuthStatus.unknown,
     this.user,
     this.error,
   });
 
-  AuthState copyWith({
-    AuthStatus? status,
-    User? user,
-    String? error,
-  }) {
+  bool get isAuthenticated => status == AuthStatus.authenticated && user != null;
+  bool get isBusy => status == AuthStatus.authenticating;
+
+  AuthState copyWith({AuthStatus? status, User? user, String? error}) {
     return AuthState(
       status: status ?? this.status,
       user: user ?? this.user,
@@ -29,133 +36,129 @@ class AuthState {
   }
 }
 
+/// Owns the session: bootstrap-from-storage, sign in/up, OTP, profile, logout.
 class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthService _authService;
-  final SecureStorage _storage;
+  final AuthService _service;
+  final FlutterSecureStorage _storage;
 
-  AuthNotifier(this._authService, this._storage) : super(const AuthState()) {
-    _checkAuthStatus();
+  AuthNotifier(this._service, this._storage) : super(const AuthState()) {
+    bootstrap();
   }
 
-  Future<void> _checkAuthStatus() async {
-    final token = await _storage.read(key: 'auth_token');
-    if (token != null) {
-      try {
-        final user = await _authService.getProfile();
-        state = AuthState(status: AuthStatus.authenticated, user: user);
-      } catch (e) {
-        await logout();
-      }
-    } else {
+  /// On launch, restore the session if a token is present and still valid.
+  Future<void> bootstrap() async {
+    final token = await _storage.read(key: kAuthTokenKey);
+    if (token == null || token.isEmpty) {
       state = const AuthState(status: AuthStatus.unauthenticated);
+      return;
+    }
+    try {
+      final user = await _service.getProfile();
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+    } catch (_) {
+      await _clearSession();
     }
   }
 
-  Future<void> login(String email, String password) async {
-    state = const AuthState(status: AuthStatus.loading);
-    try {
-      final response =
-          await _authService.login(email: email, password: password);
-      await _storage.write(key: 'auth_token', value: response.accessToken);
-      await _storage.write(key: 'refresh_token', value: response.refreshToken);
-      state = AuthState(status: AuthStatus.authenticated, user: response.user);
-    } catch (e) {
-      state =
-          AuthState(status: AuthStatus.unauthenticated, error: e.toString());
+  Future<bool> login(String email, String password) =>
+      _run(() => _service.login(email: email, password: password));
+
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+    String? phone,
+    String role = 'customer',
+  }) =>
+      _run(() => _service.register(
+            name: name,
+            email: email,
+            password: password,
+            phone: phone,
+            role: role,
+          ));
+
+  Future<bool> loginWithGoogle(String idToken) =>
+      _run(() => _service.loginWithGoogle(idToken));
+
+  Future<bool> loginWithApple(String token) =>
+      _run(() => _service.loginWithApple(token));
+
+  /// Sends an OTP code; throws [AppException] on failure for the UI to surface.
+  Future<void> sendOtp(String phone) => _service.sendOtp(phone);
+
+  /// Verifies an OTP. If it resolves to an existing account, the session is
+  /// established and `true` is returned; new numbers return `false`.
+  Future<bool> verifyOtp(String phone, String code) async {
+    final result = await _service.verifyOtp(phone, code);
+    if (!result.isNew && result.user != null && result.token != null) {
+      await _storage.write(key: kAuthTokenKey, value: result.token);
+      state = AuthState(status: AuthStatus.authenticated, user: result.user);
+      return true;
     }
+    return false;
   }
 
-  Future<void> register(
-      String name, String email, String password, String phone) async {
-    state = const AuthState(status: AuthStatus.loading);
-    try {
-      final response = await _authService.register(
-        name: name,
-        email: email,
-        password: password,
-        phone: phone,
-      );
-      await _storage.write(key: 'auth_token', value: response.accessToken);
-      await _storage.write(key: 'refresh_token', value: response.refreshToken);
-      state = AuthState(status: AuthStatus.authenticated, user: response.user);
-    } catch (e) {
-      state =
-          AuthState(status: AuthStatus.unauthenticated, error: e.toString());
-    }
+  Future<void> updateProfile(Map<String, dynamic> changes) async {
+    final updated = await _service.updateProfile(changes);
+    state = state.copyWith(user: updated);
   }
 
-  Future<void> loginWithGoogle(String idToken) async {
-    state = const AuthState(status: AuthStatus.loading);
+  /// Re-fetches the current user (e.g. after KYC / host verification changes).
+  Future<void> refreshUser() async {
     try {
-      final response = await _authService.loginWithGoogle(idToken);
-      await _storage.write(key: 'auth_token', value: response.accessToken);
-      await _storage.write(key: 'refresh_token', value: response.refreshToken);
-      state = AuthState(status: AuthStatus.authenticated, user: response.user);
-    } catch (e) {
-      state =
-          AuthState(status: AuthStatus.unauthenticated, error: e.toString());
-    }
-  }
-
-  Future<void> loginWithApple(String identityToken) async {
-    state = const AuthState(status: AuthStatus.loading);
-    try {
-      final response = await _authService.loginWithApple(identityToken);
-      await _storage.write(key: 'auth_token', value: response.accessToken);
-      await _storage.write(key: 'refresh_token', value: response.refreshToken);
-      state = AuthState(status: AuthStatus.authenticated, user: response.user);
-    } catch (e) {
-      state =
-          AuthState(status: AuthStatus.unauthenticated, error: e.toString());
-    }
+      final user = await _service.getProfile();
+      state = state.copyWith(user: user);
+    } catch (_) {/* keep current state */}
   }
 
   Future<void> logout() async {
+    await _service.logout();
+    await _clearSession();
+  }
+
+  /// Invoked when the API rejects the token (HTTP 401).
+  Future<void> handleUnauthorized() async {
+    if (state.status == AuthStatus.unauthenticated) return;
+    await _clearSession();
+  }
+
+  // ── internals ───────────────────────────────────────────────────────────
+  Future<bool> _run(Future<AuthResult> Function() action) async {
+    state = state.copyWith(status: AuthStatus.authenticating, error: null);
     try {
-      await _authService.logout();
+      final result = await action();
+      await _storage.write(key: kAuthTokenKey, value: result.token);
+      state = AuthState(status: AuthStatus.authenticated, user: result.user);
+      return true;
+    } on AppException catch (e) {
+      state = AuthState(status: AuthStatus.unauthenticated, error: e.message);
+      return false;
     } catch (e) {
-      // Continue with logout even if API call fails
+      state = AuthState(status: AuthStatus.unauthenticated, error: e.toString());
+      return false;
     }
-    await _storage.delete(key: 'auth_token');
-    await _storage.delete(key: 'refresh_token');
+  }
+
+  Future<void> _clearSession() async {
+    await _storage.delete(key: kAuthTokenKey);
     state = const AuthState(status: AuthStatus.unauthenticated);
-  }
-
-  Future<void> sendOtp(String phone) async {
-    try {
-      await _authService.sendOtp(phone);
-    } catch (e) {
-      state = AuthState(status: state.status, error: e.toString());
-    }
-  }
-
-  Future<void> verifyOtp(String phone, String code) async {
-    try {
-      await _authService.verifyOtp(phone, code);
-    } catch (e) {
-      state = AuthState(status: state.status, error: e.toString());
-    }
-  }
-
-  Future<void> updateProfile(
-      {String? name, String? phone, String? avatarUrl}) async {
-    if (state.user == null) return;
-    try {
-      final updatedUser = await _authService.updateProfile(
-        name: name,
-        phone: phone,
-        avatarUrl: avatarUrl,
-      );
-      state = state.copyWith(user: updatedUser);
-    } catch (e) {
-      state = AuthState(status: state.status, error: e.toString());
-    }
   }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(
-    ref.watch(authServiceProvider),
-    ref.watch(secureStorageProvider),
+  final notifier = AuthNotifier(
+    ref.read(authServiceProvider),
+    ref.read(secureStorageProvider),
   );
+  // React to global 401s emitted by the Dio interceptor.
+  ref.listen<int>(unauthorizedSignalProvider, (_, __) {
+    notifier.handleUnauthorized();
+  });
+  return notifier;
+});
+
+/// Convenience: the current user's id (or null when signed out).
+final currentUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(authProvider).user?.id;
 });
