@@ -221,31 +221,36 @@ class _ScaffoldWithNavBar extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     return Scaffold(
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _indexFor(location),
-        onTap: (i) => context.go(_tabs[i]),
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.explore_outlined),
-              activeIcon: Icon(Icons.explore),
-              label: 'Discover'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.luggage_outlined),
-              activeIcon: Icon(Icons.luggage),
-              label: 'Trips'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline),
-              activeIcon: Icon(Icons.chat_bubble),
-              label: 'Messages'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              activeIcon: Icon(Icons.account_balance_wallet),
-              label: 'Wallet'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: BrandColors.border)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _indexFor(location),
+          onDestinationSelected: (i) => context.go(_tabs[i]),
+          destinations: const [
+            NavigationDestination(
+                icon: Icon(Icons.explore_outlined),
+                selectedIcon: Icon(Icons.explore),
+                label: 'Discover'),
+            NavigationDestination(
+                icon: Icon(Icons.luggage_outlined),
+                selectedIcon: Icon(Icons.luggage),
+                label: 'Trips'),
+            NavigationDestination(
+                icon: Icon(Icons.chat_bubble_outline),
+                selectedIcon: Icon(Icons.chat_bubble),
+                label: 'Messages'),
+            NavigationDestination(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                selectedIcon: Icon(Icons.account_balance_wallet),
+                label: 'Wallet'),
+            NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: 'Profile'),
+          ],
+        ),
       ),
     );
   }
