@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>App</string>
+	<string>Drivly</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Drivly uses your location to show nearby cars and provide directions during trips.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Drivly uses your location to show nearby cars and provide directions during trips.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Drivly needs camera access so you can take photos of your listing and verify your identity.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Drivly needs photo library access so you can upload car photos and documents.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Drivly saves trip and receipt images to your photo library.</string>
 </dict>
 </plist>
