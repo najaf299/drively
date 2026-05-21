@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/glow_background.dart';
 import '../../domain/providers/auth_provider.dart';
 
@@ -38,9 +39,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the Terms to continue.')),
-      );
+      AppSnack.show(context, 'Please accept the Terms to continue.',
+          type: SnackType.warning);
       return;
     }
     FocusScope.of(context).unfocus();
@@ -60,8 +60,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     ref.listen<AuthState>(authProvider, (prev, next) {
       if (next.error != null && next.error != prev?.error && mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(next.error!)));
+        AppSnack.error(context, next.error!);
       }
     });
 

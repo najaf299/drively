@@ -85,71 +85,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                     Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x5),
-                child: Row(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // 'Hi, {name}' — headline, name in primary.
+                    Text.rich(
+                      TextSpan(
+                        style: text.headlineSmall,
                         children: [
-                          // Greeting overline.
-                          Text(
-                            'WELCOME BACK',
-                            style: text.labelSmall?.copyWith(
-                              color: BrandColors.mutedFg,
-                              letterSpacing: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          // 'Hi, {name}' — headline, name in primary.
-                          Text.rich(
-                            TextSpan(
-                              style: text.headlineSmall,
-                              children: [
-                                const TextSpan(text: 'Hi, '),
-                                TextSpan(
-                                  text: (user?.name.trim().isNotEmpty ?? false)
-                                      ? user!.name.trim().split(' ').first
-                                      : 'there',
-                                  style: text.headlineSmall
-                                      ?.copyWith(color: BrandColors.primary),
-                                ),
-                              ],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: Spacing.x2),
-                          // Location chip — surface2 pill.
-                          _LocationChip(
-                            location: 'Karachi, PK',
-                            onTap: () {},
+                          const TextSpan(text: 'Hi, '),
+                          TextSpan(
+                            text: (user?.name.trim().isNotEmpty ?? false)
+                                ? user!.name.trim().split(' ').first
+                                : 'there',
+                            style: text.headlineSmall
+                                ?.copyWith(color: BrandColors.primary),
                           ),
                         ],
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: Spacing.x4),
-                    // Avatar — aligned to the top of the greeting block.
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: BrandColors.border, width: 1.5),
-                      ),
-                      padding: const EdgeInsets.all(2),
-                      child: CircleAvatar(
-                        radius: Sizes.avatarSm,
-                        backgroundColor: BrandColors.accent,
-                        child: Text(
-                          (user?.name.trim().isNotEmpty ?? false)
-                              ? user!.name.trim()[0].toUpperCase()
-                              : '?',
-                          style: text.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
+                    const SizedBox(height: Spacing.x2),
+                    // Location dropdown — surface2 pill.
+                    _LocationChip(
+                      location: 'Karachi, PK',
+                      onTap: () {},
                     ),
                   ],
                 ),

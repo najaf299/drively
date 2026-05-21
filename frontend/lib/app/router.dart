@@ -27,6 +27,7 @@ import '../features/host/presentation/screens/host_cars_screen.dart';
 import '../features/host/presentation/screens/host_dashboard_screen.dart';
 import '../features/host/presentation/screens/host_earnings_screen.dart';
 import '../features/host/presentation/screens/host_verification_screen.dart';
+import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/notifications_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/profile/presentation/screens/settings_screen.dart';
@@ -183,6 +184,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/notifications',
           builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(
+          path: '/profile/personal',
+          builder: (_, __) => const EditProfileScreen()),
       GoRoute(
           path: '/payment-methods',
           builder: (_, __) => const PaymentMethodsScreen()),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../shared/widgets/app_snack.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
 /// Settings screen — spec §7.40.
@@ -49,15 +51,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         'preferred_language': _language,
         'notification_settings': _channels,
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Settings saved.')));
-      }
+      if (mounted) AppSnack.success(context, 'Settings saved.');
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not save settings.')));
-      }
+      if (mounted) AppSnack.error(context, 'Could not save settings.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -91,8 +87,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  void _soon() => ScaffoldMessenger.of(context)
-      .showSnackBar(const SnackBar(content: Text('Coming soon.')));
+  void _soon() => AppSnack.soon(context);
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +119,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _RowTile(
                 icon: Icons.person_outline,
                 label: 'Personal info',
-                onTap: _soon,
+                onTap: () => context.push('/profile/personal'),
               ),
               _RowTile(
                 icon: Icons.lock_outline,
@@ -171,10 +166,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 value: _darkMode,
                 onChanged: (v) {
                   setState(() => _darkMode = v);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Drivly is dark by design.')),
-                  );
+                  AppSnack.show(context, 'Drivly is dark by design.',
+                      type: SnackType.info);
                 },
               ),
             ]),

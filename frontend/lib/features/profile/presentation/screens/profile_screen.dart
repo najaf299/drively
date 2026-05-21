@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/models/user.dart';
+import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
@@ -61,10 +62,7 @@ class ProfileScreen extends ConsumerWidget {
     if (confirm == true) await ref.read(authProvider.notifier).logout();
   }
 
-  void _soon(BuildContext context) =>
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coming soon.')),
-      );
+  void _soon(BuildContext context) => AppSnack.soon(context);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,7 +102,7 @@ class ProfileScreen extends ConsumerWidget {
                 _MenuTile(
                   icon: Icons.person_outline,
                   label: 'Personal info',
-                  onTap: () => _soon(context),
+                  onTap: () => context.push('/profile/personal'),
                 ),
                 _MenuTile(
                   icon: Icons.credit_card_outlined,

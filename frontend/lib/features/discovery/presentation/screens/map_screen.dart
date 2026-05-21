@@ -441,9 +441,9 @@ class _MapCanvas extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              // Subtle grid texture so it reads as a map surface.
+              // Stylised street map (roads, water, parks) — dark map palette.
               const Positioned.fill(
-                  child: CustomPaint(painter: _GridPainter())),
+                  child: CustomPaint(painter: _MapPainter())),
 
               // Price markers — deterministically scattered.
               for (var i = 0; i < cars.length; i++)
@@ -615,23 +615,66 @@ class _CircleButton extends StatelessWidget {
   }
 }
 
-// ── Grid painter ─────────────────────────────────────────────────────────────
+// ── Stylised map painter ─────────────────────────────────────────────────────
 
-class _GridPainter extends CustomPainter {
-  const _GridPainter();
+/// Paints a believable dark street map: a river, a park, a fine minor-street
+/// grid, and a few major arterials/diagonals — so the screen reads as a real
+/// map for the prototype (no Google Maps key required). Deterministic.
+class _MapPainter extends CustomPainter {
+  const _MapPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = BrandColors.border.withValues(alpha: 0.35)
+    final w = size.width;
+    final h = size.height;
+
+    // ── Water (river) — soft band sweeping the lower-left ──
+    final water = Paint()..color = BrandColors.info.withValues(alpha: 0.08);
+    final river = Path()
+      ..moveTo(0, h * 0.60)
+      ..quadraticBezierTo(w * 0.22, h * 0.72, w * 0.40, h)
+      ..lineTo(0, h)
+      ..close();
+    canvas.drawPath(river, water);
+
+    // ── Park — rounded block, upper-right ──
+    final park = Paint()..color = BrandColors.success.withValues(alpha: 0.07);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(w * 0.60, h * 0.10, w * 0.32, h * 0.20),
+        const Radius.circular(18),
+      ),
+      park,
+    );
+
+    // ── Minor street grid (fine hairlines) ──
+    final minor = Paint()
+      ..color = BrandColors.border.withValues(alpha: 0.55)
       ..strokeWidth = 1;
-    const step = 56.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    const step = 64.0;
+    for (double x = step; x < w; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, h), minor);
     }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    for (double y = step; y < h; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(w, y), minor);
     }
+
+    // ── Secondary roads (mid weight) ──
+    final mid = Paint()
+      ..color = BrandColors.surface3.withValues(alpha: 0.7)
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(0, h * 0.66), Offset(w, h * 0.60), mid);
+    canvas.drawLine(Offset(w * 0.74, 0), Offset(w * 0.80, h), mid);
+
+    // ── Major arterials + a diagonal highway (heavy) ──
+    final major = Paint()
+      ..color = BrandColors.surface3
+      ..strokeWidth = 9
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(0, h * 0.34), Offset(w, h * 0.30), major);
+    canvas.drawLine(Offset(w * 0.42, 0), Offset(w * 0.50, h), major);
+    canvas.drawLine(Offset(w * 0.08, 0), Offset(w, h * 0.86), major);
   }
 
   @override

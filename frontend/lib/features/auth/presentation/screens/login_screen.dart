@@ -8,6 +8,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/glow_background.dart';
 import '../../domain/providers/auth_provider.dart';
 
@@ -73,8 +74,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    AppSnack.error(context, message);
   }
 
   @override
