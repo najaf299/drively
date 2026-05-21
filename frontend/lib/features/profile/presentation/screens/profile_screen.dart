@@ -21,13 +21,40 @@ class ProfileScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Sign out'),
         content: const Text('Are you sure you want to sign out?'),
+        actionsPadding: const EdgeInsets.fromLTRB(
+            Spacing.x5, Spacing.x2, Spacing.x5, Spacing.x5),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sign out')),
+          Row(
+            children: [
+              // Cancel — tonal, equal width/height.
+              Expanded(
+                child: SizedBox(
+                  height: Sizes.secondaryHeight,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: Spacing.x3),
+              // Sign out — destructive, equal width/height.
+              Expanded(
+                child: SizedBox(
+                  height: Sizes.secondaryHeight,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: BrandColors.destructive,
+                      foregroundColor: Colors.white,
+                      minimumSize:
+                          const Size.fromHeight(Sizes.secondaryHeight),
+                    ),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Sign out'),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/glow_background.dart';
 import '../../domain/providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -65,20 +66,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Spacing.x6),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      body: GlowBackground(
+        glowAlignment: const Alignment(0.5, -1.1),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(Spacing.x6),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 const _StepHeader(label: 'Step 1 of 3'),
                 const SizedBox(height: Spacing.x6),
-                // Title — displayMedium (no hardcoded fontSize/weight).
+                // Title — oversized brand headline.
                 Text(
                   'Create\nyour account',
-                  style: textTheme.displayMedium?.copyWith(height: 1.1),
+                  style: BrandText.display(size: 38, height: 1.05),
                 ),
                 const SizedBox(height: Spacing.x6),
                 // Role toggle — surface2 pill track, selected = primary/primaryFg.
@@ -233,6 +236,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

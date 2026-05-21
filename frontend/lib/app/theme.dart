@@ -31,6 +31,7 @@ class BrandColors {
   static const Color destructiveBg = Color(0xFF2A0F11);
   static const Color info = Color(0xFF3FA9FF); // toasts, route polyline
   static const Color overlay = Color(0xFF000000); // modal scrim @60%
+  static const Color heroGlow = Color(0xFF3A63B8); // top light-glow on auth bg
 
   /// Back-compat: dim lime for legacy call sites (disabled now uses surface2).
   static const Color primaryDim = Color(0xFF8FA833);
@@ -138,9 +139,27 @@ class Radii {
   static const double card = lg; // 20 → card radius
 }
 
-/// JetBrains Mono helper — OTP digits, license plate, booking ID (spec §1.2).
+/// Font helpers for sizes outside the ramp (oversized auth headlines, codes).
 class BrandText {
   BrandText._();
+
+  /// Space Grotesk display — for hero wordmarks/headlines larger than the ramp.
+  static TextStyle display({
+    double size = 48,
+    FontWeight weight = FontWeight.w700,
+    Color color = BrandColors.foreground,
+    double spacing = -1.0,
+    double height = 1.02,
+  }) =>
+      GoogleFonts.spaceGrotesk(
+        fontSize: size,
+        fontWeight: weight,
+        color: color,
+        letterSpacing: spacing,
+        height: height,
+      );
+
+  /// JetBrains Mono — OTP digits, license plate, booking ID (spec §1.2).
   static TextStyle mono({
     double size = 22,
     FontWeight weight = FontWeight.w600,

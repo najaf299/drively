@@ -204,51 +204,158 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-/// Bottom navigation host for the five primary tabs.
+/// A single navigation destination for the custom animated nav bar.
+class _NavItem {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final String route;
+  const _NavItem(this.icon, this.activeIcon, this.label, this.route);
+}
+
+/// Bottom navigation host for the five primary tabs. Uses a custom animated
+/// nav bar where the active tab morphs into a lime pill (icon + label) with a
+/// smooth ease-out transition.
 class _ScaffoldWithNavBar extends StatelessWidget {
   final Widget child;
   const _ScaffoldWithNavBar({required this.child});
 
-  static const _tabs = ['/home', '/trips', '/messages', '/wallet', '/profile'];
+  static const _items = [
+    _NavItem(Icons.explore_outlined, Icons.explore, 'Discover', '/home'),
+    _NavItem(Icons.luggage_outlined, Icons.luggage, 'Trips', '/trips'),
+    _NavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'Messages',
+        '/messages'),
+    _NavItem(Icons.account_balance_wallet_outlined,
+        Icons.account_balance_wallet, 'Wallet', '/wallet'),
+    _NavItem(Icons.person_outline, Icons.person, 'Profile', '/profile'),
+  ];
 
   int _indexFor(String location) {
-    final i = _tabs.indexWhere((t) => location.startsWith(t));
+    final i = _items.indexWhere((t) => location.startsWith(t.route));
     return i < 0 ? 0 : i;
   }
 
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
+    final current = _indexFor(location);
+
     return Scaffold(
       body: child,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: BrandColors.border)),
+      bottomNavigationBar: _AnimatedNavBar(
+        items: _items,
+        currentIndex: current,
+        onTap: (i) => context.go(_items[i].route),
+      ),
+    );
+  }
+}
+
+class _AnimatedNavBar extends StatelessWidget {
+  final List<_NavItem> items;
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const _AnimatedNavBar({
+    required this.items,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: BrandColors.surface,
+        border: Border(top: BorderSide(color: BrandColors.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.x3, vertical: Spacing.x3),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (var i = 0; i < items.length; i++)
+                _NavPill(
+                  item: items[i],
+                  selected: i == currentIndex,
+                  onTap: () => onTap(i),
+                ),
+            ],
+          ),
         ),
-        child: NavigationBar(
-          selectedIndex: _indexFor(location),
-          onDestinationSelected: (i) => context.go(_tabs[i]),
-          destinations: const [
-            NavigationDestination(
-                icon: Icon(Icons.explore_outlined),
-                selectedIcon: Icon(Icons.explore),
-                label: 'Discover'),
-            NavigationDestination(
-                icon: Icon(Icons.luggage_outlined),
-                selectedIcon: Icon(Icons.luggage),
-                label: 'Trips'),
-            NavigationDestination(
-                icon: Icon(Icons.chat_bubble_outline),
-                selectedIcon: Icon(Icons.chat_bubble),
-                label: 'Messages'),
-            NavigationDestination(
-                icon: Icon(Icons.account_balance_wallet_outlined),
-                selectedIcon: Icon(Icons.account_balance_wallet),
-                label: 'Wallet'),
-            NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: 'Profile'),
+      ),
+    );
+  }
+}
+
+/// A single nav destination that morphs between an icon-only state and an
+/// expanded lime pill (icon + label) with a smooth animation.
+class _NavPill extends StatelessWidget {
+  final _NavItem item;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _NavPill({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const duration = Duration(milliseconds: 280);
+    const curve = Curves.easeOutCubic;
+    final text = Theme.of(context).textTheme;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: duration,
+        curve: curve,
+        padding: EdgeInsets.symmetric(
+          horizontal: selected ? Spacing.x4 : Spacing.x3,
+          vertical: Spacing.x3,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? BrandColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(Radii.pill),
+          boxShadow: selected ? BrandShadows.glow : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(end: selected ? 1 : 0),
+              duration: duration,
+              curve: curve,
+              builder: (context, t, _) => Icon(
+                selected ? item.activeIcon : item.icon,
+                size: Sizes.icon,
+                color: Color.lerp(
+                    BrandColors.mutedFg, BrandColors.primaryFg, t),
+              ),
+            ),
+            // Label slides/fades in only when selected.
+            AnimatedSize(
+              duration: duration,
+              curve: curve,
+              child: selected
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: Spacing.x2),
+                      child: Text(
+                        item.label,
+                        style: text.labelLarge?.copyWith(
+                          color: BrandColors.primaryFg,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ],
         ),
       ),

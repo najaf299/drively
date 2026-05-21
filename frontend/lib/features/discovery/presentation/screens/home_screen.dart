@@ -84,25 +84,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x4),
+                    Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x5),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 'Hi, {name}' — titleLarge, name in primary.
+                          // Greeting overline.
+                          Text(
+                            'WELCOME BACK',
+                            style: text.labelSmall?.copyWith(
+                              color: BrandColors.mutedFg,
+                              letterSpacing: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          // 'Hi, {name}' — headline, name in primary.
                           Text.rich(
                             TextSpan(
-                              style: text.titleLarge,
+                              style: text.headlineSmall,
                               children: [
                                 const TextSpan(text: 'Hi, '),
                                 TextSpan(
                                   text: (user?.name.trim().isNotEmpty ?? false)
                                       ? user!.name.trim().split(' ').first
                                       : 'there',
-                                  style: text.titleLarge
+                                  style: text.headlineSmall
                                       ?.copyWith(color: BrandColors.primary),
                                 ),
                               ],
@@ -110,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: Spacing.x1),
+                          const SizedBox(height: Spacing.x2),
                           // Location chip — surface2 pill.
                           _LocationChip(
                             location: 'Karachi, PK',
@@ -119,18 +128,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: Spacing.x3),
-                    // Avatar.
-                    CircleAvatar(
-                      radius: Sizes.avatarSm,
-                      backgroundColor: BrandColors.accent,
-                      child: Text(
-                        (user?.name.trim().isNotEmpty ?? false)
-                            ? user!.name.trim()[0].toUpperCase()
-                            : '?',
-                        style: text.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                    const SizedBox(width: Spacing.x4),
+                    // Avatar — aligned to the top of the greeting block.
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: BrandColors.border, width: 1.5),
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: CircleAvatar(
+                        radius: Sizes.avatarSm,
+                        backgroundColor: BrandColors.accent,
+                        child: Text(
+                          (user?.name.trim().isNotEmpty ?? false)
+                              ? user!.name.trim()[0].toUpperCase()
+                              : '?',
+                          style: text.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -416,7 +433,7 @@ class _HorizontalCarList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 260,
+      height: 276,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
@@ -459,13 +476,13 @@ class _HorizontalCardShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 260,
+      height: 276,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
         itemCount: 4,
         separatorBuilder: (_, __) => const SizedBox(width: Spacing.x3),
-        itemBuilder: (_, __) => const _ShimmerBox(width: 220, height: 260),
+        itemBuilder: (_, __) => const _ShimmerBox(width: 220, height: 276),
       ),
     );
   }
