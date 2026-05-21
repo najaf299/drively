@@ -28,8 +28,9 @@ class TripCard extends StatelessWidget {
     return featured ? _featured(context) : _standard(context);
   }
 
-  // ---- Standard dark row -------------------------------------------------
+  // ---- Standard dark row ---------------------------------------------------
   Widget _standard(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     final car = booking.car;
     final host = car?.host?.name;
     return Material(
@@ -55,21 +56,14 @@ class TripCard extends StatelessWidget {
                   children: [
                     Text(
                       car?.displayNameWithYear ?? booking.reference,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: BrandColors.foreground,
-                      ),
+                      style: text.titleMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       _subtitle(host),
-                      style: const TextStyle(
-                        color: BrandColors.mutedFg,
-                        fontSize: 12,
-                      ),
+                      style: text.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -90,24 +84,22 @@ class TripCard extends StatelessWidget {
     );
   }
 
-  // ---- Featured lime hero ------------------------------------------------
+  // ---- Featured lime hero --------------------------------------------------
   Widget _featured(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     final car = booking.car;
     final location = booking.pickupAddress ?? car?.city;
+    const radius = Radii.card + 4.0;
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(Radii.card + 4),
+      borderRadius: BorderRadius.circular(radius),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(Radii.card + 4),
+        borderRadius: BorderRadius.circular(radius),
         child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Radii.card + 4),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [BrandColors.primary, Color(0xFFB6D93C)],
-            ),
+            borderRadius: BorderRadius.circular(radius),
+            gradient: BrandGradients.primary,
           ),
           padding: const EdgeInsets.all(Spacing.x4),
           child: Column(
@@ -130,20 +122,16 @@ class TripCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           car?.displayNameWithYear ?? booking.reference,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 17,
-                            color: BrandColors.primaryFg,
-                          ),
+                          style: text.titleLarge
+                              ?.copyWith(color: BrandColors.primaryFg),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           _pickupLine(),
-                          style: TextStyle(
+                          style: text.bodySmall?.copyWith(
                             color: BrandColors.primaryFg.withValues(alpha: 0.8),
-                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -172,9 +160,8 @@ class TripCard extends StatelessWidget {
                           location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: text.bodySmall?.copyWith(
                             color: BrandColors.primaryFg,
-                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -230,13 +217,14 @@ class _Tag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: BrandColors.primary,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.6,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: BrandColors.primary,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
       ),
     );
   }
 }
+

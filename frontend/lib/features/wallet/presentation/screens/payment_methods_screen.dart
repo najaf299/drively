@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme.dart';
 import '../../../../shared/widgets/status_badge.dart';
 
-/// Saved cards are managed by Stripe at checkout time; this build does not
-/// persist cards locally. The screen presents the configured methods.
+/// Saved cards — §4.3 / §7.22.
+/// Each saved card is a MiniCard ~96h using BrandGradients.surfaceCard bg.
 class PaymentMethodsScreen extends StatelessWidget {
   const PaymentMethodsScreen({super.key});
 
@@ -21,6 +21,7 @@ class PaymentMethodsScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(
               Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
           children: [
+            // Header row with back button
             Row(
               children: [
                 _BackButton(),
@@ -30,38 +31,24 @@ class PaymentMethodsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: Spacing.x6),
-            const _DefaultCard(),
-            const SizedBox(height: Spacing.x6),
-            Text('Other methods',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(color: BrandColors.mutedFg)),
-            const SizedBox(height: Spacing.x3),
-            _MethodRow(
-              stripe: BrandColors.warning,
-              icon: Icons.credit_card,
-              title: 'Mastercard',
-              subtitle: '•••• 1245',
+            // Default card — MiniCard with surfaceCard gradient
+            _MiniCard(
+              brand: 'Visa',
+              lastFour: '4829',
+              expiry: '08/27',
+              isDefault: true,
               onTap: () => _soon(context),
             ),
             const SizedBox(height: Spacing.x3),
-            _MethodRow(
-              stripe: BrandColors.foreground,
-              icon: Icons.phone_iphone,
-              title: 'Apple Pay',
-              subtitle: 'Default device',
-              onTap: () => _soon(context),
-            ),
-            const SizedBox(height: Spacing.x3),
-            _MethodRow(
-              stripe: BrandColors.success,
-              icon: Icons.account_balance,
-              title: 'Bank transfer',
-              subtitle: 'ACH · 2–3 days',
+            _MiniCard(
+              brand: 'Mastercard',
+              lastFour: '1245',
+              expiry: '09/27',
+              isDefault: false,
               onTap: () => _soon(context),
             ),
             const SizedBox(height: Spacing.x6),
+            // Add payment method — dashed-border tile
             _AddMethodButton(onTap: () => _soon(context)),
           ],
         ),
@@ -69,6 +56,141 @@ class PaymentMethodsScreen extends StatelessWidget {
     );
   }
 }
+
+// ─── Mini card (~96h, surfaceCard gradient) ────────────────────────────────────
+
+class _MiniCard extends StatelessWidget {
+  final String brand;
+  final String lastFour;
+  final String expiry;
+  final bool isDefault;
+  final VoidCallback onTap;
+
+  const _MiniCard({
+    required this.brand,
+    required this.lastFour,
+    required this.expiry,
+    required this.isDefault,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 96,
+        padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.x5, vertical: Spacing.x3),
+        decoration: BoxDecoration(
+          gradient: BrandGradients.surfaceCard,
+          borderRadius: BorderRadius.circular(Radii.xl),
+          border: Border.all(color: BrandColors.border),
+          boxShadow: BrandShadows.card,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Brand mark top-left (within the row, leading)
+            _BrandMark(brand: brand),
+            const SizedBox(width: Spacing.x4),
+            // Card number mono center
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '•••• $lastFour',
+                    style: BrandText.mono(
+                      size: 17,
+                      weight: FontWeight.w600,
+                      color: BrandColors.foreground,
+                      spacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Exp $expiry',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: BrandColors.mutedFg),
+                  ),
+                ],
+              ),
+            ),
+            // Default badge
+            if (isDefault)
+              const StatusBadge('Default', tone: BadgeTone.success)
+            else
+              const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BrandMark extends StatelessWidget {
+  final String brand;
+  const _BrandMark({required this.brand});
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color) = switch (brand.toLowerCase()) {
+      'visa' => (Icons.credit_card, BrandColors.info),
+      'mastercard' => (Icons.credit_card, BrandColors.warning),
+      'amex' => (Icons.credit_card, BrandColors.success),
+      _ => (Icons.credit_card, BrandColors.mutedFg),
+    };
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(Radii.sm),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Icon(icon, color: color, size: Sizes.icon),
+    );
+  }
+}
+
+// ─── Add method dashed tile ───────────────────────────────────────────────────
+
+class _AddMethodButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddMethodButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(Radii.xl),
+      child: DottedBorderBox(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Spacing.x4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.add, color: BrandColors.primary, size: 20),
+              const SizedBox(width: Spacing.x2),
+              Text(
+                'Add payment method',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: BrandColors.primary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Back button ──────────────────────────────────────────────────────────────
 
 class _BackButton extends StatelessWidget {
   @override
@@ -82,192 +204,8 @@ class _BackButton extends StatelessWidget {
         child: const SizedBox(
           width: 40,
           height: 40,
-          child: Icon(Icons.arrow_back, color: BrandColors.foreground, size: 20),
-        ),
-      ),
-    );
-  }
-}
-
-class _DefaultCard extends StatelessWidget {
-  const _DefaultCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(Spacing.x5),
-      decoration: BoxDecoration(
-        gradient: BrandGradients.accent,
-        borderRadius: BorderRadius.circular(Radii.xxl),
-        boxShadow: BrandShadows.card,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('VISA · DEFAULT',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: BrandColors.foreground,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                      )),
-              const Spacer(),
-              const StatusBadge('DEFAULT', tone: BadgeTone.neutral),
-            ],
-          ),
-          const SizedBox(height: Spacing.x6),
-          Text(
-            '••••  4829',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: BrandColors.foreground,
-                  letterSpacing: 3,
-                ),
-          ),
-          const SizedBox(height: Spacing.x5),
-          const Row(
-            children: [
-              _CardField(label: 'EXP', value: '08/27'),
-              SizedBox(width: Spacing.x8),
-              _CardField(label: 'CVV', value: '•••'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CardField extends StatelessWidget {
-  final String label;
-  final String value;
-  const _CardField({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: BrandColors.foreground.withValues(alpha: 0.7),
-                  letterSpacing: 1,
-                )),
-        const SizedBox(height: 2),
-        Text(value,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: BrandColors.foreground,
-                )),
-      ],
-    );
-  }
-}
-
-class _MethodRow extends StatelessWidget {
-  final Color stripe;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  const _MethodRow({
-    required this.stripe,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: BrandColors.surface,
-      borderRadius: BorderRadius.circular(Radii.xl),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(Radii.xl),
-        child: Container(
-          padding: const EdgeInsets.all(Spacing.x3),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Radii.xl),
-            border: Border.all(color: BrandColors.border),
-          ),
-          child: Row(
-            children: [
-              _CardThumb(stripe: stripe, icon: icon),
-              const SizedBox(width: Spacing.x3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: Theme.of(context).textTheme.titleSmall),
-                    const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A ~56x40 card thumbnail with a brand-colour stripe along the bottom.
-class _CardThumb extends StatelessWidget {
-  final Color stripe;
-  final IconData icon;
-  const _CardThumb({required this.stripe, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 56,
-      height: 40,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: BrandColors.surface2,
-        borderRadius: BorderRadius.circular(Radii.xs),
-        border: Border.all(color: BrandColors.border),
-      ),
-      child: Stack(
-        children: [
-          Center(child: Icon(icon, color: stripe, size: 20)),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(height: 6, color: stripe),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AddMethodButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _AddMethodButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(Radii.xl),
-      child: const DottedBorderBox(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: Spacing.x4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add, color: BrandColors.primary, size: 20),
-              SizedBox(width: Spacing.x2),
-              Text('Add new method',
-                  style: TextStyle(
-                      color: BrandColors.primary,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
+          child:
+              Icon(Icons.arrow_back, color: BrandColors.foreground, size: 20),
         ),
       ),
     );

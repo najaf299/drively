@@ -5,11 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/models/chat.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../domain/providers/chat_provider.dart';
 
-/// Conversation list (used as the Messages tab for both renters and hosts).
+/// Conversation list (Messages tab) — spec tokens.
+/// Unread: primary dot/badge. Rows on surface.
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
 
@@ -74,6 +76,7 @@ class _ThreadTile extends StatelessWidget {
     final other = thread.otherParticipant(me);
     final last = thread.latestMessage;
     final name = other?.name ?? 'Conversation';
+    final unread = thread.hasUnread;
 
     return Material(
       color: BrandColors.surface,
@@ -92,22 +95,10 @@ class _ThreadTile extends StatelessWidget {
           padding: const EdgeInsets.all(Spacing.x3),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: BrandColors.accent,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  other?.initials ?? '?',
-                  style: const TextStyle(
-                    color: BrandColors.primaryFg,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 17,
-                  ),
-                ),
+              // AppAvatar — surface2 bg, no coral.
+              AppAvatar(
+                initials: other?.initials ?? '?',
+                radius: 24,
               ),
               const SizedBox(width: Spacing.x3),
               Expanded(
@@ -116,7 +107,11 @@ class _ThreadTile extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: unread
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -126,10 +121,10 @@ class _ThreadTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: thread.hasUnread
+                            color: unread
                                 ? BrandColors.foreground
                                 : BrandColors.mutedFg,
-                            fontWeight: thread.hasUnread
+                            fontWeight: unread
                                 ? FontWeight.w600
                                 : FontWeight.w400,
                           ),
@@ -138,6 +133,7 @@ class _ThreadTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Spacing.x2),
+              // Timestamp + unread primary dot
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -148,7 +144,7 @@ class _ThreadTile extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   const SizedBox(height: 6),
-                  if (thread.hasUnread)
+                  if (unread)
                     Container(
                       width: 10,
                       height: 10,
@@ -156,7 +152,9 @@ class _ThreadTile extends StatelessWidget {
                         color: BrandColors.primary,
                         shape: BoxShape.circle,
                       ),
-                    ),
+                    )
+                  else
+                    const SizedBox(height: 10),
                 ],
               ),
             ],

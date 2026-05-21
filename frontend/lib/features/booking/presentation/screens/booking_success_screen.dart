@@ -8,7 +8,11 @@ import '../../../../core/models/booking.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../features/auth/domain/providers/auth_provider.dart';
 
-/// Post-payment confirmation screen.
+/// Post-payment confirmation — spec §7.15.
+///
+/// Big success check 96 px in primary wrapped with BrandShadows.glow.
+/// Title displaySmall 'Booking confirmed'. Booking ID in BrandText.mono.
+/// PrimaryButton 'View trip'. Tonal 'Add to wallet pass' / 'Back to home'.
 class BookingSuccessScreen extends ConsumerWidget {
   final Booking booking;
   const BookingSuccessScreen({super.key, required this.booking});
@@ -17,6 +21,7 @@ class BookingSuccessScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final email = ref.watch(authProvider).user?.email;
     final carName = booking.car?.displayName ?? 'car';
+    final t = Theme.of(context).textTheme;
 
     final dateRange = (booking.pickupAt != null && booking.returnAt != null)
         ? '${Formatters.dayMonth(booking.pickupAt!)} – '
@@ -26,9 +31,8 @@ class BookingSuccessScreen extends ConsumerWidget {
     final pickup = booking.pickupAt != null
         ? Formatters.dateTime(booking.pickupAt!)
         : 'See trip details';
-    final location = booking.pickupAddress ??
-        booking.car?.address ??
-        'See trip details';
+    final location =
+        booking.pickupAddress ?? booking.car?.address ?? 'See trip details';
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -36,38 +40,50 @@ class BookingSuccessScreen extends ConsumerWidget {
         backgroundColor: BrandColors.background,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(Spacing.x6),
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.x6),
             child: Column(
               children: [
                 const Spacer(),
+
+                // ── Glow check — spec §7.15 primary + BrandShadows.glow ─────
                 const _GlowCheck(),
                 const SizedBox(height: Spacing.x6),
+
+                // ── Title — displaySmall ─────────────────────────────────────
                 Text(
-                  "You're all set!",
-                  style: Theme.of(context).textTheme.displaySmall,
+                  'Booking confirmed',
+                  textAlign: TextAlign.center,
+                  style: t.displaySmall,
                 ),
                 const SizedBox(height: Spacing.x3),
                 Text(
                   'Your $carName is booked for $dateRange.'
-                  '${email != null ? ' We sent a confirmation to $email.' : ''}',
+                  '${email != null ? ' Confirmation sent to $email.' : ''}',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: BrandColors.mutedFg),
+                  style: t.bodyLarge?.copyWith(color: BrandColors.mutedFg),
                 ),
                 const SizedBox(height: Spacing.x6),
+
+                // ── Details card with mono booking ID ────────────────────────
                 _detailsCard(context, pickup: pickup, location: location),
                 const Spacer(),
+
+                // ── CTAs ─────────────────────────────────────────────────────
                 FilledButton(
                   onPressed: () => context.go('/trips'),
-                  child: const Text('View trip details'),
+                  child: const Text('View trip'),
                 ),
                 const SizedBox(height: Spacing.x3),
                 OutlinedButton(
+                  onPressed: () {},
+                  child: const Text('Add to wallet pass'),
+                ),
+                const SizedBox(height: Spacing.x3),
+                TextButton(
                   onPressed: () => context.go('/home'),
                   child: const Text('Back to home'),
                 ),
+                const SizedBox(height: Spacing.x4),
               ],
             ),
           ),
@@ -94,12 +110,11 @@ class BookingSuccessScreen extends ConsumerWidget {
                   .textTheme
                   .labelSmall
                   ?.copyWith(color: BrandColors.mutedFg)),
-          const SizedBox(height: Spacing.x1),
+          const SizedBox(height: Spacing.x2),
+          // Booking ID in BrandText.mono — spec §7.15.
           Text(
-            booking.reference,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+            booking.reference.toUpperCase(),
+            style: BrandText.mono(size: 22, spacing: 3),
           ),
           const Divider(height: Spacing.x6),
           _row(context, 'Pickup', pickup),
@@ -131,32 +146,25 @@ class BookingSuccessScreen extends ConsumerWidget {
   }
 }
 
-/// A lime circle with a check icon and a soft radial glow behind it.
+/// Lime circle ~96 px with check icon, wrapped in BrandShadows.glow.
+/// Spec §7.15.
 class _GlowCheck extends StatelessWidget {
   const _GlowCheck();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      height: 160,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
+    return DecoratedBox(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            BrandColors.primary.withValues(alpha: 0.22),
-            BrandColors.primary.withValues(alpha: 0.0),
-          ],
-        ),
+        boxShadow: BrandShadows.glow,
       ),
       child: Container(
         width: 96,
         height: 96,
+        alignment: Alignment.center,
         decoration: const BoxDecoration(
-          shape: BoxShape.circle,
           color: BrandColors.primary,
-          boxShadow: BrandShadows.glow,
+          shape: BoxShape.circle,
         ),
         child: const Icon(
           Icons.check_rounded,

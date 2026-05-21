@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 /// Cached network image with consistent placeholder/error fallbacks.
 ///
 /// Tolerates null/empty URLs by rendering the [fallbackIcon] on a surface tile.
+/// All colours use brand tokens — no raw hex literals.
 class AppNetworkImage extends StatelessWidget {
   final String? url;
   final double? width;
@@ -27,8 +28,10 @@ class AppNetworkImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget child = (url == null || url!.isEmpty)
-        ? _placeholder(const Icon(Icons.image_not_supported_outlined,
-            color: BrandColors.mutedFg))
+        ? _placeholder(const Icon(
+            Icons.image_not_supported_outlined,
+            color: BrandColors.mutedFg,
+          ))
         : CachedNetworkImage(
             imageUrl: url!,
             width: width,

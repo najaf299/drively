@@ -9,13 +9,17 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/chat.dart';
 import '../../../../core/network/realtime_client.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/chat_service.dart';
 import '../../domain/providers/chat_provider.dart';
 
-/// 1:1 conversation. Messages load over REST; outgoing messages are appended
-/// optimistically and incoming ones arrive via the realtime channel.
+/// 1:1 chat — spec §7.19.
+///
+/// Outgoing bubbles: primary bg, primaryFg text, radius 18, bottom-right = 4.
+/// Incoming: surface2. Timestamps bodySmall muted below.
+/// System pill: surface2 @60. Composer on surface; send = 40 round primary.
 class ChatScreen extends ConsumerStatefulWidget {
   final String threadId;
   final String? recipientId;
@@ -48,7 +52,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final has = _input.text.trim().isNotEmpty;
       if (has != _hasText) setState(() => _hasText = has);
     });
-    // Mark the thread read and wire realtime.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(chatServiceProvider).markRead(widget.threadId).ignore();
     });
@@ -124,7 +127,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _header(),
+              _header(context),
               Expanded(
                 child: AsyncValueView<List<ChatMessage>>(
                   value: messages,
@@ -135,7 +138,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     if (list.isEmpty) {
                       return const EmptyView(
                         icon: Icons.waving_hand_outlined,
-                        title: 'Say hi! 👋',
+                        title: 'Say hi!',
                         subtitle: 'Start the conversation.',
                       );
                     }
@@ -143,10 +146,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         .addPostFrameCallback((_) => _scrollToBottom());
                     return ListView.builder(
                       controller: _scroll,
-                      padding: const EdgeInsets.all(Spacing.x4),
+                      padding: const EdgeInsets.fromLTRB(
+                          Spacing.x4, Spacing.x3, Spacing.x4, Spacing.x3),
                       itemCount: list.length + 1,
                       itemBuilder: (_, i) {
-                        if (i == 0) return _dateSeparator(list);
+                        if (i == 0) return _dateSeparator(context, list);
                         final m = list[i - 1];
                         return _Bubble(message: m, isMine: m.isFromMe(me));
                       },
@@ -154,7 +158,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   },
                 ),
               ),
-              _composer(),
+              _composer(context),
             ],
           ),
         ),
@@ -162,7 +166,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _header() {
+  Widget _header(BuildContext context) {
     final name = widget.recipientName ?? 'Chat';
     final initials = _initials(name);
     return Container(
@@ -188,23 +192,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
           const SizedBox(width: Spacing.x3),
-          Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: BrandColors.accent,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: BrandColors.primaryFg,
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-              ),
-            ),
-          ),
+          // Surface2 avatar — no coral/accent per spec.
+          AppAvatar(initials: initials, radius: 20),
           const SizedBox(width: Spacing.x3),
           Expanded(
             child: Column(
@@ -251,34 +240,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _dateSeparator(List<ChatMessage> list) {
+  /// System date separator — surface2 @60 center pill.
+  Widget _dateSeparator(BuildContext context, List<ChatMessage> list) {
     final ts = list.isNotEmpty ? list.first.createdAt : null;
-    final label =
-        ts != null ? 'TODAY · ${Formatters.time(ts)}' : 'TODAY';
+    final label = ts != null
+        ? 'TODAY  ·  ${Formatters.time(ts)}'
+        : 'TODAY';
     return Center(
       child: Container(
         margin: const EdgeInsets.only(bottom: Spacing.x3),
         padding:
             const EdgeInsets.symmetric(horizontal: Spacing.x3, vertical: 5),
         decoration: BoxDecoration(
-          color: BrandColors.surface,
+          color: BrandColors.surface2.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(Radii.pill),
-          border: Border.all(color: BrandColors.border),
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            color: BrandColors.mutedFg,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
-          ),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                letterSpacing: 0.4,
+              ),
         ),
       ),
     );
   }
 
-  Widget _composer() {
+  /// Composer bar — surface bg, attachment icon, pill input, 40-round send.
+  Widget _composer(BuildContext context) {
     final canSend = widget.recipientId != null;
     return SafeArea(
       top: false,
@@ -292,9 +280,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // Attachment icon
             _circleIcon(Icons.add, BrandColors.surface2, BrandColors.foreground,
                 onTap: canSend ? () {} : null),
             const SizedBox(width: Spacing.x2),
+            // Pill text input
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -312,8 +302,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         minLines: 1,
                         maxLines: 4,
                         textCapitalization: TextCapitalization.sentences,
-                        style:
-                            const TextStyle(color: BrandColors.foreground),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyLarge
+                            ?.copyWith(color: BrandColors.foreground),
                         decoration: InputDecoration(
                           isCollapsed: true,
                           contentPadding:
@@ -321,8 +313,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           hintText: canSend
                               ? 'Message…'
                               : 'Read-only conversation',
-                          hintStyle:
-                              const TextStyle(color: BrandColors.mutedFg),
+                          hintStyle: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(color: BrandColors.subtleFg),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
@@ -333,41 +327,46 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
                     const Icon(Icons.emoji_emotions_outlined,
-                        color: BrandColors.mutedFg, size: 22),
+                        color: BrandColors.mutedFg, size: Sizes.iconSm),
                   ],
                 ),
               ),
             ),
             const SizedBox(width: Spacing.x2),
-            _sendOrMic(canSend),
+            // 40-round send button — primary, disabled until non-empty.
+            _sendButton(canSend),
           ],
         ),
       ),
     );
   }
 
-  Widget _sendOrMic(bool canSend) {
-    final showSend = _hasText;
+  Widget _sendButton(bool canSend) {
+    final active = canSend && _hasText && !_sending;
     return InkWell(
-      onTap: canSend && !_sending && showSend ? _send : null,
+      onTap: active ? _send : null,
       customBorder: const CircleBorder(),
       child: Container(
-        width: 48,
-        height: 48,
-        decoration: const BoxDecoration(
-          color: BrandColors.primary,
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: active ? BrandColors.primary : BrandColors.surface2,
           shape: BoxShape.circle,
         ),
         child: _sending
-            ? const Padding(
-                padding: EdgeInsets.all(14),
+            ? Padding(
+                padding: const EdgeInsets.all(11),
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: BrandColors.primaryFg),
+                    strokeWidth: 2,
+                    color: active
+                        ? BrandColors.primaryFg
+                        : BrandColors.mutedFg),
               )
             : Icon(
-                showSend ? Icons.send : Icons.mic,
-                color: BrandColors.primaryFg,
-                size: 22,
+                _hasText ? Icons.send_rounded : Icons.mic_none_rounded,
+                color:
+                    active ? BrandColors.primaryFg : BrandColors.mutedFg,
+                size: 18,
               ),
       ),
     );
@@ -379,14 +378,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       onTap: onTap,
       customBorder: const CircleBorder(),
       child: Container(
-        width: 44,
-        height: 44,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: bg,
           shape: BoxShape.circle,
           border: Border.all(color: BrandColors.border),
         ),
-        child: Icon(icon, color: fg, size: 22),
+        child: Icon(icon, color: fg, size: Sizes.iconSm),
       ),
     );
   }
@@ -399,6 +398,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
+/// Chat bubble — spec §7.19.
+/// Outgoing: primary bg, primaryFg text, radius 18, bottom-right corner 4.
+/// Incoming: surface2 bg, foreground text, bottom-left corner 4.
 class _Bubble extends StatelessWidget {
   final ChatMessage message;
   final bool isMine;
@@ -406,20 +408,23 @@ class _Bubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const r = 18.0;
+    const corner = 4.0;
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         constraints:
             BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        padding:
+            const EdgeInsets.symmetric(horizontal: Spacing.x4, vertical: 10),
         decoration: BoxDecoration(
           color: isMine ? BrandColors.primary : BrandColors.surface2,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(Radii.lg),
-            topRight: const Radius.circular(Radii.lg),
-            bottomLeft: Radius.circular(isMine ? Radii.lg : Radii.xs / 2),
-            bottomRight: Radius.circular(isMine ? Radii.xs / 2 : Radii.lg),
+            topLeft: const Radius.circular(r),
+            topRight: const Radius.circular(r),
+            bottomLeft: Radius.circular(isMine ? r : corner),
+            bottomRight: Radius.circular(isMine ? corner : r),
           ),
         ),
         child: Column(
@@ -428,11 +433,13 @@ class _Bubble extends StatelessWidget {
             Text(
               message.content,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color:
-                        isMine ? BrandColors.primaryFg : BrandColors.foreground,
+                    color: isMine
+                        ? BrandColors.primaryFg
+                        : BrandColors.foreground,
                   ),
             ),
             const SizedBox(height: 3),
+            // Timestamp + read receipt — bodySmall muted, grouped below.
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -441,8 +448,9 @@ class _Bubble extends StatelessWidget {
                     Formatters.time(message.createdAt!),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: isMine
-                              ? BrandColors.primaryFg.withValues(alpha: 0.7)
+                              ? BrandColors.primaryFg.withValues(alpha: 0.65)
                               : BrandColors.mutedFg,
+                          fontSize: 11,
                         ),
                   ),
                 if (isMine) ...[

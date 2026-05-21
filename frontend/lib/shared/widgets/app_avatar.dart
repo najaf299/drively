@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 
-/// Circular avatar that shows the user's photo, or their initials on a brand
-/// surface when no photo is available.
+/// Circular avatar — photo or initials fallback.
+///
+/// Spec: circular with a 2 px [BrandColors.surface] ring; honours [radius].
 class AppAvatar extends StatelessWidget {
   final String? imageUrl;
   final String initials;
@@ -19,6 +20,20 @@ class AppAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inner = _inner();
+    // 2 px surface ring around the avatar.
+    return Container(
+      width: radius * 2 + 4,
+      height: radius * 2 + 4,
+      decoration: const BoxDecoration(
+        color: BrandColors.surface,
+        shape: BoxShape.circle,
+      ),
+      child: Center(child: inner),
+    );
+  }
+
+  Widget _inner() {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: radius,

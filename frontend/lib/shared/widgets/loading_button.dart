@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 
 /// A full-width [FilledButton] that shows a spinner and disables itself while
-/// [loading] is true. Used for all primary form submissions.
+/// [loading] is true.  Shape, size and colour are inherited from the
+/// [FilledButtonThemeData] defined in [DrivlyTheme] — no overrides needed here.
 class LoadingButton extends StatelessWidget {
   final String label;
   final bool loading;
@@ -36,7 +37,7 @@ class LoadingButton extends StatelessWidget {
               children: [
                 if (icon != null) ...[
                   Icon(icon, size: 18),
-                  const SizedBox(width: 8)
+                  const SizedBox(width: 8),
                 ],
                 Text(label),
               ],

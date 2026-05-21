@@ -10,11 +10,11 @@ import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/host_service.dart';
 import '../../domain/providers/host_provider.dart';
 
-/// Host onboarding wizard: identity → bank → vehicle → agreement.
+/// Host onboarding — spec §7.27.
 ///
-/// Restyled to the Drivly "Become a host" design: a completion header with a
-/// large lime percentage, a steps-left chip and a lime progress bar, followed
-/// by a checklist of status cards.
+/// 4-step progress: Identity · Vehicle · Insurance · Payout.
+/// Each step has StatusBadge: done→success, pending/in-review→warning,
+/// not-started→neutral. Progress bar in primary. 'Continue' PrimaryButton.
 class HostVerificationScreen extends ConsumerStatefulWidget {
   const HostVerificationScreen({super.key});
 
@@ -26,6 +26,15 @@ class HostVerificationScreen extends ConsumerStatefulWidget {
 class _HostVerificationScreenState
     extends ConsumerState<HostVerificationScreen> {
   bool _busy = false;
+
+  // Map model keys to spec step labels: §7.27 Identity·Vehicle·Insurance·Payout
+  static String _specLabel(String key) => switch (key) {
+        'identity' => 'Identity',
+        'vehicle' => 'Vehicle',
+        'bank' => 'Payout',
+        'agreement' => 'Insurance',
+        _ => key,
+      };
 
   Future<void> _initiate() async {
     setState(() => _busy = true);
@@ -42,8 +51,6 @@ class _HostVerificationScreenState
   Future<void> _submitStep(String step) async {
     setState(() => _busy = true);
     try {
-      // Document upload to object storage happens out-of-band; here we mark the
-      // step as submitted for review.
       await ref.read(hostServiceProvider).updateStep(step, {'submitted': true});
       ref.invalidate(hostVerificationProvider);
       await ref.read(authProvider.notifier).refreshUser();
@@ -135,10 +142,25 @@ class _HostVerificationScreenState
     final pending = total - completed;
     final percent = total == 0 ? 0 : ((completed / total) * 100).round();
 
+    // Spec-ordered steps: Identity · Vehicle · Insurance · Payout
+    // Model order: identity, bank, vehicle, agreement
+    // Reorder to match spec: identity, vehicle, agreement(insurance), bank(payout)
+    final specOrdered = [
+      v.steps.firstWhere((s) => s.key == 'identity',
+          orElse: () => const HostVerificationStep('identity', 'Identity', 'pending')),
+      v.steps.firstWhere((s) => s.key == 'vehicle',
+          orElse: () => const HostVerificationStep('vehicle', 'Vehicle', 'pending')),
+      v.steps.firstWhere((s) => s.key == 'agreement',
+          orElse: () => const HostVerificationStep('agreement', 'Insurance', 'pending')),
+      v.steps.firstWhere((s) => s.key == 'bank',
+          orElse: () => const HostVerificationStep('bank', 'Payout', 'pending')),
+    ];
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(Spacing.x5, Spacing.x2, Spacing.x5,
-          Spacing.x8),
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.x5, Spacing.x2, Spacing.x5, Spacing.x8),
       children: [
+        // Completion header: % done + progress bar in primary
         _CompletionHeader(
           percent: percent,
           progress: total == 0 ? 0 : completed / total,
@@ -148,18 +170,36 @@ class _HostVerificationScreenState
         const SizedBox(height: Spacing.x6),
         Text(
           'VERIFICATION STEPS',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: BrandColors.mutedFg,
-              ),
+          style: Theme.of(context)
+              .textTheme
+              .labelSmall
+              ?.copyWith(color: BrandColors.mutedFg),
         ),
         const SizedBox(height: Spacing.x3),
-        for (final step in v.steps) ...[
+        // 4-step cards with StatusBadge per status
+        for (final step in specOrdered) ...[
           _StepCard(
             step: step,
+            specLabel: _specLabel(step.key),
             busy: _busy,
             onSubmit: () => _submitStep(step.key),
           ),
           const SizedBox(height: Spacing.x3),
+        ],
+        if (!v.isComplete) ...[
+          const SizedBox(height: Spacing.x2),
+          _PrimaryButton(
+            label: 'Continue',
+            loading: _busy,
+            onPressed: () {
+              // Submit first incomplete step
+              final first = specOrdered.firstWhere(
+                (s) => !s.isApproved,
+                orElse: () => specOrdered.first,
+              );
+              _submitStep(first.key);
+            },
+          ),
         ],
         if (v.isComplete) ...[
           const SizedBox(height: Spacing.x2),
@@ -168,8 +208,8 @@ class _HostVerificationScreenState
             decoration: BoxDecoration(
               color: BrandColors.successBg,
               borderRadius: BorderRadius.circular(Radii.xl),
-              border:
-                  Border.all(color: BrandColors.success.withValues(alpha: 0.4)),
+              border: Border.all(
+                  color: BrandColors.success.withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
@@ -192,7 +232,8 @@ class _HostVerificationScreenState
   }
 }
 
-/// Big lime percent + "Verification complete" + steps-left chip + lime bar.
+// ─── Completion header ────────────────────────────────────────────────────────
+
 class _CompletionHeader extends StatelessWidget {
   final int percent;
   final double progress;
@@ -251,6 +292,7 @@ class _CompletionHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Spacing.x4),
+          // Progress bar in primary
           ClipRRect(
             borderRadius: BorderRadius.circular(Radii.pill),
             child: LinearProgressIndicator(
@@ -266,21 +308,24 @@ class _CompletionHeader extends StatelessWidget {
   }
 }
 
-/// A checklist step card: leading status circle + label + status/action.
+// ─── Step card with StatusBadge ───────────────────────────────────────────────
+
 class _StepCard extends StatelessWidget {
   final HostVerificationStep step;
+  final String specLabel;
   final bool busy;
   final VoidCallback onSubmit;
 
   const _StepCard({
     required this.step,
+    required this.specLabel,
     required this.busy,
     required this.onSubmit,
   });
 
   @override
   Widget build(BuildContext context) {
-    final (statusColor, statusLabel, statusIcon) = _statusVisuals();
+    final (statusColor, statusText, statusIcon) = _statusVisuals();
 
     return Container(
       padding: const EdgeInsets.all(Spacing.x4),
@@ -295,14 +340,15 @@ class _StepCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Leading status circle.
+          // Status circle
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
               color: statusColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
-              border: Border.all(color: statusColor.withValues(alpha: 0.5)),
+              border:
+                  Border.all(color: statusColor.withValues(alpha: 0.5)),
             ),
             child: Icon(statusIcon, color: statusColor, size: 20),
           ),
@@ -311,11 +357,11 @@ class _StepCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(step.label,
+                Text(specLabel,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 3),
                 Text(
-                  statusLabel,
+                  statusText,
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
@@ -324,40 +370,26 @@ class _StepCard extends StatelessWidget {
               ],
             ),
           ),
-          _trailing(),
+          // Spec: done→success, pending/in-review→warning, not-started→neutral
+          _badge(),
         ],
       ),
     );
   }
 
-  Widget _trailing() {
+  Widget _badge() {
     if (step.isApproved) {
-      return const StatusBadge('DONE',
+      return const StatusBadge('Done',
           tone: BadgeTone.success, icon: Icons.check);
     }
-    if (step.isRejected) {
-      return TextButton(
-        onPressed: busy ? null : onSubmit,
-        style: TextButton.styleFrom(foregroundColor: BrandColors.destructive),
-        child: const Text('Retry'),
-      );
-    }
     if (step.isSubmitted) {
-      // Pending review → amber "REVIEW" badge.
-      return const StatusBadge('REVIEW', tone: BadgeTone.warning);
+      return const StatusBadge('In Review', tone: BadgeTone.warning);
     }
-    // Pending → "Start →" lime action.
-    return TextButton(
-      onPressed: busy ? null : onSubmit,
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Start', style: TextStyle(fontWeight: FontWeight.w600)),
-          SizedBox(width: 4),
-          Icon(Icons.arrow_forward, size: 16),
-        ],
-      ),
-    );
+    if (step.isRejected) {
+      return const StatusBadge('Rejected', tone: BadgeTone.error);
+    }
+    // not started
+    return const StatusBadge('Not started', tone: BadgeTone.neutral);
   }
 
   (Color, String, IconData) _statusVisuals() {
@@ -374,7 +406,8 @@ class _StepCard extends StatelessWidget {
   }
 }
 
-/// Shared circular-back header used across host wizard-style screens.
+// ─── Shared header ────────────────────────────────────────────────────────────
+
 class _Header extends StatelessWidget {
   final String title;
   final VoidCallback onBack;
@@ -384,8 +417,8 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.x5, Spacing.x3, Spacing.x5,
-          Spacing.x3),
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x3),
       child: Row(
         children: [
           _CircleBackButton(onTap: onBack),
@@ -426,7 +459,7 @@ class _CircleBackButton extends StatelessWidget {
   }
 }
 
-/// Full-width lime pill primary button (relies on the FilledButton theme).
+/// Full-width lime pill primary button.
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final bool loading;

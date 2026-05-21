@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme.dart';
+
 /// Dims [child] and shows a centered spinner while [isLoading] is true.
+///
+/// Scrim uses [BrandColors.overlay] at 60 % opacity — no raw hex literals.
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;
@@ -17,10 +21,10 @@ class LoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          const Positioned.fill(
+          Positioned.fill(
             child: ColoredBox(
-              color: Color(0x99000000),
-              child: Center(child: CircularProgressIndicator()),
+              color: BrandColors.overlay.withValues(alpha: 0.6),
+              child: const Center(child: CircularProgressIndicator()),
             ),
           ),
       ],

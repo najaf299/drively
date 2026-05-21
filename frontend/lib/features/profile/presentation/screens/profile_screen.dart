@@ -7,6 +7,11 @@ import '../../../../core/models/user.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
+/// Profile screen — spec §7.26.
+///
+/// Header: avatar 96 (avatarXl) · name headlineSmall · email muted ·
+/// VERIFIED StatusBadge. Stats row: Trips · Reviews · Member since.
+/// Settings list grouped in surface cards with chevrons.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -45,6 +50,7 @@ class ProfileScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(
               Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
           children: [
+            // Page title + settings cog
             Row(
               children: [
                 Text('Profile',
@@ -57,31 +63,30 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: Spacing.x6),
+            // Header: avatar 96 + name + email + verified badge
             _ProfileHeader(user: user),
             const SizedBox(height: Spacing.x6),
+            // Stats row: Trips · Reviews · Member since
             _statsRow(context, user),
             const SizedBox(height: Spacing.x6),
+            // Personal group
+            _sectionLabel(context, 'ACCOUNT'),
+            const SizedBox(height: Spacing.x2),
             _MenuCard(
               tiles: [
+                _MenuTile(
+                  icon: Icons.person_outline,
+                  label: 'Personal info',
+                  onTap: () => _soon(context),
+                ),
                 _MenuTile(
                   icon: Icons.credit_card_outlined,
                   label: 'Payment methods',
                   onTap: () => context.push('/payment-methods'),
                 ),
                 _MenuTile(
-                  icon: Icons.badge_outlined,
-                  label: 'Driver\'s license',
-                  onTap: () => context.push('/kyc'),
-                  trailing: _kycBadge(user.kycStatus),
-                ),
-                _MenuTile(
-                  icon: Icons.history,
-                  label: 'Trip history',
-                  onTap: () => context.go('/trips'),
-                ),
-                _MenuTile(
-                  icon: Icons.favorite_border,
-                  label: 'Favorites',
+                  icon: Icons.location_on_outlined,
+                  label: 'Addresses',
                   onTap: () => _soon(context),
                 ),
                 _MenuTile(
@@ -90,13 +95,47 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/notifications'),
                 ),
                 _MenuTile(
-                  icon: Icons.help_outline,
-                  label: 'Help & support',
+                  icon: Icons.language,
+                  label: 'Language',
                   onTap: () => _soon(context),
                 ),
               ],
             ),
-            const SizedBox(height: Spacing.x6),
+            const SizedBox(height: Spacing.x5),
+            // Host group
+            _sectionLabel(context, 'HOST'),
+            const SizedBox(height: Spacing.x2),
+            _MenuCard(
+              tiles: [
+                _MenuTile(
+                  icon: Icons.directions_car_outlined,
+                  label: 'Become a host',
+                  iconColor: BrandColors.primary,
+                  labelColor: BrandColors.primary,
+                  onTap: () => context.push('/host'),
+                ),
+              ],
+            ),
+            const SizedBox(height: Spacing.x5),
+            // Support + legal group
+            _sectionLabel(context, 'SUPPORT'),
+            const SizedBox(height: Spacing.x2),
+            _MenuCard(
+              tiles: [
+                _MenuTile(
+                  icon: Icons.help_outline,
+                  label: 'Help',
+                  onTap: () => _soon(context),
+                ),
+                _MenuTile(
+                  icon: Icons.description_outlined,
+                  label: 'Legal',
+                  onTap: () => _soon(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: Spacing.x5),
+            // Logout — destructive
             OutlinedButton.icon(
               onPressed: () => _signOut(context, ref),
               style: OutlinedButton.styleFrom(
@@ -104,7 +143,7 @@ class ProfileScreen extends ConsumerWidget {
                 side: const BorderSide(color: BrandColors.destructive),
               ),
               icon: const Icon(Icons.logout),
-              label: const Text('Sign out'),
+              label: const Text('Logout'),
             ),
           ],
         ),
@@ -112,15 +151,29 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _sectionLabel(BuildContext context, String label) {
+    return Text(
+      label,
+      style: Theme.of(context)
+          .textTheme
+          .labelSmall
+          ?.copyWith(color: BrandColors.mutedFg),
+    );
+  }
+
   Widget _statsRow(BuildContext context, User user) {
-    final saved = (user.totalTrips * 23).toDouble();
+    final memberYear = user.createdAt?.year.toString() ?? '—';
     return Row(
       children: [
         _stat(context, '${user.totalTrips}', 'Trips'),
         const SizedBox(width: Spacing.x3),
-        _stat(context, '${user.totalTrips}', 'Cars rented'),
+        _stat(context,
+            user.averageRating > 0
+                ? user.averageRating.toStringAsFixed(1)
+                : '—',
+            'Reviews'),
         const SizedBox(width: Spacing.x3),
-        _stat(context, '\$${saved.toStringAsFixed(0)}', 'Saved'),
+        _stat(context, memberYear, 'Member since'),
       ],
     );
   }
@@ -137,7 +190,8 @@ class ProfileScreen extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            Text(value, style: Theme.of(context).textTheme.headlineSmall),
+            Text(value,
+                style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 2),
             Text(label,
                 textAlign: TextAlign.center,
@@ -147,15 +201,9 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _kycBadge(String status) {
-    final approved = status == 'approved';
-    return StatusBadge(
-      approved ? 'Verified' : 'Verify',
-      tone: approved ? BadgeTone.success : BadgeTone.warning,
-    );
-  }
 }
+
+// ─── Profile header ───────────────────────────────────────────────────────────
 
 class _ProfileHeader extends StatelessWidget {
   final User user;
@@ -163,12 +211,12 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final year = user.createdAt?.year;
     return Column(
       children: [
+        // Avatar — 96dp = Sizes.avatarXl
         Container(
-          width: Sizes.avatarLg,
-          height: Sizes.avatarLg,
+          width: Sizes.avatarXl,
+          height: Sizes.avatarXl,
           decoration: const BoxDecoration(
             color: BrandColors.primary,
             shape: BoxShape.circle,
@@ -179,20 +227,27 @@ class _ProfileHeader extends StatelessWidget {
               : Center(
                   child: Text(
                     user.initials,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: BrandColors.primaryFg,
-                        ),
+                    style:
+                        Theme.of(context).textTheme.headlineLarge?.copyWith(
+                              color: BrandColors.primaryFg,
+                            ),
                   ),
                 ),
         ),
         const SizedBox(height: Spacing.x4),
+        // Name — headlineSmall
         Text(user.name, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 4),
+        // Email — muted
         Text(
-          year != null ? 'Member since $year' : 'Member',
-          style: Theme.of(context).textTheme.bodySmall,
+          user.email,
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: BrandColors.mutedFg),
         ),
         const SizedBox(height: Spacing.x3),
+        // VERIFIED badge (success) + rating
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -201,7 +256,8 @@ class _ProfileHeader extends StatelessWidget {
                   tone: BadgeTone.success, icon: Icons.verified),
               const SizedBox(width: Spacing.x3),
             ],
-            const Icon(Icons.star, color: BrandColors.warning, size: 16),
+            const Icon(Icons.star_rounded,
+                color: BrandColors.warning, size: 16),
             const SizedBox(width: 4),
             Text(
               user.averageRating.toStringAsFixed(1),
@@ -213,6 +269,8 @@ class _ProfileHeader extends StatelessWidget {
     );
   }
 }
+
+// ─── Menu card + tile ─────────────────────────────────────────────────────────
 
 class _MenuCard extends StatelessWidget {
   final List<_MenuTile> tiles;
@@ -232,8 +290,7 @@ class _MenuCard extends StatelessWidget {
           for (var i = 0; i < tiles.length; i++) ...[
             tiles[i],
             if (i != tiles.length - 1)
-              const Divider(
-                  height: 1, indent: 60, color: BrandColors.border),
+              const Divider(height: 1, indent: 60, color: BrandColors.border),
           ],
         ],
       ),
@@ -245,12 +302,15 @@ class _MenuTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final Widget? trailing;
+  final Color? iconColor;
+  final Color? labelColor;
+
   const _MenuTile({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.trailing,
+    this.iconColor,
+    this.labelColor,
   });
 
   @override
@@ -264,25 +324,31 @@ class _MenuTile extends StatelessWidget {
           children: [
             SizedBox(
               width: 28,
-              child:
-                  Icon(icon, color: BrandColors.foreground, size: Sizes.icon),
+              child: Icon(icon,
+                  color: iconColor ?? BrandColors.foreground,
+                  size: Sizes.icon),
             ),
             const SizedBox(width: Spacing.x3),
             Expanded(
-              child: Text(label,
-                  style: Theme.of(context).textTheme.titleMedium),
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: labelColor,
+                    ),
+              ),
             ),
-            if (trailing != null) ...[
-              trailing!,
-              const SizedBox(width: Spacing.x2),
-            ],
-            const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
+            Icon(Icons.chevron_right,
+                color: labelColor != null
+                    ? labelColor!.withValues(alpha: 0.6)
+                    : BrandColors.mutedFg),
           ],
         ),
       ),
     );
   }
 }
+
+// ─── Circle action button ─────────────────────────────────────────────────────
 
 class _CircleAction extends StatelessWidget {
   final IconData icon;

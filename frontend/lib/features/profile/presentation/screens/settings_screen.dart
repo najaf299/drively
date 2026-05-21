@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
+/// Settings screen — spec §7.40.
+///
+/// Grouped sections: Account · App · Privacy · About
+/// Surface cards, chevron rows, lime Switches.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -15,6 +19,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late Map<String, bool> _channels;
   late String _language;
   bool _saving = false;
+  bool _darkMode = true; // Drivly is always dark; toggle is decorative
 
   static const _languages = {
     'en': 'English',
@@ -97,6 +102,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           padding: const EdgeInsets.fromLTRB(
               Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
           children: [
+            // Header
             Row(
               children: [
                 _BackButton(),
@@ -113,10 +119,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
             const SizedBox(height: Spacing.x6),
+            // § Account
             _section('ACCOUNT', [
               _RowTile(
-                icon: Icons.shield_outlined,
-                label: 'Privacy & security',
+                icon: Icons.person_outline,
+                label: 'Personal info',
                 onTap: _soon,
               ),
               _RowTile(
@@ -124,9 +131,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 label: 'Change password',
                 onTap: _soon,
               ),
+              _RowTile(
+                icon: Icons.shield_outlined,
+                label: 'Linked accounts',
+                onTap: _soon,
+              ),
+            ]),
+            const SizedBox(height: Spacing.x5),
+            // § App
+            _section('APP', [
               _ToggleRow(
                 icon: Icons.notifications_none,
-                label: 'Notifications',
+                label: 'Push notifications',
                 value: _channels['bookings']!,
                 onChanged: (v) {
                   setState(() {
@@ -137,9 +153,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _save();
                 },
               ),
-            ]),
-            const SizedBox(height: Spacing.x5),
-            _section('PREFERENCES', [
               _RowTile(
                 icon: Icons.language,
                 label: 'Language',
@@ -149,20 +162,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _RowTile(
                 icon: Icons.attach_money,
                 label: 'Currency',
-                value: 'USD',
+                value: 'AED',
                 onTap: _soon,
               ),
               _ToggleRow(
                 icon: Icons.dark_mode_outlined,
                 label: 'Dark mode',
-                value: true,
-                onChanged: (_) => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Drivly is dark by design.')),
-                ),
+                value: _darkMode,
+                onChanged: (v) {
+                  setState(() => _darkMode = v);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Drivly is dark by design.')),
+                  );
+                },
               ),
             ]),
             const SizedBox(height: Spacing.x5),
-            _section('SUPPORT', [
+            // § Privacy
+            _section('PRIVACY', [
+              _RowTile(
+                icon: Icons.security_outlined,
+                label: 'Privacy & security',
+                onTap: _soon,
+              ),
+              _RowTile(
+                icon: Icons.data_usage_outlined,
+                label: 'Data & permissions',
+                onTap: _soon,
+              ),
+            ]),
+            const SizedBox(height: Spacing.x5),
+            // § About
+            _section('ABOUT', [
               _RowTile(
                 icon: Icons.help_outline,
                 label: 'Help center',
@@ -191,10 +223,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: Spacing.x1, bottom: Spacing.x2),
-          child: Text(title,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: BrandColors.mutedFg,
-                  )),
+          child: Text(
+            title,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: BrandColors.mutedFg),
+          ),
         ),
         Container(
           decoration: BoxDecoration(
@@ -219,11 +254,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
+// ─── Row tile (chevron) ───────────────────────────────────────────────────────
+
 class _RowTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String? value;
   final VoidCallback onTap;
+
   const _RowTile({
     required this.icon,
     required this.label,
@@ -246,8 +284,8 @@ class _RowTile extends StatelessWidget {
             ),
             const SizedBox(width: Spacing.x3),
             Expanded(
-              child:
-                  Text(label, style: Theme.of(context).textTheme.titleMedium),
+              child: Text(label,
+                  style: Theme.of(context).textTheme.titleMedium),
             ),
             if (value != null) ...[
               Text(value!,
@@ -264,11 +302,14 @@ class _RowTile extends StatelessWidget {
   }
 }
 
+// ─── Toggle row ───────────────────────────────────────────────────────────────
+
 class _ToggleRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
+
   const _ToggleRow({
     required this.icon,
     required this.label,
@@ -289,7 +330,8 @@ class _ToggleRow extends StatelessWidget {
           ),
           const SizedBox(width: Spacing.x3),
           Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+            child: Text(label,
+                style: Theme.of(context).textTheme.titleMedium),
           ),
           Switch(value: value, onChanged: onChanged),
         ],
@@ -297,6 +339,8 @@ class _ToggleRow extends StatelessWidget {
     );
   }
 }
+
+// ─── Back button ──────────────────────────────────────────────────────────────
 
 class _BackButton extends StatelessWidget {
   @override
@@ -310,7 +354,8 @@ class _BackButton extends StatelessWidget {
         child: const SizedBox(
           width: 40,
           height: 40,
-          child: Icon(Icons.arrow_back, color: BrandColors.foreground, size: 20),
+          child:
+              Icon(Icons.arrow_back, color: BrandColors.foreground, size: 20),
         ),
       ),
     );

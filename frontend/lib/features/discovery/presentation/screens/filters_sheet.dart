@@ -6,7 +6,8 @@ import '../../domain/car_filters.dart';
 import '../../domain/providers/car_provider.dart';
 
 /// Shows the filter bottom sheet and returns the chosen [CarFilters], or null
-/// if dismissed.
+/// if dismissed.  Sheet top radius comes from [BottomSheetThemeData] (Radii.xxl
+/// = 28), matching spec §6.
 Future<CarFilters?> showFiltersSheet(
   BuildContext context,
   CarFilters current,
@@ -14,13 +15,14 @@ Future<CarFilters?> showFiltersSheet(
   return showModalBottomSheet<CarFilters>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: BrandColors.surface,
+    // Let the theme's shape (xxl top corners) apply.
     builder: (_) => _FiltersSheet(initial: current),
   );
 }
 
 class _FiltersSheet extends ConsumerStatefulWidget {
   final CarFilters initial;
+
   const _FiltersSheet({required this.initial});
 
   @override
@@ -30,10 +32,11 @@ class _FiltersSheet extends ConsumerStatefulWidget {
 class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   late RangeValues _price;
   String? _transmission;
-  String? _fuel; // "Vehicle type" maps to the fuel filter.
+  String? _fuel;
   int? _minSeats;
   String? _sort;
-  bool _instantBooking = false; // cosmetic; not part of CarFilters.
+  bool _instantBooking = false;
+  bool _delivery = false;
 
   static const _maxPrice = 500.0;
 
@@ -58,6 +61,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
       _minSeats = null;
       _sort = null;
       _instantBooking = false;
+      _delivery = false;
     });
   }
 
@@ -79,26 +83,32 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final count = ref.watch(carListProvider).valueOrNull?.length;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
+      initialChildSize: 0.88,
       minChildSize: 0.5,
-      maxChildSize: 0.95,
+      maxChildSize: 0.96,
       expand: false,
       builder: (_, controller) => Column(
         children: [
-          const SizedBox(height: Spacing.x3),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: BrandColors.borderStrong,
-              borderRadius: BorderRadius.circular(Radii.pill),
+          // ── Drag handle ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.only(
+                top: Spacing.x3, bottom: Spacing.x1),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: BrandColors.borderStrong,
+                borderRadius: BorderRadius.circular(Radii.pill),
+              ),
             ),
           ),
-          // Header: Filters + Reset.
+
+          // ── Title: headlineSmall + Reset TextButton ───────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                Spacing.x5, Spacing.x4, Spacing.x3, 0),
+                Spacing.x5, Spacing.x3, Spacing.x4, 0),
             child: Row(
               children: [
                 Text('Filters', style: text.headlineSmall),
@@ -110,93 +120,152 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
               ],
             ),
           ),
+
+          // ── Scrollable body ───────────────────────────────────────────────
           Expanded(
             child: ListView(
               controller: controller,
               padding: const EdgeInsets.fromLTRB(
-                  Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x5),
+                  Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x4),
               children: [
-                _label('Price range / day'),
+                // Price / day.
+                const _SectionLabel(label: 'Price / day'),
                 RangeSlider(
                   values: _price,
                   min: 0,
                   max: _maxPrice,
                   divisions: 50,
                   labels: RangeLabels(
-                    '\$${_price.start.round()}',
-                    '\$${_price.end.round()}',
+                    'AED ${_price.start.round()}',
+                    'AED ${_price.end.round()}',
                   ),
                   onChanged: (v) => setState(() => _price = v),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('\$${_price.start.round()}',
-                        style: const TextStyle(color: BrandColors.mutedFg)),
+                    Text('AED ${_price.start.round()}',
+                        style: text.bodySmall),
                     Text(
-                        _price.end >= _maxPrice
-                            ? '\$${_maxPrice.round()}+'
-                            : '\$${_price.end.round()}',
-                        style: const TextStyle(color: BrandColors.mutedFg)),
+                      _price.end >= _maxPrice
+                          ? 'AED ${_maxPrice.round()}+'
+                          : 'AED ${_price.end.round()}',
+                      style: text.bodySmall,
+                    ),
                   ],
                 ),
                 const SizedBox(height: Spacing.x5),
-                _label('Vehicle type'),
-                _pillGrid(
-                  const {
+
+                // Toggle rows.
+                const _SectionLabel(label: 'Options'),
+                _ToggleRow(
+                  icon: Icons.bolt,
+                  label: 'Instant book',
+                  value: _instantBooking,
+                  onChanged: (v) => setState(() => _instantBooking = v),
+                ),
+                const SizedBox(height: Spacing.x2),
+                _ToggleRow(
+                  icon: Icons.local_shipping_outlined,
+                  label: 'Delivery available',
+                  value: _delivery,
+                  onChanged: (v) => setState(() => _delivery = v),
+                ),
+                const SizedBox(height: Spacing.x5),
+
+                // Body type / fuel.
+                const _SectionLabel(label: 'Fuel type'),
+                _ChipGroup(
+                  options: const {
                     'electric': 'Electric',
                     'hybrid': 'Hybrid',
                     'petrol': 'Petrol',
                     'diesel': 'Diesel',
                   },
-                  _fuel,
-                  (v) => setState(() => _fuel = v),
+                  selected: _fuel,
+                  onSelect: (v) => setState(() => _fuel = v),
                 ),
                 const SizedBox(height: Spacing.x5),
-                _label('Transmission'),
-                _pillGrid(
-                  const {'automatic': 'Automatic', 'manual': 'Manual'},
-                  _transmission,
-                  (v) => setState(() => _transmission = v),
+
+                // Transmission.
+                const _SectionLabel(label: 'Transmission'),
+                _ChipGroup(
+                  options: const {
+                    'automatic': 'Automatic',
+                    'manual': 'Manual',
+                  },
+                  selected: _transmission,
+                  onSelect: (v) => setState(() => _transmission = v),
                 ),
                 const SizedBox(height: Spacing.x5),
-                _label('Minimum seats'),
-                _pillGrid(
-                  const {'2': '2', '4': '4', '5': '5', '7': '7+'},
-                  _minSeats?.toString(),
-                  (v) =>
-                      setState(() => _minSeats = v == null ? null : int.parse(v)),
+
+                // Seats.
+                const _SectionLabel(label: 'Seats'),
+                _ChipGroup(
+                  options: const {
+                    '2': '2',
+                    '4': '4',
+                    '5': '5',
+                    '7': '7+',
+                  },
+                  selected: _minSeats?.toString(),
+                  onSelect: (v) => setState(
+                      () => _minSeats = v == null ? null : int.parse(v)),
                 ),
                 const SizedBox(height: Spacing.x5),
-                _label('Sort by'),
-                _pillGrid(
-                  const {
+
+                // Sort by.
+                const _SectionLabel(label: 'Sort by'),
+                _ChipGroup(
+                  options: const {
                     'price_asc': 'Price ↑',
                     'price_desc': 'Price ↓',
                     'rating': 'Rating',
                   },
-                  _sort,
-                  (v) => setState(() => _sort = v),
-                ),
-                const SizedBox(height: Spacing.x5),
-                _label('Features'),
-                _FeatureToggle(
-                  icon: Icons.bolt,
-                  label: 'Instant booking',
-                  value: _instantBooking,
-                  onChanged: (v) => setState(() => _instantBooking = v),
+                  selected: _sort,
+                  onSelect: (v) => setState(() => _sort = v),
                 ),
               ],
             ),
           ),
-          // Bottom full-width "Show N cars" primary CTA.
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(Spacing.x4),
-              child: FilledButton(
-                onPressed: _apply,
-                child: Text(count == null ? 'Show cars' : 'Show $count cars'),
+
+          // ── Sticky bottom: Reset (text) + Show N cars (filled) ────────────
+          Container(
+            decoration: const BoxDecoration(
+              color: BrandColors.surface,
+              border: Border(
+                  top: BorderSide(color: BrandColors.border)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.x4, Spacing.x3, Spacing.x4, Spacing.x4),
+                child: Row(
+                  children: [
+                    OutlinedButton(
+                      onPressed: _reset,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize:
+                            const Size(0, Sizes.secondaryHeight),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.x5),
+                      ),
+                      child: const Text('Reset'),
+                    ),
+                    const SizedBox(width: Spacing.x3),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: _apply,
+                        child: Text(
+                          count == null
+                              ? 'Show cars'
+                              : 'Show $count cars',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -204,57 +273,34 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
       ),
     );
   }
+}
 
-  Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: Spacing.x3),
-        child: Text(text, style: Theme.of(context).textTheme.titleMedium),
-      );
+// ── Section label ────────────────────────────────────────────────────────────
 
-  /// A wrap of selectable stadium pills (active = lime + dark text).
-  Widget _pillGrid(
-    Map<String, String> options,
-    String? selected,
-    ValueChanged<String?> onSelect,
-  ) {
-    return Wrap(
-      spacing: Spacing.x2,
-      runSpacing: Spacing.x2,
-      children: options.entries.map((e) {
-        final isSel = selected == e.key;
-        return GestureDetector(
-          onTap: () => onSelect(isSel ? null : e.key),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.x4, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSel ? BrandColors.primary : BrandColors.surface2,
-              borderRadius: BorderRadius.circular(Radii.pill),
-              border: Border.all(
-                color: isSel ? BrandColors.primary : BrandColors.border,
-              ),
-            ),
-            child: Text(
-              e.value,
-              style: TextStyle(
-                color: isSel ? BrandColors.primaryFg : BrandColors.foreground,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+class _SectionLabel extends StatelessWidget {
+  final String label;
+
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.x3),
+      child: Text(label,
+          style: Theme.of(context).textTheme.titleMedium),
     );
   }
 }
 
-/// A feature row on a nested surface with a real [Switch] (theme-styled).
-class _FeatureToggle extends StatelessWidget {
+// ── Toggle row (Switch) ──────────────────────────────────────────────────────
+
+class _ToggleRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
-  const _FeatureToggle({
+
+  const _ToggleRow({
     required this.icon,
     required this.label,
     required this.value,
@@ -268,7 +314,7 @@ class _FeatureToggle extends StatelessWidget {
           horizontal: Spacing.x4, vertical: Spacing.x2),
       decoration: BoxDecoration(
         color: BrandColors.surface2,
-        borderRadius: BorderRadius.circular(Radii.xl),
+        borderRadius: BorderRadius.circular(Radii.lg),
         border: Border.all(color: BrandColors.border),
       ),
       child: Row(
@@ -277,11 +323,43 @@ class _FeatureToggle extends StatelessWidget {
           const SizedBox(width: Spacing.x3),
           Expanded(
             child: Text(label,
-                style: Theme.of(context).textTheme.titleMedium),
+                style: Theme.of(context).textTheme.bodyLarge),
           ),
           Switch(value: value, onChanged: onChanged),
         ],
       ),
+    );
+  }
+}
+
+// ── Theme FilterChip group ───────────────────────────────────────────────────
+
+/// Uses the theme's [ChipThemeData] — selected = primary, unselected = surface2.
+class _ChipGroup extends StatelessWidget {
+  final Map<String, String> options;
+  final String? selected;
+  final ValueChanged<String?> onSelect;
+
+  const _ChipGroup({
+    required this.options,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: Spacing.x2,
+      runSpacing: Spacing.x2,
+      children: options.entries.map((e) {
+        final isSel = selected == e.key;
+        return FilterChip(
+          label: Text(e.value),
+          selected: isSel,
+          onSelected: (_) => onSelect(isSel ? null : e.key),
+          showCheckmark: false,
+        );
+      }).toList(),
     );
   }
 }

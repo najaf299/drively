@@ -107,13 +107,18 @@ class _KycScreenState extends ConsumerState<KycScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const _StepHeader(label: 'Step 3 of 3'),
+                const SizedBox(height: Spacing.x4),
+                // Top warning banner — warningBg/warning (spec §7.6).
+                const _WarningBanner(
+                  message: 'Verification required to book a car',
+                ),
                 const SizedBox(height: Spacing.x6),
                 Text(
                   'Verify license',
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: Spacing.x6),
-                // Large camera capture frame with lime corner brackets.
+                // 3:2 capture frame with L-shaped corner brackets.
                 _CaptureFrame(
                   file: _front,
                   onTap: () => _pick((f) => _front = f),
@@ -155,11 +160,16 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                   onPressed: kyc.isApproved ? null : _submit,
                 ),
                 if (kyc.isApproved)
-                  const Padding(
-                    padding: EdgeInsets.only(top: Spacing.x4),
+                  Padding(
+                    padding: const EdgeInsets.only(top: Spacing.x4),
                     child: Center(
-                      child: Text('Your licence is verified',
-                          style: TextStyle(color: BrandColors.success)),
+                      child: Text(
+                        'Your licence is verified',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: BrandColors.success),
+                      ),
                     ),
                   ),
                 const SizedBox(height: Spacing.x4),
@@ -172,8 +182,51 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   }
 }
 
-/// A 16:10 capture area framed by four lime L-shaped corner brackets with a
-/// centred camera prompt, or a preview of the captured front-of-licence image.
+// ---------------------------------------------------------------------------
+// Top warning banner — warningBg fill, warning text/icon (spec §7.6).
+// ---------------------------------------------------------------------------
+
+class _WarningBanner extends StatelessWidget {
+  final String message;
+  const _WarningBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.x4, vertical: Spacing.x3),
+      decoration: BoxDecoration(
+        color: BrandColors.warningBg,
+        borderRadius: BorderRadius.circular(Radii.md),
+        border: Border.all(
+            color: BrandColors.warning.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded,
+              color: BrandColors.warning, size: Sizes.icon),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: BrandColors.warning),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Capture frame — 3:2 aspect, radius Radii.xl, L-shaped lime corner brackets,
+// caption in mutedFg, capture control = 72px primary circle + BrandShadows.glow.
+// ---------------------------------------------------------------------------
+
 class _CaptureFrame extends StatelessWidget {
   final XFile? file;
   final VoidCallback onTap;
@@ -185,7 +238,7 @@ class _CaptureFrame extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(Radii.xl),
       child: AspectRatio(
-        aspectRatio: 16 / 10,
+        aspectRatio: 3 / 2,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -200,6 +253,7 @@ class _CaptureFrame extends StatelessWidget {
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // 72px primary circle capture control with glow.
                         Container(
                           width: 72,
                           height: 72,
@@ -208,21 +262,26 @@ class _CaptureFrame extends StatelessWidget {
                             shape: BoxShape.circle,
                             boxShadow: BrandShadows.glow,
                           ),
-                          child: const Icon(Icons.photo_camera_outlined,
-                              color: BrandColors.primaryFg, size: 32),
+                          child: const Icon(
+                            Icons.photo_camera_outlined,
+                            color: BrandColors.primaryFg,
+                            size: 32,
+                          ),
                         ),
                         const SizedBox(height: Spacing.x3),
+                        // Caption in mutedFg (spec §7.6).
                         Text(
-                          'Position license in frame',
+                          'Position front of license inside the frame',
                           style: Theme.of(context)
                               .textTheme
-                              .bodyMedium
+                              .bodySmall
                               ?.copyWith(color: BrandColors.mutedFg),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
             ),
-            // Lime corner brackets drawn on top.
+            // Lime L-shaped corner brackets drawn on top.
             const Positioned.fill(
               child: IgnorePointer(
                 child: CustomPaint(painter: _CornerBracketsPainter()),
@@ -346,7 +405,10 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-/// Full-width lime CTA (theme-driven) with an inline busy spinner.
+// ---------------------------------------------------------------------------
+// Primary CTA with glow — full pill (theme-driven), spec §shared rules.
+// ---------------------------------------------------------------------------
+
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final bool busy;
@@ -359,8 +421,12 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(Radii.pill),
+        boxShadow: BrandShadows.glow,
+      ),
       child: FilledButton(
         onPressed: busy ? null : onPressed,
         child: busy
@@ -378,7 +444,10 @@ class _PrimaryButton extends StatelessWidget {
   }
 }
 
-/// Circular chevron back button followed by a step-progress label.
+// ---------------------------------------------------------------------------
+// Step header — circular chevron back + step label.
+// ---------------------------------------------------------------------------
+
 class _StepHeader extends StatelessWidget {
   final String label;
   const _StepHeader({required this.label});
@@ -415,7 +484,10 @@ class _StepHeader extends StatelessWidget {
   }
 }
 
-/// Paints four lime L-shaped corner brackets inset from the frame edges.
+// ---------------------------------------------------------------------------
+// Paints four lime L-shaped corner brackets inset from the frame edges.
+// ---------------------------------------------------------------------------
+
 class _CornerBracketsPainter extends CustomPainter {
   const _CornerBracketsPainter();
 

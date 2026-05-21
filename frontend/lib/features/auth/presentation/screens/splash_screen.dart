@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../app/theme.dart';
 
@@ -16,29 +17,24 @@ class SplashScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: Sizes.avatarLg + 24,
-                height: Sizes.avatarLg + 24,
-                decoration: const BoxDecoration(
-                  color: BrandColors.primary,
-                  shape: BoxShape.circle,
-                  boxShadow: BrandShadows.glow,
-                ),
-                child: const Icon(Icons.directions_car_rounded,
-                    size: 48, color: BrandColors.primaryFg),
-              ),
-              const SizedBox(height: Spacing.x5),
+              // Wordmark — Space Grotesk w700 64px in lime (spec §7.1).
+              // GoogleFonts.spaceGrotesk is used directly because the ramp tops
+              // out at 32px (displayLarge); 64px is only allowed for this one
+              // wordmark per the shared theme rules.
               Text(
                 'drivly',
-                style: Theme.of(context)
-                    .textTheme
-                    .displayLarge
-                    ?.copyWith(color: BrandColors.primary),
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 64,
+                  fontWeight: FontWeight.w700,
+                  color: BrandColors.primary,
+                  letterSpacing: -1.0,
+                ),
               ),
               const SizedBox(height: Spacing.x8),
+              // Thin progress indicator anchored below the wordmark.
               const SizedBox(
-                width: Sizes.icon,
-                height: Sizes.icon,
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: BrandColors.primary,

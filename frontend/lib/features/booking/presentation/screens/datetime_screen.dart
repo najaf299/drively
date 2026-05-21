@@ -8,7 +8,12 @@ import '../../../../core/models/car.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../domain/booking_draft.dart';
 
-/// Pick the pickup/return date range and times for a booking.
+/// Date & time picker — spec §6 date & time, §7.13.
+///
+/// Date range picker: selected day = primary circle, in-range = primary @~20%.
+/// Pickup/return time chips pill row.
+/// Helper 'Minimum 4 hours · Maximum 30 days'.
+/// Confirm = PrimaryButton (FilledButton via theme).
 class DateTimeScreen extends StatefulWidget {
   final Car car;
   const DateTimeScreen({super.key, required this.car});
@@ -49,7 +54,6 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
     if (!_valid) return;
     var pickupAt = _combine(_rangeStart!, _pickupTime);
     final returnAt = _combine(_rangeEnd!, _returnTime);
-    // Backend requires pickup_at strictly in the future.
     if (!pickupAt.isAfter(DateTime.now())) {
       pickupAt = DateTime.now().add(const Duration(hours: 1));
     }
@@ -79,27 +83,46 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
                   padding: const EdgeInsets.fromLTRB(
                       Spacing.x5, Spacing.x2, Spacing.x5, Spacing.x6),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _calendarCard(today),
+                      // Calendar card
+                      _calendarCard(context, today),
                       const SizedBox(height: Spacing.x4),
+
+                      // Time pickers row
                       Row(
                         children: [
                           Expanded(
-                            child: _timeTile('Pickup time', _pickupTime,
+                            child: _timeTile(
+                                context, 'Pickup time', _pickupTime,
                                 () => _pickTime(true)),
                           ),
                           const SizedBox(width: Spacing.x3),
                           Expanded(
-                            child: _timeTile('Return time', _returnTime,
+                            child: _timeTile(
+                                context, 'Return time', _returnTime,
                                 () => _pickTime(false)),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: Spacing.x4),
+
+                      // Helper text — spec §6.
+                      Center(
+                        child: Text(
+                          'Minimum 4 hours  ·  Maximum 30 days',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: BrandColors.mutedFg),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-              _summaryBar(),
+              _summaryBar(context),
             ],
           ),
         ),
@@ -122,7 +145,7 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
     );
   }
 
-  Widget _calendarCard(DateTime today) {
+  Widget _calendarCard(BuildContext context, DateTime today) {
     return Container(
       padding: const EdgeInsets.all(Spacing.x3),
       decoration: BoxDecoration(
@@ -140,34 +163,30 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
         startingDayOfWeek: StartingDayOfWeek.monday,
         availableGestures: AvailableGestures.horizontalSwipe,
         rowHeight: 46,
-        headerStyle: const HeaderStyle(
+        headerStyle: HeaderStyle(
           formatButtonVisible: false,
           titleCentered: true,
-          leftChevronIcon:
-              Icon(Icons.chevron_left_rounded, color: BrandColors.foreground),
-          rightChevronIcon:
-              Icon(Icons.chevron_right_rounded, color: BrandColors.foreground),
-          titleTextStyle: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: BrandColors.foreground,
-            letterSpacing: -0.2,
-          ),
+          leftChevronIcon: const Icon(Icons.chevron_left_rounded,
+              color: BrandColors.foreground),
+          rightChevronIcon: const Icon(Icons.chevron_right_rounded,
+              color: BrandColors.foreground),
+          titleTextStyle: Theme.of(context).textTheme.titleLarge!,
         ),
-        daysOfWeekStyle: const DaysOfWeekStyle(
-          weekdayStyle: TextStyle(
-            color: BrandColors.mutedFg,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-          weekendStyle: TextStyle(
-            color: BrandColors.mutedFg,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
+        daysOfWeekStyle: DaysOfWeekStyle(
+          weekdayStyle: Theme.of(context)
+              .textTheme
+              .labelMedium!
+              .copyWith(color: BrandColors.mutedFg),
+          weekendStyle: Theme.of(context)
+              .textTheme
+              .labelMedium!
+              .copyWith(color: BrandColors.mutedFg),
         ),
         calendarStyle: CalendarStyle(
-          rangeHighlightColor: BrandColors.primary.withValues(alpha: 0.20),
+          // In-range: primary @ ~20%
+          rangeHighlightColor:
+              BrandColors.primary.withValues(alpha: 0.20),
+          // Selected start/end: primary circle.
           rangeStartDecoration: const BoxDecoration(
             color: BrandColors.primary,
             shape: BoxShape.circle,
@@ -184,6 +203,7 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
             color: BrandColors.primaryFg,
             fontWeight: FontWeight.w700,
           ),
+          // Today ring
           todayDecoration: BoxDecoration(
             color: Colors.transparent,
             shape: BoxShape.circle,
@@ -195,9 +215,12 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
           ),
           withinRangeTextStyle:
               const TextStyle(color: BrandColors.foreground),
-          defaultTextStyle: const TextStyle(color: BrandColors.foreground),
-          weekendTextStyle: const TextStyle(color: BrandColors.foreground),
-          outsideTextStyle: const TextStyle(color: BrandColors.mutedFg),
+          defaultTextStyle:
+              const TextStyle(color: BrandColors.foreground),
+          weekendTextStyle:
+              const TextStyle(color: BrandColors.foreground),
+          outsideTextStyle:
+              const TextStyle(color: BrandColors.mutedFg),
           disabledTextStyle: TextStyle(
             color: BrandColors.mutedFg.withValues(alpha: 0.4),
           ),
@@ -213,8 +236,9 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
     );
   }
 
-  Widget _timeTile(String label, TimeOfDay time, VoidCallback onTap) {
-    final t = Theme.of(context).textTheme;
+  /// Pill time tile — spec §7.13 pickup/return time chips.
+  Widget _timeTile(
+      BuildContext context, String label, TimeOfDay time, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(Radii.pill),
@@ -230,15 +254,17 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.access_time_rounded,
-                size: 18, color: BrandColors.primary),
+                size: Sizes.iconSm, color: BrandColors.primary),
             const SizedBox(width: Spacing.x3),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: t.bodySmall),
+                  Text(label,
+                      style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 2),
-                  Text(time.format(context), style: t.titleSmall),
+                  Text(time.format(context),
+                      style: Theme.of(context).textTheme.titleSmall),
                 ],
               ),
             ),
@@ -248,7 +274,7 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
     );
   }
 
-  Widget _summaryBar() {
+  Widget _summaryBar(BuildContext context) {
     final subtotal = widget.car.dailyPrice * _days;
     return Container(
       padding: const EdgeInsets.fromLTRB(
@@ -284,13 +310,11 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
                 ],
               ),
             ),
-          _PillButtonTheme(
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _valid ? _confirm : null,
-                child: Text(_valid ? 'Confirm dates' : 'Select your dates'),
-              ),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _valid ? _confirm : null,
+              child: Text(_valid ? 'Confirm dates' : 'Select your dates'),
             ),
           ),
         ],
@@ -299,30 +323,7 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
   }
 }
 
-/// Wraps a [FilledButton]/[LoadingButton] so it renders as a ~56-tall lime pill.
-class _PillButtonTheme extends StatelessWidget {
-  final Widget child;
-  const _PillButtonTheme({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButtonTheme(
-      data: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: BrandColors.primary,
-          foregroundColor: BrandColors.primaryFg,
-          disabledBackgroundColor: BrandColors.primary.withValues(alpha: 0.4),
-          minimumSize: const Size.fromHeight(56),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-          shape: const StadiumBorder(),
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// Circular 40px back button on a surface tile.
+/// Circular 40 px back button — surface bg, border.
 class _CircleBackButton extends StatelessWidget {
   final VoidCallback onTap;
   const _CircleBackButton({required this.onTap});

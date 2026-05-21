@@ -11,6 +11,14 @@ import '../../../../shared/widgets/state_views.dart';
 import '../../data/notification_service.dart';
 import '../../domain/providers/notification_provider.dart';
 
+/// Notifications screen — spec §3.2 / §7.20.
+///
+/// Filter tabs: All · Unread · Trips · Payments · Promos.
+/// Each row 88h — 44 round icon with tonal bg by channel:
+///   bookings = primary, payments = success, promo = accent (purple),
+///   system = info, message = info.
+/// Unread rows: 8px primary dot + surface2 bg. Read rows: surface bg.
+/// Empty state: primary bell icon + headlineSmall "You're all caught up".
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -22,23 +30,31 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   String _filter = 'all';
 
-  static (IconData, Color) _style(String category) {
+  // Spec §3.2 channel → (icon, color):
+  // bookings=primary, payments=success, promo=accent(purple),
+  // system=info, message=info
+  static (IconData, Color) _channelStyle(String category) {
     return switch (category) {
-      'booking' => (Icons.event_available, BrandColors.primary),
-      'payment' => (Icons.account_balance_wallet, BrandColors.success),
+      'booking' => (Icons.event_available_outlined, BrandColors.primary),
+      'payment' => (Icons.account_balance_wallet_outlined, BrandColors.success),
+      'promo' => (Icons.local_offer_outlined, BrandColors.accent),
+      'system' => (Icons.info_outline, BrandColors.info),
+      'message' => (Icons.chat_bubble_outline, BrandColors.info),
       'alert' => (Icons.warning_amber_rounded, BrandColors.warning),
-      'promo' => (Icons.local_offer, BrandColors.accent),
-      'message' => (Icons.chat_bubble_outline, BrandColors.accent),
       _ => (Icons.notifications_none, BrandColors.mutedFg),
     };
   }
 
   bool _matches(AppNotification n) {
     switch (_filter) {
+      case 'unread':
+        return !n.isRead;
       case 'trips':
         return n.category == 'booking' || n.category == 'alert';
-      case 'messages':
-        return n.category == 'message';
+      case 'payments':
+        return n.category == 'payment';
+      case 'promos':
+        return n.category == 'promo';
       default:
         return true;
     }
@@ -74,6 +90,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
             ),
             const SizedBox(height: Spacing.x3),
+            // Filter tabs: All · Unread · Trips · Payments · Promos
             _filterPills(notifs.valueOrNull ?? const []),
             const SizedBox(height: Spacing.x3),
             Expanded(
@@ -93,8 +110,23 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           Spacing.x5, 0, Spacing.x5, Spacing.x6),
                       itemCount: list.length,
                       separatorBuilder: (_, __) =>
-                          const SizedBox(height: Spacing.x3),
-                      itemBuilder: (_, i) => _tile(list[i]),
+                          const SizedBox(height: Spacing.x2),
+                      itemBuilder: (_, i) => _NotifTile(
+                        n: list[i],
+                        onTap: () async {
+                          final router = GoRouter.of(context);
+                          if (!list[i].isRead) {
+                            await ref
+                                .read(notificationServiceProvider)
+                                .markRead(list[i].id);
+                            ref.invalidate(notificationsProvider);
+                          }
+                          final link = list[i].deepLink;
+                          if (link != null && mounted) {
+                            unawaited(router.push(link));
+                          }
+                        },
+                      ),
                     ),
                   );
                 },
@@ -107,10 +139,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Widget _filterPills(List<AppNotification> all) {
+    final unreadCount = all.where((n) => !n.isRead).length;
     final pills = <(String, String)>[
       ('all', 'All · ${all.length}'),
+      ('unread', 'Unread${unreadCount > 0 ? ' · $unreadCount' : ''}'),
       ('trips', 'Trips'),
-      ('messages', 'Messages'),
+      ('payments', 'Payments'),
+      ('promos', 'Promos'),
     ];
     return SizedBox(
       height: 36,
@@ -124,15 +159,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           final selected = key == _filter;
           return GestureDetector(
             onTap: () => setState(() => _filter = key),
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(
                   horizontal: Spacing.x4, vertical: Spacing.x2),
               decoration: BoxDecoration(
                 color: selected ? BrandColors.primary : BrandColors.surface,
                 borderRadius: BorderRadius.circular(Radii.pill),
                 border: Border.all(
-                    color:
-                        selected ? BrandColors.primary : BrandColors.border),
+                    color: selected
+                        ? BrandColors.primary
+                        : BrandColors.border),
               ),
               child: Text(
                 label,
@@ -148,59 +185,77 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       ),
     );
   }
+}
 
-  Widget _tile(AppNotification n) {
-    final (icon, color) = _style(n.category);
+// ─── Notification row (88h) ───────────────────────────────────────────────────
+
+class _NotifTile extends StatelessWidget {
+  final AppNotification n;
+  final VoidCallback onTap;
+  const _NotifTile({required this.n, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color) =
+        _NotificationsScreenState._channelStyle(n.category);
+    // Unread rows: surface2 bg + primary dot. Read: surface bg.
+    final rowBg = n.isRead ? BrandColors.surface : BrandColors.surface2;
+
     return Material(
-      color: BrandColors.surface,
+      color: rowBg,
       borderRadius: BorderRadius.circular(Radii.xl),
       child: InkWell(
         borderRadius: BorderRadius.circular(Radii.xl),
-        onTap: () async {
-          final router = GoRouter.of(context);
-          if (!n.isRead) {
-            await ref.read(notificationServiceProvider).markRead(n.id);
-            ref.invalidate(notificationsProvider);
-          }
-          final link = n.deepLink;
-          if (link != null && mounted) {
-            unawaited(router.push(link));
-          }
-        },
+        onTap: onTap,
         child: Container(
+          // 88h per spec
+          constraints: const BoxConstraints(minHeight: 88),
           padding: const EdgeInsets.all(Spacing.x3),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(Radii.xl),
             border: Border.all(color: BrandColors.border),
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // 44 round icon with tonal bg
               Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: Sizes.icon),
               ),
               const SizedBox(width: Spacing.x3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(n.title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    // title 14 w600 (1 line)
+                    Text(
+                      n.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
                     if (n.body.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text(n.body,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall),
+                      // body 13 muted (2 lines)
+                      Text(
+                        n.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontSize: 13,
+                                  color: BrandColors.mutedFg,
+                                ),
+                      ),
                     ],
                   ],
                 ),
@@ -208,11 +263,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               const SizedBox(width: Spacing.x2),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (n.createdAt != null)
                     Text(Formatters.timeAgo(n.createdAt!),
-                        style: Theme.of(context).textTheme.bodySmall),
+                        style: Theme.of(context).textTheme.labelSmall),
                   const SizedBox(height: Spacing.x2),
+                  // Unread: 8px primary dot
                   if (!n.isRead)
                     Container(
                       width: 8,
@@ -232,7 +289,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 }
 
-/// "All caught up" empty state: a lime bell chip and a [headlineSmall] title.
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+/// "You're all caught up": primary bell icon + headlineSmall.
 class _EmptyNotifications extends StatelessWidget {
   const _EmptyNotifications();
 
@@ -255,12 +314,12 @@ class _EmptyNotifications extends StatelessWidget {
                   size: 44, color: BrandColors.primary),
             ),
             const SizedBox(height: Spacing.x5),
-            Text('All caught up',
+            Text("You're all caught up",
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: Spacing.x2),
             Text(
-              'We\'ll let you know about bookings, trips and more.',
+              "We'll let you know about bookings, trips and more.",
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: BrandColors.mutedFg,

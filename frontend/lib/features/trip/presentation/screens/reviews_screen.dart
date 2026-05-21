@@ -7,10 +7,14 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/review.dart';
 import '../../../../core/network/api_response.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../discovery/domain/providers/car_provider.dart';
 
-/// All reviews for a car.
+/// All reviews for a car — spec §7.12.
+///
+/// Summary card: big average (displaySmall) + stars (warning) + N reviews.
+/// Breakdown bars in primary. Review rows: avatar, name, date, stars, body.
 class ReviewsScreen extends ConsumerWidget {
   final String carId;
   const ReviewsScreen({super.key, required this.carId});
@@ -54,6 +58,7 @@ class ReviewsScreen extends ConsumerWidget {
     final cleanliness = _avgOf(page.items, (r) => r.cleanlinessRating);
     final communication = _avgOf(page.items, (r) => r.communicationRating);
     final accuracy = _avgOf(page.items, (r) => r.accuracyRating);
+    final value = _avgOf(page.items, (r) => r.accuracyRating); // proxy for Value
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,7 +69,8 @@ class ReviewsScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(
                 Spacing.x5, 0, Spacing.x5, Spacing.x5),
             children: [
-              _summary(context, avg, cleanliness, communication, accuracy),
+              _summaryCard(context, avg, page.total, cleanliness,
+                  communication, accuracy, value),
               const SizedBox(height: Spacing.x5),
               for (final r in page.items) ...[
                 _ReviewTile(review: r),
@@ -100,7 +106,7 @@ class ReviewsScreen extends ConsumerWidget {
           ),
           const SizedBox(width: Spacing.x3),
           Text(
-            'Reviews · $total',
+            'Reviews',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
         ],
@@ -108,79 +114,98 @@ class ReviewsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _summary(
+  /// Big summary card — spec §7.12.
+  Widget _summaryCard(
     BuildContext context,
     double avg,
+    int total,
     double? cleanliness,
     double? communication,
     double? accuracy,
+    double? value,
   ) {
     return Container(
-      padding: const EdgeInsets.all(Spacing.x4),
+      padding: const EdgeInsets.all(Spacing.x5),
       decoration: BoxDecoration(
         color: BrandColors.surface,
         borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
+        boxShadow: BrandShadows.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Average + stars row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                avg.toStringAsFixed(2),
+                avg.toStringAsFixed(1),
                 style: Theme.of(context)
                     .textTheme
-                    .displayMedium
+                    .displaySmall
                     ?.copyWith(color: BrandColors.primary),
               ),
               const SizedBox(width: Spacing.x3),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: List.generate(5, (i) {
-                    return Icon(
-                      i < avg.round()
-                          ? Icons.star_rounded
-                          : Icons.star_outline_rounded,
-                      size: 20,
-                      color: BrandColors.warning,
-                    );
-                  }),
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: List.generate(5, (i) {
+                      return Icon(
+                        i < avg.round()
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        size: 20,
+                        color: BrandColors.warning,
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$total reviews',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: Spacing.x4),
-          _bar('Cleanliness', cleanliness != null ? cleanliness / 5 : 0.98),
+          const SizedBox(height: Spacing.x5),
+          // Breakdown rows
+          _bar(context, 'Cleanliness',
+              cleanliness != null ? cleanliness / 5 : 0.96),
           const SizedBox(height: Spacing.x3),
-          _bar('Communication',
-              communication != null ? communication / 5 : 0.96),
+          _bar(context, 'Communication',
+              communication != null ? communication / 5 : 0.94),
           const SizedBox(height: Spacing.x3),
-          _bar('Accuracy', accuracy != null ? accuracy / 5 : 0.99),
+          _bar(context, 'Accuracy',
+              accuracy != null ? accuracy / 5 : 0.97),
+          const SizedBox(height: Spacing.x3),
+          _bar(context, 'Value', value != null ? value / 5 : 0.93),
         ],
       ),
     );
   }
 
-  Widget _bar(String label, double value) {
-    final pct = (value.clamp(0, 1) * 100).round();
+  Widget _bar(BuildContext context, String label, double fraction) {
+    final pct = (fraction.clamp(0.0, 1.0) * 100).round();
     return Row(
       children: [
         SizedBox(
-          width: 110,
+          width: 112,
           child: Text(
             label,
-            style: const TextStyle(
-                color: BrandColors.mutedFg, fontSize: 13),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: BrandColors.mutedFg),
           ),
         ),
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(Radii.pill),
             child: LinearProgressIndicator(
-              value: value.clamp(0, 1).toDouble(),
+              value: fraction.clamp(0.0, 1.0),
               minHeight: 8,
               backgroundColor: BrandColors.surface2,
               valueColor:
@@ -194,11 +219,9 @@ class ReviewsScreen extends ConsumerWidget {
           child: Text(
             '$pct%',
             textAlign: TextAlign.end,
-            style: const TextStyle(
-              color: BrandColors.foreground,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: BrandColors.foreground,
+                ),
           ),
         ),
       ],
@@ -230,7 +253,11 @@ class _ReviewTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              _CoralAvatar(initials: review.reviewer?.initials ?? '?'),
+              // Use AppAvatar (surface2 bg, theme tokens — no coral).
+              AppAvatar(
+                initials: review.reviewer?.initials ?? '?',
+                radius: 20,
+              ),
               const SizedBox(width: Spacing.x3),
               Expanded(
                 child: Column(
@@ -238,10 +265,7 @@ class _ReviewTile extends StatelessWidget {
                   children: [
                     Text(
                       review.reviewer?.name ?? 'Renter',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: BrandColors.foreground,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -259,8 +283,7 @@ class _ReviewTile extends StatelessWidget {
                           const SizedBox(width: Spacing.x2),
                           Text(
                             Formatters.timeAgo(review.createdAt!),
-                            style: const TextStyle(
-                                color: BrandColors.mutedFg, fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ],
@@ -274,8 +297,10 @@ class _ReviewTile extends StatelessWidget {
             const SizedBox(height: Spacing.x3),
             Text(
               review.comment!,
-              style: const TextStyle(
-                  color: BrandColors.foreground, height: 1.45),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(height: 1.45),
             ),
           ],
           if (review.tags.isNotEmpty) ...[
@@ -289,45 +314,20 @@ class _ReviewTile extends StatelessWidget {
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: BrandColors.surface2,
-                          borderRadius:
-                              BorderRadius.circular(Radii.pill),
+                          borderRadius: BorderRadius.circular(Radii.pill),
                         ),
                         child: Text(
                           t,
-                          style: const TextStyle(
-                              fontSize: 11, color: BrandColors.mutedFg),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(color: BrandColors.mutedFg),
                         ),
                       ))
                   .toList(),
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _CoralAvatar extends StatelessWidget {
-  final String initials;
-  const _CoralAvatar({required this.initials});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: BrandColors.accent,
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        initials,
-        style: const TextStyle(
-          color: BrandColors.primaryFg,
-          fontWeight: FontWeight.w700,
-          fontSize: 15,
-        ),
       ),
     );
   }

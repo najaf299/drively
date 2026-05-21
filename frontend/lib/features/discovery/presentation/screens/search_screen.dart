@@ -11,6 +11,8 @@ import '../../domain/car_filters.dart';
 import '../../domain/providers/car_provider.dart';
 import 'filters_sheet.dart';
 
+/// Active-search screen — spec §7.8.
+/// List ↔ Map toggle top-right; 2-col CarCard grid in list mode.
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -22,6 +24,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _scroll = ScrollController();
   final _query = TextEditingController();
   Timer? _debounce;
+  bool _mapMode = false; // List ↔ Map toggle.
 
   @override
   void initState() {
@@ -71,7 +74,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── Top row: back + rounded search field + filter ──────────────
+            // ── Top row: back + search pill + List/Map toggle + filter ─────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   Spacing.x4, Spacing.x3, Spacing.x4, Spacing.x3),
@@ -84,9 +87,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   const SizedBox(width: Spacing.x3),
                   Expanded(
                     child: Container(
-                      height: Sizes.secondaryHeight,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: Spacing.x4),
+                      height: Sizes.searchBar,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.x4),
                       decoration: BoxDecoration(
                         color: BrandColors.surface2,
                         borderRadius: BorderRadius.circular(Radii.pill),
@@ -95,7 +98,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: Row(
                         children: [
                           const Icon(Icons.search,
-                              color: BrandColors.mutedFg, size: 20),
+                              color: BrandColors.mutedFg,
+                              size: Sizes.iconSm),
                           const SizedBox(width: Spacing.x2),
                           Expanded(
                             child: TextField(
@@ -104,8 +108,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               textInputAction: TextInputAction.search,
                               onChanged: _onQueryChanged,
                               style: text.bodyLarge,
-                              decoration: const InputDecoration(
-                                hintText: 'Search cars, cities…',
+                              decoration: InputDecoration(
+                                hintText: 'Search cars, models, cities…',
+                                hintStyle: text.bodyLarge?.copyWith(
+                                    color: BrandColors.subtleFg),
                                 isCollapsed: true,
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -122,17 +128,62 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 _onQueryChanged('');
                               },
                               child: const Icon(Icons.close,
-                                  color: BrandColors.mutedFg, size: 20),
+                                  color: BrandColors.mutedFg,
+                                  size: Sizes.iconSm),
                             ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: Spacing.x3),
-                  _CircleButton(icon: Icons.tune, onTap: _openFilters),
+                  const SizedBox(width: Spacing.x2),
+                  // List ↔ Map toggle.
+                  _CircleButton(
+                    icon: _mapMode
+                        ? Icons.view_list_outlined
+                        : Icons.map_outlined,
+                    onTap: () {
+                      if (_mapMode) {
+                        setState(() => _mapMode = false);
+                      } else {
+                        context.push('/map');
+                      }
+                    },
+                  ),
+                  const SizedBox(width: Spacing.x2),
+                  // Filter icon with badge.
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _CircleButton(
+                          icon: Icons.tune, onTap: _openFilters),
+                      if (filters.activeCount > 0)
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: BrandColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '${filters.activeCount}',
+                              style: text.labelSmall?.copyWith(
+                                color: BrandColors.primaryFg,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
+
+            // ── Active filter summary row ───────────────────────────────────
             if (filters.activeCount > 0)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -142,12 +193,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     Text(
                       '${filters.activeCount} filter'
                       '${filters.activeCount == 1 ? '' : 's'} applied',
-                      style: const TextStyle(color: BrandColors.mutedFg),
+                      style:
+                          text.bodySmall?.copyWith(color: BrandColors.mutedFg),
                     ),
                     const Spacer(),
                     TextButton(
                       onPressed: () {
-                        // Reset everything except the free-text query.
                         final next = CarFilters(query: filters.query);
                         ref.read(carFiltersProvider.notifier).state = next;
                         ref.read(carListProvider.notifier).load(next);
@@ -157,6 +208,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ],
                 ),
               ),
+
+            // ── Results ────────────────────────────────────────────────────
             Expanded(
               child: cars.when(
                 loading: () => const LoadingView(),
@@ -173,18 +226,42 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           : Icons.search_off,
                       title: _query.text.isEmpty
                           ? 'Find your next drive'
-                          : 'No cars match',
+                          : 'No cars match these filters',
                       subtitle: _query.text.isEmpty
                           ? 'Search by car, make or city to get started.'
                           : 'Try a different search or clear your filters.',
+                      actionLabel: filters.activeCount > 0
+                          ? 'Reset filters'
+                          : null,
+                      onAction: filters.activeCount > 0
+                          ? () {
+                              final next = CarFilters(query: filters.query);
+                              ref
+                                  .read(carFiltersProvider.notifier)
+                                  .state = next;
+                              ref
+                                  .read(carListProvider.notifier)
+                                  .load(next);
+                            }
+                          : null,
                     );
                   }
-                  return ListView.separated(
+                  // 2-col grid.
+                  return GridView.builder(
                     controller: _scroll,
-                    padding: const EdgeInsets.all(Spacing.x5),
+                    padding: const EdgeInsets.fromLTRB(
+                        Spacing.x4,
+                        Spacing.x2,
+                        Spacing.x4,
+                        Spacing.x8),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: Spacing.x3,
+                      crossAxisSpacing: Spacing.x3,
+                      childAspectRatio: 0.72,
+                    ),
                     itemCount: list.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: Spacing.x4),
                     itemBuilder: (_, i) => CarCard(
                       car: list[i],
                       onTap: () => context.push('/car/${list[i].id}'),
@@ -196,35 +273,31 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/map'),
-        backgroundColor: BrandColors.primary,
-        foregroundColor: BrandColors.primaryFg,
-        icon: const Icon(Icons.map_outlined),
-        label: const Text('Map view'),
-      ),
     );
   }
 }
 
-/// 44px circular icon button on a surface tile.
+/// 44 dp circular icon button — surface fill with border.
 class _CircleButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
+
   const _CircleButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BrandColors.surface,
-      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      color: BrandColors.surface2,
+      shape: const CircleBorder(
+          side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(icon, color: BrandColors.foreground, size: 20),
+          width: Sizes.iconRoundButton,
+          height: Sizes.iconRoundButton,
+          child: Icon(icon,
+              color: BrandColors.foreground, size: Sizes.iconSm),
         ),
       ),
     );

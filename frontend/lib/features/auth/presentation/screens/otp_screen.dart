@@ -121,7 +121,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               const SizedBox(height: Spacing.x2),
               Text(
                 _phone.text.isEmpty
-                    ? 'We\'ll text you a 6-digit verification code.'
+                    ? "We'll text you a 6-digit verification code."
                     : 'We sent a 6-digit code to ${_phone.text}',
                 style: textTheme.bodyLarge
                     ?.copyWith(color: BrandColors.mutedFg),
@@ -144,8 +144,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   onPressed: _send,
                 ),
               ] else ...[
-                // Six digit boxes backed by a single hidden field so the
-                // existing verify logic is unchanged.
+                // Six digit boxes backed by a single hidden field.
                 _OtpBoxes(
                   controller: _code,
                   focusNode: _codeFocus,
@@ -153,34 +152,23 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   onChanged: () => setState(() {}),
                 ),
                 const SizedBox(height: Spacing.x6),
+                // Resend row: countdown or active link.
                 Center(
                   child: _resendIn > 0
                       ? Text(
-                          'Didn\'t receive code? Resend in '
+                          'Resend in '
                           '0:${_resendIn.toString().padLeft(2, '0')}',
                           style: textTheme.bodyMedium
                               ?.copyWith(color: BrandColors.mutedFg),
                         )
-                      : Text.rich(
-                          TextSpan(
-                            text: 'Didn\'t receive code?  ',
-                            style: textTheme.bodyMedium
-                                ?.copyWith(color: BrandColors.mutedFg),
-                            children: [
-                              WidgetSpan(
-                                alignment: PlaceholderAlignment.middle,
-                                child: GestureDetector(
-                                  onTap: _send,
-                                  child: const Text(
-                                    'Resend',
-                                    style: TextStyle(
-                                      color: BrandColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                      : GestureDetector(
+                          onTap: _send,
+                          child: Text(
+                            'Resend code',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: BrandColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                 ),
@@ -195,12 +183,15 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               Center(
                 child: GestureDetector(
                   onTap: () => context.go('/login'),
-                  child: const Text(
+                  child: Text(
                     'Use email instead',
-                    style: TextStyle(
-                      color: BrandColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(
+                          color: BrandColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ),
@@ -212,7 +203,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 }
 
-/// A row of six rounded digit slots backed by a single hidden [TextField].
+// ---------------------------------------------------------------------------
+// OTP boxes — 6 cells 48×56, surface2 fill, radius Radii.md.
+// Active/focused: border 1.6 primary + BrandShadows.glow.
+// Digits rendered with BrandText.mono(size: 22).
+// ---------------------------------------------------------------------------
+
 class _OtpBoxes extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -237,24 +233,24 @@ class _OtpBoxes extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(6, (i) {
               final filled = i < digits.length;
-              final active = i == digits.length;
+              // Active = the next empty slot (cursor position).
+              final active = i == digits.length && i < 6;
               return Container(
-                width: 56,
+                width: 48,
                 height: 56,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: BrandColors.surface2,
                   borderRadius: BorderRadius.circular(Radii.md),
                   border: Border.all(
-                    color: (active || filled)
-                        ? BrandColors.primary
-                        : BrandColors.border,
-                    width: (active || filled) ? 1.6 : 1,
+                    color: active ? BrandColors.primary : BrandColors.border,
+                    width: active ? 1.6 : 1.0,
                   ),
+                  boxShadow: active ? BrandShadows.glow : null,
                 ),
                 child: Text(
                   filled ? digits[i] : '',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  style: BrandText.mono(size: 22),
                 ),
               );
             }),
@@ -285,7 +281,10 @@ class _OtpBoxes extends StatelessWidget {
   }
 }
 
-/// Full-width lime CTA (theme-driven) with an inline busy spinner.
+// ---------------------------------------------------------------------------
+// Primary CTA with glow — full pill (theme-driven), spec §shared rules.
+// ---------------------------------------------------------------------------
+
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final bool busy;
@@ -298,8 +297,12 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(Radii.pill),
+        boxShadow: BrandShadows.glow,
+      ),
       child: FilledButton(
         onPressed: busy ? null : onPressed,
         child: busy
@@ -317,7 +320,10 @@ class _PrimaryButton extends StatelessWidget {
   }
 }
 
-/// Circular chevron back button followed by a step-progress label.
+// ---------------------------------------------------------------------------
+// Step header — circular chevron back + step label.
+// ---------------------------------------------------------------------------
+
 class _StepHeader extends StatelessWidget {
   final String label;
   const _StepHeader({required this.label});

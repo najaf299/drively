@@ -9,10 +9,30 @@ import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/wallet_service.dart';
 import '../../domain/providers/wallet_provider.dart';
 
-class WalletScreen extends ConsumerWidget {
+class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
 
-  Future<void> _topUp(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<WalletScreen> createState() => _WalletScreenState();
+}
+
+class _WalletScreenState extends ConsumerState<WalletScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabs;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  Future<void> _topUp(BuildContext context) async {
     final amount = await showModalBottomSheet<double>(
       context: context,
       builder: (_) => const _TopUpSheet(),
@@ -40,7 +60,7 @@ class WalletScreen extends ConsumerWidget {
       );
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final wallet = ref.watch(walletProvider);
     final txns = ref.watch(walletTransactionsProvider);
     final user = ref.watch(authProvider).user;
@@ -52,92 +72,96 @@ class WalletScreen extends ConsumerWidget {
             ref.invalidate(walletProvider);
             ref.invalidate(walletTransactionsProvider);
           },
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-                Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
-            children: [
-              Row(
-                children: [
-                  Text('Wallet',
-                      style: Theme.of(context).textTheme.headlineLarge),
-                  const Spacer(),
-                  _CircleAction(
-                    icon: Icons.add,
-                    onTap: () => _topUp(context, ref),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.x5),
-              _BalanceCard(wallet: wallet, name: user?.name ?? 'Drivly member'),
-              const SizedBox(height: Spacing.x5),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ActionTile(
-                      icon: Icons.add,
-                      label: 'Top up',
-                      onTap: () => _topUp(context, ref),
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.x3),
-                  Expanded(
-                    child: _ActionTile(
-                      icon: Icons.arrow_outward,
-                      label: 'Send',
-                      onTap: () => _soon(context),
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.x3),
-                  Expanded(
-                    child: _ActionTile(
-                      icon: Icons.card_giftcard,
-                      label: 'Refer',
-                      onTap: () => _soon(context),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.x6),
-              Text('Activity',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: Spacing.x3),
-              txns.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(Spacing.x6),
-                  child: LoadingView(),
-                ),
-                error: (e, _) => ErrorView(
-                  message: e.toString(),
-                  onRetry: () => ref.invalidate(walletTransactionsProvider),
-                ),
-                data: (list) {
-                  if (list.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: Spacing.x6),
-                      child: EmptyView(
-                        icon: Icons.receipt_long_outlined,
-                        title: 'No transactions yet',
-                        subtitle: 'Top up your wallet to get started.',
-                      ),
-                    );
-                  }
-                  return Column(
+          child: NestedScrollView(
+            headerSliverBuilder: (ctx, _) => [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      Spacing.x5, Spacing.x4, Spacing.x5, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final t in list) ...[
-                        _TxnTile(txn: t),
-                        const SizedBox(height: Spacing.x3),
-                      ],
+                      // Page title row
+                      Row(
+                        children: [
+                          Text('Wallet',
+                              style:
+                                  Theme.of(context).textTheme.headlineLarge),
+                          const Spacer(),
+                          _CircleAction(
+                            icon: Icons.add,
+                            onTap: () => _topUp(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Spacing.x5),
+                      // Hero balance card ~180h surfaceCard gradient
+                      _BalanceCard(
+                          wallet: wallet,
+                          name: user?.name ?? 'Drivly member'),
+                      const SizedBox(height: Spacing.x5),
+                      // Two CTAs
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () => _topUp(context),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Top up'),
+                            ),
+                          ),
+                          const SizedBox(width: Spacing.x3),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _soon(context),
+                              icon: const Icon(Icons.arrow_outward, size: 18),
+                              label: const Text('Withdraw'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Spacing.x5),
+                      // Quick-stats row
+                      _QuickStatsRow(txns: txns),
+                      const SizedBox(height: Spacing.x5),
                     ],
-                  );
-                },
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: TabBar(
+                  controller: _tabs,
+                  padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
+                  isScrollable: false,
+                  tabs: const [
+                    Tab(text: 'Activity'),
+                    Tab(text: 'Cards'),
+                    Tab(text: 'Promos'),
+                  ],
+                ),
               ),
             ],
+            body: TabBarView(
+              controller: _tabs,
+              children: [
+                // Activity tab
+                _ActivityTab(txns: txns, onRetry: () {
+                  ref.invalidate(walletTransactionsProvider);
+                }),
+                // Cards tab
+                const _ComingSoonTab(icon: Icons.credit_card_outlined, label: 'Saved cards coming soon.'),
+                // Promos tab
+                const _ComingSoonTab(icon: Icons.local_offer_outlined, label: 'Promos & rewards coming soon.'),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+// ─── Hero balance card ────────────────────────────────────────────────────────
 
 class _BalanceCard extends StatelessWidget {
   final AsyncValue<Wallet> wallet;
@@ -151,38 +175,39 @@ class _BalanceCard extends StatelessWidget {
       orElse: () => '—',
     );
     return Container(
+      height: 180,
       padding: const EdgeInsets.all(Spacing.x5),
       decoration: BoxDecoration(
-        gradient: BrandGradients.primary,
+        gradient: BrandGradients.surfaceCard,
         borderRadius: BorderRadius.circular(Radii.xxl),
-        boxShadow: BrandShadows.glow,
+        boxShadow: BrandShadows.card,
+        border: Border.all(color: BrandColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text('Drivly Balance',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: BrandColors.primaryFg,
-                      )),
+              Text('Available balance',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: BrandColors.mutedFg)),
               const Spacer(),
-              Icon(Icons.account_balance_wallet,
-                  color: BrandColors.primaryFg.withValues(alpha: 0.6),
-                  size: 22),
+              const Icon(Icons.account_balance_wallet_outlined,
+                  color: BrandColors.mutedFg, size: 20),
             ],
           ),
-          const SizedBox(height: Spacing.x4),
+          const Spacer(),
           Text(
             balance,
             style: Theme.of(context).textTheme.displayMedium?.copyWith(
-              color: BrandColors.primaryFg,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+                  color: BrandColors.primary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
           ),
-          const SizedBox(height: Spacing.x6),
+          const SizedBox(height: Spacing.x3),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
                 child: Text(
@@ -190,16 +215,17 @@ class _BalanceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: BrandColors.primaryFg.withValues(alpha: 0.85),
+                        color: BrandColors.mutedFg,
                       ),
                 ),
               ),
               const SizedBox(width: Spacing.x3),
               Text(
                 'drivly.',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: BrandColors.primaryFg,
-                    ),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(color: BrandColors.mutedFg),
               ),
             ],
           ),
@@ -209,47 +235,272 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-class _ActionTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  const _ActionTile(
-      {required this.icon, required this.label, required this.onTap});
+// ─── Quick stats row ──────────────────────────────────────────────────────────
+
+class _QuickStatsRow extends StatelessWidget {
+  final AsyncValue<List<WalletTransaction>> txns;
+  const _QuickStatsRow({required this.txns});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: BrandColors.surface,
-      borderRadius: BorderRadius.circular(Radii.xl),
-      child: InkWell(
-        onTap: onTap,
+    final spent = txns.maybeWhen(
+      data: (list) {
+        final now = DateTime.now();
+        return list
+            .where((t) =>
+                t.isDebit &&
+                t.createdAt != null &&
+                t.createdAt!.month == now.month &&
+                t.createdAt!.year == now.year)
+            .fold<double>(0, (s, t) => s + t.amount);
+      },
+      orElse: () => null,
+    );
+    final rewards = txns.maybeWhen(
+      data: (list) => list
+          .where((t) => t.type == 'reward' || t.type == 'referral')
+          .fold<double>(0, (s, t) => s + t.amount),
+      orElse: () => null,
+    );
+
+    return Row(
+      children: [
+        Expanded(
+          child: _StatCard(
+            label: 'Spent this month',
+            value: spent != null ? Formatters.money(spent) : '—',
+            icon: Icons.arrow_upward,
+            iconColor: BrandColors.destructive,
+          ),
+        ),
+        const SizedBox(width: Spacing.x3),
+        Expanded(
+          child: _StatCard(
+            label: 'Rewards earned',
+            value: rewards != null ? Formatters.money(rewards) : '—',
+            icon: Icons.card_giftcard_outlined,
+            iconColor: BrandColors.success,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(Spacing.x4),
+      decoration: BoxDecoration(
+        color: BrandColors.surface,
         borderRadius: BorderRadius.circular(Radii.xl),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: Spacing.x4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Radii.xl),
-            border: Border.all(color: BrandColors.border),
+        border: Border.all(color: BrandColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
           ),
-          child: Column(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: BrandColors.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: BrandColors.primary, size: 20),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(color: BrandColors.foreground)),
+                const SizedBox(height: 2),
+                Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Activity tab ─────────────────────────────────────────────────────────────
+
+class _ActivityTab extends StatelessWidget {
+  final AsyncValue<List<WalletTransaction>> txns;
+  final VoidCallback onRetry;
+  const _ActivityTab({required this.txns, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return txns.when(
+      loading: () => const Center(child: LoadingView()),
+      error: (e, _) => ErrorView(message: e.toString(), onRetry: onRetry),
+      data: (list) {
+        if (list.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(
+                vertical: Spacing.x6, horizontal: Spacing.x5),
+            child: EmptyView(
+              icon: Icons.receipt_long_outlined,
+              title: 'No transactions yet',
+              subtitle: 'Top up your wallet to get started.',
+            ),
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
+          itemCount: list.length,
+          separatorBuilder: (_, __) => const SizedBox(height: Spacing.x3),
+          itemBuilder: (_, i) => _TxnTile(txn: list[i]),
+        );
+      },
+    );
+  }
+}
+
+class _ComingSoonTab extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _ComingSoonTab({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.x6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: BrandColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: BrandColors.border),
               ),
-              const SizedBox(height: Spacing.x2),
-              Text(label, style: Theme.of(context).textTheme.titleSmall),
-            ],
-          ),
+              child: Icon(icon, color: BrandColors.mutedFg, size: 32),
+            ),
+            const SizedBox(height: Spacing.x4),
+            Text(label,
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: BrandColors.mutedFg)),
+          ],
         ),
       ),
     );
   }
 }
+
+// ─── Transaction tile ─────────────────────────────────────────────────────────
+
+class _TxnTile extends StatelessWidget {
+  final WalletTransaction txn;
+  const _TxnTile({required this.txn});
+
+  @override
+  Widget build(BuildContext context) {
+    final isRefund = txn.isRefund;
+    final isCredit = txn.isCredit || isRefund;
+    // Spec: top-up = success arrow-down, charge = destructive arrow-up,
+    //        refund = info (replay icon)
+    final Color iconColor;
+    final IconData icon;
+    final Color amountColor;
+    if (isRefund) {
+      iconColor = BrandColors.info;
+      icon = Icons.replay;
+      amountColor = BrandColors.info;
+    } else if (isCredit) {
+      iconColor = BrandColors.success;
+      icon = Icons.arrow_downward;
+      amountColor = BrandColors.success;
+    } else {
+      iconColor = BrandColors.destructive;
+      icon = Icons.arrow_upward;
+      amountColor = BrandColors.destructive;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(Spacing.x3),
+      decoration: BoxDecoration(
+        color: BrandColors.surface,
+        borderRadius: BorderRadius.circular(Radii.xl),
+        border: Border.all(color: BrandColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: Sizes.avatar,
+            height: Sizes.avatar,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  txn.description ?? _humanise(txn.type),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                if (txn.createdAt != null) ...[
+                  const SizedBox(height: 2),
+                  Text(Formatters.date(txn.createdAt!),
+                      style: Theme.of(context).textTheme.labelSmall),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: Spacing.x3),
+          Text(
+            '${isCredit ? '+' : '−'}${Formatters.money(txn.amount)}',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: amountColor,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _humanise(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+}
+
+// ─── Circle action button ─────────────────────────────────────────────────────
 
 class _CircleAction extends StatelessWidget {
   final IconData icon;
@@ -274,73 +525,7 @@ class _CircleAction extends StatelessWidget {
   }
 }
 
-class _TxnTile extends StatelessWidget {
-  final WalletTransaction txn;
-  const _TxnTile({required this.txn});
-
-  @override
-  Widget build(BuildContext context) {
-    final credit = txn.isCredit || txn.isRefund;
-    final color = credit ? BrandColors.success : BrandColors.destructive;
-    final icon = txn.isRefund
-        ? Icons.replay
-        : credit
-            ? Icons.arrow_downward
-            : Icons.arrow_upward;
-    return Container(
-      padding: const EdgeInsets.all(Spacing.x3),
-      decoration: BoxDecoration(
-        color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.xl),
-        border: Border.all(color: BrandColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: Sizes.avatar,
-            height: Sizes.avatar,
-            decoration: const BoxDecoration(
-              color: BrandColors.surface2,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: BrandColors.mutedFg, size: 20),
-          ),
-          const SizedBox(width: Spacing.x3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  txn.description ?? _humanise(txn.type),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                if (txn.createdAt != null) ...[
-                  const SizedBox(height: 2),
-                  Text(Formatters.date(txn.createdAt!),
-                      style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: Spacing.x3),
-          Text(
-            '${credit ? '+' : '−'}${Formatters.money(txn.amount)}',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static String _humanise(String s) =>
-      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
-}
+// ─── Top-up bottom sheet ──────────────────────────────────────────────────────
 
 class _TopUpSheet extends StatelessWidget {
   const _TopUpSheet();

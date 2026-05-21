@@ -12,7 +12,10 @@ class LoadingView extends StatelessWidget {
       const Center(child: CircularProgressIndicator());
 }
 
-/// Error state with a friendly message and an optional retry action.
+/// Error state — drivly Flutter Build Spec v2 §2 (ErrorView).
+///
+/// 96 px line-icon on a surface circle (destructive tint), headlineSmall title,
+/// bodyMedium muted body, optional tonal OutlinedButton.
 class ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
@@ -21,22 +24,40 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(Spacing.x6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline,
-                size: 48, color: BrandColors.destructive),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: const BoxDecoration(
+                color: BrandColors.surface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: BrandColors.destructive,
+              ),
+            ),
             const SizedBox(height: Spacing.x4),
+            Text(
+              'Something went wrong',
+              textAlign: TextAlign.center,
+              style: text.headlineSmall,
+            ),
+            const SizedBox(height: Spacing.x2),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: BrandColors.mutedFg),
+              style: text.bodyMedium?.copyWith(color: BrandColors.mutedFg),
             ),
             if (onRetry != null) ...[
-              const SizedBox(height: Spacing.x4),
+              const SizedBox(height: Spacing.x5),
               OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
@@ -50,7 +71,10 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-/// Empty state with an illustration glyph, copy and an optional CTA.
+/// Empty state — drivly Flutter Build Spec v2 §2 (EmptyState).
+///
+/// 96 px line-icon on a surface circle (primary tint), headlineSmall title,
+/// bodyMedium muted subtitle, optional tonal OutlinedButton CTA.
 class EmptyView extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -69,30 +93,42 @@ class EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(Spacing.x6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: BrandColors.mutedFg),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: const BoxDecoration(
+                color: BrandColors.surface,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 48, color: BrandColors.primary),
+            ),
             const SizedBox(height: Spacing.x4),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
+              style: text.headlineSmall,
             ),
             if (subtitle != null) ...[
               const SizedBox(height: Spacing.x2),
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: BrandColors.mutedFg),
+                style: text.bodyMedium?.copyWith(color: BrandColors.mutedFg),
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: Spacing.x5),
-              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+              OutlinedButton(
+                onPressed: onAction,
+                child: Text(actionLabel!),
+              ),
             ],
           ],
         ),

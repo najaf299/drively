@@ -6,9 +6,13 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/car.dart';
 import '../../../../shared/widgets/car_card.dart';
 import '../../../../shared/widgets/state_views.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../../domain/providers/host_provider.dart';
 
-/// The host's fleet of listed cars. Restyled to the Drivly dark premium system.
+/// Host garage — spec §7.29.
+///
+/// CarListTile rows + StatusBadge: Listed→success, Paused→neutral,
+/// In review→warning. FAB '+ List a car'.
 class HostCarsScreen extends ConsumerWidget {
   const HostCarsScreen({super.key});
 
@@ -21,8 +25,7 @@ class HostCarsScreen extends ConsumerWidget {
         backgroundColor: BrandColors.primary,
         foregroundColor: BrandColors.primaryFg,
         icon: const Icon(Icons.add),
-        label: const Text('Add car',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        label: const Text('List a car'),
       ),
       body: SafeArea(
         child: Column(
@@ -41,7 +44,8 @@ class HostCarsScreen extends ConsumerWidget {
                   const SizedBox(width: Spacing.x4),
                   Expanded(
                     child: Text('My cars',
-                        style: Theme.of(context).textTheme.headlineMedium),
+                        style:
+                            Theme.of(context).textTheme.headlineMedium),
                   ),
                   cars.maybeWhen(
                     data: (list) => _CountPill(count: list.length),
@@ -65,17 +69,18 @@ class HostCarsScreen extends ConsumerWidget {
                     );
                   }
                   return RefreshIndicator(
-                    onRefresh: () async => ref.invalidate(hostCarsProvider),
+                    onRefresh: () async =>
+                        ref.invalidate(hostCarsProvider),
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(
                           Spacing.x5, 0, Spacing.x5, Spacing.x10),
                       itemCount: list.length,
                       separatorBuilder: (_, __) =>
                           const SizedBox(height: Spacing.x4),
-                      itemBuilder: (_, i) => CarCard(
+                      itemBuilder: (_, i) => _CarListItem(
                         car: list[i],
-                        showStatus: true,
-                        onTap: () => context.push('/car/${list[i].id}'),
+                        onTap: () =>
+                            context.push('/car/${list[i].id}'),
                       ),
                     ),
                   );
@@ -88,6 +93,60 @@ class HostCarsScreen extends ConsumerWidget {
     );
   }
 }
+
+// ─── Car list item (CarCard + status badge row) ───────────────────────────────
+
+class _CarListItem extends StatelessWidget {
+  final Car car;
+  final VoidCallback onTap;
+  const _CarListItem({required this.car, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CarCard(
+          car: car,
+          showStatus: true,
+          onTap: onTap,
+        ),
+        const SizedBox(height: Spacing.x2),
+        // StatusBadge row per spec: Listed→success, Paused→neutral, In review→warning
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.x2),
+          child: Row(
+            children: [
+              _carStatusBadge(car.status),
+              const SizedBox(width: Spacing.x2),
+              Expanded(
+                child: Text(
+                  car.displayNameWithYear,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Widget _carStatusBadge(String status) {
+    return switch (status) {
+      'active' => const StatusBadge('Listed', tone: BadgeTone.success),
+      'paused' => const StatusBadge('Paused', tone: BadgeTone.neutral),
+      'pending_approval' =>
+        const StatusBadge('In review', tone: BadgeTone.warning),
+      'draft' => const StatusBadge('Draft', tone: BadgeTone.neutral),
+      _ => StatusBadge(status, tone: BadgeTone.neutral),
+    };
+  }
+}
+
+// ─── Count pill ───────────────────────────────────────────────────────────────
 
 class _CountPill extends StatelessWidget {
   final int count;
@@ -110,6 +169,8 @@ class _CountPill extends StatelessWidget {
     );
   }
 }
+
+// ─── Circle back button ───────────────────────────────────────────────────────
 
 class _CircleBackButton extends StatelessWidget {
   final VoidCallback onTap;

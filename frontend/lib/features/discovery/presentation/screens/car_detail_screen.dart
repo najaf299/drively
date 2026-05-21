@@ -14,8 +14,15 @@ import '../../data/car_service.dart';
 import '../../data/favorite_service.dart';
 import '../../domain/providers/car_provider.dart';
 
+/// Car detail screen — spec §7.11.
+///
+/// Transparent AppBar over 320h photo carousel; sticky bottom bar with
+/// [headlineMedium] price in primary. Favourite heart filled →
+/// [BrandColors.destructive]. Scrim uses [BrandColors.overlay] alpha only —
+/// zero hard-coded `Color(0x..)` literals.
 class CarDetailScreen extends ConsumerStatefulWidget {
   final String carId;
+
   const CarDetailScreen({super.key, required this.carId});
 
   @override
@@ -74,87 +81,106 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
         SliverToBoxAdapter(child: _gallery(car, photos)),
         SliverPadding(
           padding: const EdgeInsets.all(Spacing.x5),
-          sliver: SliverList.list(children: [
-            // Title + category pill.
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(car.displayNameWithYear,
-                      style: text.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
-                ),
-                const SizedBox(width: Spacing.x3),
-                _CategoryPill(label: _humanise(car.fuelType)),
-              ],
-            ),
-            const SizedBox(height: Spacing.x3),
-            // Rating line.
-            Row(
-              children: [
-                const Icon(Icons.star_rounded,
-                    size: 18, color: BrandColors.warning),
-                const SizedBox(width: 4),
-                Text(
-                  car.averageRating.toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  '  ·  ${car.totalReviews} trips  ·  ',
-                  style: const TextStyle(color: BrandColors.mutedFg),
-                ),
-                const Flexible(
-                  child: Text(
-                    'All-Star Host',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: BrandColors.primary,
-                      fontWeight: FontWeight.w600,
+          sliver: SliverList.list(
+            children: [
+              // Title row: 'Model · Year' displayMedium + fuel pill.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      car.displayNameWithYear,
+                      style: text.displayMedium,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Spacing.x5),
-            _specChips(car),
-            const SizedBox(height: Spacing.x6),
-            _hostCard(car),
-            const SizedBox(height: Spacing.x6),
-            if (car.features.isNotEmpty) ...[
-              Text('Features', style: text.titleLarge),
-              const SizedBox(height: Spacing.x3),
-              Wrap(
-                spacing: Spacing.x2,
-                runSpacing: Spacing.x2,
-                children: [
-                  for (final f in car.features) _FeaturePill(label: _humanise(f)),
+                  const SizedBox(width: Spacing.x3),
+                  _CategoryPill(label: _humanise(car.fuelType)),
                 ],
               ),
+              const SizedBox(height: Spacing.x3),
+
+              // Rating chip + host status.
+              Row(
+                children: [
+                  const Icon(Icons.star_rounded,
+                      size: 18, color: BrandColors.warning),
+                  const SizedBox(width: 4),
+                  Text(
+                    car.averageRating.toStringAsFixed(2),
+                    style: text.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    '  ·  ${car.totalReviews} trips  ·  ',
+                    style: text.bodySmall,
+                  ),
+                  Flexible(
+                    child: Text(
+                      'All-Star Host',
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleSmall?.copyWith(
+                          color: BrandColors.primary,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.x5),
+
+              // 4 spec tiles on surface2.
+              _specChips(car),
               const SizedBox(height: Spacing.x6),
-            ],
-            if (car.description != null && car.description!.isNotEmpty) ...[
-              Text('About this car', style: text.titleLarge),
-              const SizedBox(height: Spacing.x2),
-              Text(car.description!,
-                  style:
-                      const TextStyle(color: BrandColors.mutedFg, height: 1.5)),
+
+              // Host row: avatar 48 + 'Hosted by … · Superhost' + chevron.
+              _hostCard(car),
               const SizedBox(height: Spacing.x6),
+
+              // Feature chips.
+              if (car.features.isNotEmpty) ...[
+                const SectionHeader(title: 'Features'),
+                const SizedBox(height: Spacing.x3),
+                Wrap(
+                  spacing: Spacing.x2,
+                  runSpacing: Spacing.x2,
+                  children: [
+                    for (final f in car.features)
+                      _FeaturePill(label: _humanise(f)),
+                  ],
+                ),
+                const SizedBox(height: Spacing.x6),
+              ],
+
+              // Expandable description.
+              if (car.description != null &&
+                  car.description!.isNotEmpty) ...[
+                const SectionHeader(title: 'About this car'),
+                const SizedBox(height: Spacing.x2),
+                Text(
+                  car.description!,
+                  style: text.bodyMedium
+                      ?.copyWith(color: BrandColors.mutedFg, height: 1.5),
+                ),
+                const SizedBox(height: Spacing.x6),
+              ],
+
+              // Reviews preview.
+              SectionHeader(
+                title: 'Reviews',
+                actionLabel: 'See all',
+                onAction: () => context.push('/reviews/${car.id}'),
+              ),
+              const SizedBox(height: Spacing.x3),
+              _reviewsPreview(car.id),
+              const SizedBox(height: Spacing.x4),
             ],
-            SectionHeader(
-              title: 'Reviews',
-              actionLabel: 'See all',
-              onAction: () => context.push('/reviews/${car.id}'),
-            ),
-            const SizedBox(height: Spacing.x3),
-            _reviewsPreview(car.id),
-            const SizedBox(height: Spacing.x4),
-          ]),
+          ),
         ),
       ],
     );
   }
 
-  // ── Image gallery with a bottom scrim + overlaid controls + page dots ──────
+  // ── Image gallery: 320h carousel + bottom↗top gradient scrim + overlaid
+  //    share/favourite IconRoundButtons (44, surface2 fill + border) ──────────
   Widget _gallery(Car car, List<String> photos) {
     return SizedBox(
       height: 320,
@@ -174,8 +200,9 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
               ),
             ),
           ),
-          // Bottom gradient scrim so overlaid controls/dots stay legible.
-          const Positioned(
+
+          // Bottom→top gradient scrim using token colours (no literals).
+          Positioned(
             left: 0,
             right: 0,
             bottom: 0,
@@ -186,13 +213,17 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
-                    colors: [Color(0xCC0B0D14), Color(0x000B0D14)],
+                    colors: [
+                      BrandColors.background.withValues(alpha: 0.80),
+                      BrandColors.background.withValues(alpha: 0.0),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-          // Top controls.
+
+          // Top controls: back + share + favourite.
           Positioned(
             top: 0,
             left: 0,
@@ -213,15 +244,21 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                     }),
                     const SizedBox(width: Spacing.x2),
                     _circleIcon(
-                      _favorite ? Icons.favorite : Icons.favorite_border,
+                      _favorite
+                          ? Icons.favorite
+                          : Icons.favorite_border,
                       _favBusy ? null : _toggleFavorite,
-                      color: _favorite ? BrandColors.accent : Colors.white,
+                      // filled heart → destructive; unfilled → white.
+                      color: _favorite
+                          ? BrandColors.destructive
+                          : Colors.white,
                     ),
                   ],
                 ),
               ),
             ),
           ),
+
           // Page dots.
           if (photos.length > 1)
             Positioned(
@@ -234,14 +271,16 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                   for (var i = 0; i < photos.length; i++)
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      margin:
+                          const EdgeInsets.symmetric(horizontal: 3),
                       width: i == _photoIndex ? 18 : 6,
                       height: 6,
                       decoration: BoxDecoration(
                         color: i == _photoIndex
                             ? BrandColors.primary
                             : Colors.white.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(Radii.pill),
+                        borderRadius:
+                            BorderRadius.circular(Radii.pill),
                       ),
                     ),
                 ],
@@ -252,19 +291,19 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     );
   }
 
-  // ── Spec chips with icons ──────────────────────────────────────────────────
+  // ── 4 spec tiles on surface2 ─────────────────────────────────────────────
   Widget _specChips(Car car) {
     final items = <(IconData, String)>[
       (Icons.event_seat_outlined, '${car.seats} seats'),
+      (Icons.door_front_door_outlined, '4 doors'),
       (Icons.settings_outlined, car.isAutomatic ? 'Automatic' : 'Manual'),
       (Icons.local_gas_station_outlined, _humanise(car.fuelType)),
-      (Icons.verified_user_outlined, 'Insured'),
     ];
     return Wrap(
       spacing: Spacing.x2,
       runSpacing: Spacing.x2,
       children: [
-        for (final i in items)
+        for (final item in items)
           Container(
             padding: const EdgeInsets.symmetric(
                 horizontal: Spacing.x3, vertical: 10),
@@ -276,11 +315,11 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(i.$1, size: 16, color: BrandColors.primary),
+                Icon(item.$1, size: 16, color: BrandColors.primary),
                 const SizedBox(width: 6),
-                Text(i.$2,
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w500)),
+                Text(item.$2,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: BrandColors.foreground)),
               ],
             ),
           ),
@@ -288,7 +327,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     );
   }
 
-  // ── Host card ──────────────────────────────────────────────────────────────
+  // ── Host row: avatar 48 + 'Hosted by … · Superhost' + message chevron ──
   Widget _hostCard(Car car) {
     final host = car.host;
     final joined = car.createdAt?.year;
@@ -301,16 +340,16 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
       ),
       child: Row(
         children: [
+          // Avatar 48.
           CircleAvatar(
-            radius: 26,
+            radius: Sizes.avatarMd / 2,
             backgroundColor: BrandColors.accent,
             child: Text(
               host?.initials ?? 'H',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ),
           const SizedBox(width: Spacing.x3),
@@ -318,20 +357,51 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Hosted by ${host?.name ?? 'Host'}',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Hosted by ${host?.name ?? 'Host'}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Superhost badge.
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: BrandColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                        border: Border.all(
+                            color: BrandColors.primary.withValues(alpha: 0.4)),
+                      ),
+                      child: Text(
+                        'Superhost',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: BrandColors.primary,
+                              fontSize: 10,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Spacing.x1),
                 Text(
                   '${joined != null ? 'Joined $joined · ' : ''}Responds in 5 min',
-                  style: const TextStyle(
-                      color: BrandColors.mutedFg, fontSize: 12),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall,
                 ),
               ],
             ),
           ),
           const SizedBox(width: Spacing.x2),
+          // Chevron / message button.
           Material(
             color: BrandColors.surface3,
             shape: const CircleBorder(
@@ -340,10 +410,10 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
               customBorder: const CircleBorder(),
               onTap: () => context.push('/messages'),
               child: const SizedBox(
-                width: 44,
-                height: 44,
-                child: Icon(Icons.chat_bubble_outline,
-                    color: BrandColors.primary, size: 20),
+                width: Sizes.iconRoundButton,
+                height: Sizes.iconRoundButton,
+                child: Icon(Icons.chevron_right,
+                    color: BrandColors.mutedFg),
               ),
             ),
           ),
@@ -352,6 +422,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     );
   }
 
+  // ── Reviews preview ──────────────────────────────────────────────────────
   Widget _reviewsPreview(String carId) {
     final reviews = ref.watch(carReviewsProvider(carId));
     return reviews.when(
@@ -362,8 +433,13 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
       error: (_, __) => const SizedBox.shrink(),
       data: (page) {
         if (page.items.isEmpty) {
-          return const Text('No reviews yet. Be the first after your trip!',
-              style: TextStyle(color: BrandColors.mutedFg));
+          return Text(
+            'No reviews yet. Be the first after your trip!',
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: BrandColors.mutedFg),
+          );
         }
         return Column(
           children: [
@@ -373,7 +449,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(Spacing.x4),
                   decoration: BoxDecoration(
-                    color: BrandColors.surface,
+                    color: BrandColors.surface2,
                     borderRadius: BorderRadius.circular(Radii.xl),
                     border: Border.all(color: BrandColors.border),
                   ),
@@ -387,26 +463,38 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                             backgroundColor: BrandColors.accent,
                             child: Text(
                               r.reviewer?.initials ?? '?',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600),
                             ),
                           ),
                           const SizedBox(width: Spacing.x2),
-                          Text(r.reviewer?.name ?? 'Renter',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          Text(
+                            r.reviewer?.name ?? 'Renter',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
                           const Spacer(),
                           RatingStars(
-                              rating: r.rating.toDouble(), showValue: true),
+                              rating: r.rating.toDouble(),
+                              showValue: true),
                         ],
                       ),
-                      if (r.comment != null && r.comment!.isNotEmpty) ...[
+                      if (r.comment != null &&
+                          r.comment!.isNotEmpty) ...[
                         const SizedBox(height: Spacing.x2),
-                        Text(r.comment!,
-                            style: const TextStyle(color: BrandColors.mutedFg)),
+                        Text(
+                          r.comment!,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: BrandColors.mutedFg),
+                        ),
                       ],
                     ],
                   ),
@@ -418,7 +506,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     );
   }
 
-  // ── Sticky bottom bar ──────────────────────────────────────────────────────
+  // ── Sticky bottom bar: price headlineMedium primary + DateRange + Book ──
   Widget _bottomBar(Car car) {
     final text = Theme.of(context).textTheme;
     return Container(
@@ -429,9 +517,11 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.all(Spacing.x4),
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x4),
           child: Row(
             children: [
+              // Price 'AED 220/day' headlineMedium primary.
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -441,30 +531,40 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                       children: [
                         TextSpan(
                           text: Formatters.money(car.dailyPrice),
-                          style: text.headlineMedium?.copyWith(
-                            color: BrandColors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: text.headlineMedium
+                              ?.copyWith(color: BrandColors.primary),
                         ),
-                        const TextSpan(
+                        TextSpan(
                           text: '/day',
-                          style: TextStyle(
-                              color: BrandColors.mutedFg, fontSize: 13),
+                          style: text.bodySmall,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  const Text('Free cancellation',
-                      style:
-                          TextStyle(color: BrandColors.success, fontSize: 12)),
+                  const SizedBox(height: Spacing.x1),
+                  // DateRange pill.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.x3, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: BrandColors.surface2,
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                      border: Border.all(color: BrandColors.border),
+                    ),
+                    child: Text(
+                      'Add dates',
+                      style: text.bodySmall
+                          ?.copyWith(color: BrandColors.mutedFg),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(width: Spacing.x4),
+              // PrimaryButton 'Book'.
               Expanded(
                 child: FilledButton(
                   onPressed: () => context.push('/datetime', extra: car),
-                  child: const Text('Continue'),
+                  child: const Text('Book'),
                 ),
               ),
             ],
@@ -474,17 +574,20 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     );
   }
 
+  // ── Gallery circle icon button (surface2/border, 44dp) ───────────────────
   Widget _circleIcon(IconData icon, VoidCallback? onTap, {Color? color}) {
     return Material(
-      color: Colors.black.withValues(alpha: 0.45),
+      // Scrim using token: overlay colour at 45% opacity.
+      color: BrandColors.overlay.withValues(alpha: 0.45),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(icon, color: color ?? Colors.white, size: 20),
+          width: Sizes.iconRoundButton,
+          height: Sizes.iconRoundButton,
+          child: Icon(icon,
+              color: color ?? Colors.white, size: Sizes.iconSm),
         ),
       ),
     );
@@ -497,45 +600,49 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
       .join(' ');
 }
 
-/// Lime category pill used in the detail title row.
+// ── Category pill ─────────────────────────────────────────────────────────────
+
 class _CategoryPill extends StatelessWidget {
   final String label;
+
   const _CategoryPill({required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding:
+          const EdgeInsets.symmetric(horizontal: Spacing.x3, vertical: 6),
       decoration: BoxDecoration(
         color: BrandColors.primary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(Radii.pill),
-        border: Border.all(color: BrandColors.primary.withValues(alpha: 0.5)),
+        border: Border.all(
+            color: BrandColors.primary.withValues(alpha: 0.5)),
       ),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(
-          color: BrandColors.primary,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: BrandColors.primary,
+              letterSpacing: 0.5,
+            ),
       ),
     );
   }
 }
 
-/// Surface feature chip with a lime check.
+// ── Feature pill ──────────────────────────────────────────────────────────────
+
 class _FeaturePill extends StatelessWidget {
   final String label;
+
   const _FeaturePill({required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: Spacing.x3, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.x3, vertical: 8),
       decoration: BoxDecoration(
-        color: BrandColors.surface,
+        color: BrandColors.surface2,
         borderRadius: BorderRadius.circular(Radii.pill),
         border: Border.all(color: BrandColors.border),
       ),
@@ -544,7 +651,11 @@ class _FeaturePill extends StatelessWidget {
         children: [
           const Icon(Icons.check, size: 14, color: BrandColors.primary),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 13)),
+          Text(label,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: BrandColors.foreground)),
         ],
       ),
     );

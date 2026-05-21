@@ -9,7 +9,8 @@ import '../../../../shared/widgets/status_badge.dart';
 import '../../../../shared/widgets/trip_card.dart';
 import '../../../booking/domain/providers/booking_provider.dart';
 
-/// "Trips" with Upcoming / Active / Past segmented pills.
+/// "Trips" tab — Upcoming · Active · Past · Cancelled segmented pill tabs.
+/// Spec §7.16.
 class TripsScreen extends ConsumerStatefulWidget {
   const TripsScreen({super.key});
 
@@ -20,7 +21,7 @@ class TripsScreen extends ConsumerStatefulWidget {
 class _TripsScreenState extends ConsumerState<TripsScreen> {
   int _tab = 0;
 
-  static const _tabs = ['Upcoming', 'Active', 'Past'];
+  static const _tabs = ['Upcoming', 'Active', 'Past', 'Cancelled'];
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +40,11 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
-              child: _segments(theme),
+              child: _SegmentedTabs(
+                tabs: _tabs,
+                selected: _tab,
+                onSelected: (i) => setState(() => _tab = i),
+              ),
             ),
             const SizedBox(height: Spacing.x4),
             Expanded(
@@ -50,29 +55,37 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
                   final upcoming =
                       list.where((b) => b.isPending || b.isConfirmed).toList();
                   final active = list.where((b) => b.isActive).toList();
-                  final past = list
-                      .where((b) => b.isCompleted || b.isCancelled)
-                      .toList();
+                  final past = list.where((b) => b.isCompleted).toList();
+                  final cancelled = list.where((b) => b.isCancelled).toList();
 
                   final current = switch (_tab) {
                     0 => upcoming,
                     1 => active,
-                    _ => past,
+                    2 => past,
+                    _ => cancelled,
                   };
-                  final emptyTitle = switch (_tab) {
-                    0 => 'No upcoming trips',
-                    1 => 'No active trips',
-                    _ => 'No past trips',
-                  };
-                  final emptySubtitle = switch (_tab) {
-                    0 => 'Browse cars and book your next drive.',
-                    1 => 'Your ongoing trips will appear here.',
-                    _ => 'Completed trips show up here.',
-                  };
+
+                  const emptyTitles = [
+                    'No upcoming trips',
+                    'No active trips',
+                    'No past trips',
+                    'No cancelled trips',
+                  ];
+                  const emptySubs = [
+                    'Browse cars and book your next drive.',
+                    'Your ongoing trips will appear here.',
+                    'Completed trips show up here.',
+                    'Cancelled trips will appear here.',
+                  ];
 
                   return RefreshIndicator(
                     onRefresh: () async => ref.invalidate(bookingsProvider),
-                    child: _list(current, emptyTitle, emptySubtitle),
+                    child: _list(
+                      current,
+                      emptyTitles[_tab],
+                      emptySubs[_tab],
+                      showFindCar: _tab == 0,
+                    ),
                   );
                 },
               ),
@@ -83,49 +96,10 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
     );
   }
 
-  Widget _segments(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.pill),
-        border: Border.all(color: BrandColors.border),
-      ),
-      child: Row(
-        children: List.generate(_tabs.length, (i) {
-          final selected = _tab == i;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _tab = i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color:
-                      selected ? BrandColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                ),
-                child: Text(
-                  _tabs[i],
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: selected
-                        ? BrandColors.primaryFg
-                        : BrandColors.mutedFg,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  /// Status badge for a booking, mapped per the v2 spec.
+  /// Status badge mapped per spec v2.
   StatusBadge _badge(Booking b) {
     if (b.isActive) {
-      return const StatusBadge('Active', tone: BadgeTone.live);
+      return const StatusBadge('Active', tone: BadgeTone.live, icon: Icons.circle);
     }
     if (b.isCompleted) {
       return const StatusBadge('Completed', tone: BadgeTone.success);
@@ -139,22 +113,33 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
   Widget _list(
     List<Booking> items,
     String emptyTitle,
-    String emptySubtitle,
-  ) {
+    String emptySubtitle, {
+    bool showFindCar = false,
+  }) {
     if (items.isEmpty) {
       return ListView(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.18),
           EmptyView(
             icon: Icons.luggage_outlined,
             title: emptyTitle,
             subtitle: emptySubtitle,
           ),
+          if (showFindCar) ...[
+            const SizedBox(height: Spacing.x5),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.x10),
+              child: FilledButton(
+                onPressed: () => context.go('/home'),
+                child: const Text('Find a car'),
+              ),
+            ),
+          ],
         ],
       );
     }
 
-    // On the Upcoming tab, present the soonest trip as a featured hero.
+    // On the Upcoming tab present the soonest trip as a featured hero.
     final featureFirst = _tab == 0 && items.isNotEmpty;
 
     return ListView.separated(
@@ -171,6 +156,61 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
           onTap: () => context.push('/bookings/${items[i].id}'),
         );
       },
+    );
+  }
+}
+
+/// Surface-2 capsule segmented tab bar per spec §7.16.
+class _SegmentedTabs extends StatelessWidget {
+  final List<String> tabs;
+  final int selected;
+  final ValueChanged<int> onSelected;
+
+  const _SegmentedTabs({
+    required this.tabs,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: BrandColors.surface2,
+        borderRadius: BorderRadius.circular(Radii.pill),
+        border: Border.all(color: BrandColors.border),
+      ),
+      child: Row(
+        children: List.generate(tabs.length, (i) {
+          final sel = selected == i;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onSelected(i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: sel ? BrandColors.surface3 : Colors.transparent,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+                child: Text(
+                  tabs[i],
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: sel
+                        ? BrandColors.foreground
+                        : BrandColors.mutedFg,
+                    fontWeight:
+                        sel ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 }

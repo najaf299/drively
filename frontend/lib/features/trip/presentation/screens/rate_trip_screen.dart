@@ -9,7 +9,10 @@ import '../../../../shared/widgets/rating_stars.dart';
 import '../../../booking/domain/providers/booking_provider.dart';
 import '../../data/review_service.dart';
 
-/// Post-trip rating and review for a booking.
+/// Post-trip rating screen — spec §6 rate trip.
+///
+/// Tappable 40-dp star row (fills primary) · tag chips (theme chips) ·
+/// textarea (max 500) · submit PrimaryButton.
 class RateTripScreen extends ConsumerStatefulWidget {
   final String bookingId;
   const RateTripScreen({super.key, required this.bookingId});
@@ -28,13 +31,15 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
   final _tags = <String>{};
   bool _busy = false;
 
+  /// Spec §7 tag chips: Clean · On time · Smooth ride · Great communication ·
+  /// Car as described (plus legacy options mapped across).
   static const _tagOptions = [
-    'Friendly host',
-    'Clean car',
-    'Great value',
-    'Easy pickup',
+    'Clean',
     'On time',
-    'Spacious',
+    'Smooth ride',
+    'Great communication',
+    'Car as described',
+    'Easy pickup',
   ];
 
   @override
@@ -78,36 +83,22 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         body: SafeArea(
           child: Column(
             children: [
+              // Header
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                     Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x2),
                 child: Row(
                   children: [
-                    InkWell(
-                      onTap: () => context.canPop()
-                          ? context.pop()
-                          : context.go('/trips'),
-                      customBorder: const CircleBorder(),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: BrandColors.surface,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.arrow_back,
-                            size: 20, color: BrandColors.foreground),
-                      ),
-                    ),
+                    _circleBack(context),
                     const SizedBox(width: Spacing.x3),
-                    Text('Rate your trip',
-                        style: Theme.of(context).textTheme.headlineMedium),
+                    Text('Rate your trip', style: t.headlineMedium),
                   ],
                 ),
               ),
@@ -116,94 +107,61 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
                   padding: const EdgeInsets.fromLTRB(
                       Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x5),
                   children: [
+                    // Prompt
                     Center(
                       child: Text(
                         'How was your trip?',
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        style: t.headlineSmall,
                       ),
                     ),
                     const SizedBox(height: Spacing.x5),
+
+                    // Main star row — 40 dp, fills primary.
                     StarRatingInput(
                       value: _rating,
                       onChanged: (v) => setState(() => _rating = v),
+                      size: 40,
                       fillColor: BrandColors.primary,
                     ),
                     const SizedBox(height: Spacing.x6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.x4, vertical: Spacing.x2),
-                      decoration: BoxDecoration(
-                        color: BrandColors.surface,
-                        borderRadius: BorderRadius.circular(Radii.card),
-                        border: Border.all(color: BrandColors.border),
-                      ),
-                      child: Column(
-                        children: [
-                          _categoryRow('Cleanliness', _cleanliness,
-                              (v) => setState(() => _cleanliness = v)),
-                          _categoryRow('Communication', _communication,
-                              (v) => setState(() => _communication = v)),
-                          _categoryRow('Accuracy', _accuracy,
-                              (v) => setState(() => _accuracy = v)),
-                          _categoryRow('Pickup', _pickup,
-                              (v) => setState(() => _pickup = v)),
-                        ],
-                      ),
-                    ),
+
+                    // Sub-category star rows
+                    _categoryCard(context),
                     const SizedBox(height: Spacing.x5),
-                    Text('What stood out?',
-                        style: Theme.of(context).textTheme.titleMedium),
+
+                    // Tag chips — use theme FilterChip.
+                    Text('What stood out?', style: t.titleMedium),
                     const SizedBox(height: Spacing.x3),
                     Wrap(
                       spacing: Spacing.x2,
                       runSpacing: Spacing.x2,
-                      children: _tagOptions.map((t) {
-                        final sel = _tags.contains(t);
-                        return GestureDetector(
-                          onTap: () => setState(
-                              () => sel ? _tags.remove(t) : _tags.add(t)),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.x4, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: sel
-                                  ? BrandColors.primary
-                                  : BrandColors.surface,
-                              borderRadius:
-                                  BorderRadius.circular(Radii.pill),
-                              border: Border.all(
-                                color: sel
-                                    ? BrandColors.primary
-                                    : BrandColors.border,
-                              ),
-                            ),
-                            child: Text(
-                              t,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: sel
-                                    ? BrandColors.primaryFg
-                                    : BrandColors.foreground,
-                              ),
-                            ),
-                          ),
+                      children: _tagOptions.map((tag) {
+                        final sel = _tags.contains(tag);
+                        return FilterChip(
+                          label: Text(tag),
+                          selected: sel,
+                          onSelected: (v) => setState(
+                              () => v ? _tags.add(tag) : _tags.remove(tag)),
                         );
                       }).toList(),
                     ),
                     const SizedBox(height: Spacing.x5),
+
+                    // Textarea — max 500 chars.
                     TextField(
                       controller: _comment,
                       maxLines: 4,
                       maxLength: 500,
                       decoration: const InputDecoration(
-                        hintText: 'Share details (optional)',
+                        hintText: 'Tell others about your experience (max 500)',
                         alignLabelWithHint: true,
                       ),
                     ),
                   ],
                 ),
               ),
+
+              // Sticky submit CTA
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                     Spacing.x5, 0, Spacing.x5, Spacing.x4),
@@ -214,7 +172,8 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: BrandColors.primaryFg))
+                              strokeWidth: 2,
+                              color: BrandColors.primaryFg))
                       : const Text('Submit review'),
                 ),
               ),
@@ -225,14 +184,44 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
     );
   }
 
-  Widget _categoryRow(String label, int value, ValueChanged<int> onChanged) {
+  Widget _categoryCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.x4, vertical: Spacing.x2),
+      decoration: BoxDecoration(
+        color: BrandColors.surface,
+        borderRadius: BorderRadius.circular(Radii.card),
+        border: Border.all(color: BrandColors.border),
+      ),
+      child: Column(
+        children: [
+          _categoryRow(context, 'Cleanliness', _cleanliness,
+              (v) => setState(() => _cleanliness = v)),
+          _categoryRow(context, 'Communication', _communication,
+              (v) => setState(() => _communication = v)),
+          _categoryRow(context, 'Accuracy', _accuracy,
+              (v) => setState(() => _accuracy = v)),
+          _categoryRow(context, 'Pickup', _pickup,
+              (v) => setState(() => _pickup = v)),
+        ],
+      ),
+    );
+  }
+
+  Widget _categoryRow(
+    BuildContext context,
+    String label,
+    int value,
+    ValueChanged<int> onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Spacing.x2),
       child: Row(
         children: [
           Expanded(
-              child: Text(label,
-                  style: Theme.of(context).textTheme.bodyMedium)),
+            child: Text(label,
+                style: Theme.of(context).textTheme.bodyMedium),
+          ),
           Row(
             children: List.generate(5, (i) {
               final filled = i < value;
@@ -241,7 +230,9 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Icon(
-                    filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    filled
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
                     size: 26,
                     color: filled ? BrandColors.primary : BrandColors.mutedFg,
                   ),
@@ -250,6 +241,24 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
             }),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _circleBack(BuildContext context) {
+    return InkWell(
+      onTap: () =>
+          context.canPop() ? context.pop() : context.go('/trips'),
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: const BoxDecoration(
+          color: BrandColors.surface,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.arrow_back,
+            size: 20, color: BrandColors.foreground),
       ),
     );
   }

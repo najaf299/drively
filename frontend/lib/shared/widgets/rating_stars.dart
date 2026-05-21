@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 
-/// Read-only star rating with an optional numeric label.
+/// Read-only star rating display — drivly Flutter Build Spec v2 §2.
+///
+/// [RatingStars] shows a single star + optional numeric value (compact).
+/// [StarRatingInput] is an interactive 5-star picker.
 class RatingStars extends StatelessWidget {
   final double rating;
   final double size;
   final bool showValue;
   final int? reviewCount;
+
+  /// Filled-star colour — defaults to [BrandColors.warning] per spec.
+  final Color fillColor;
 
   const RatingStars({
     super.key,
@@ -15,29 +21,32 @@ class RatingStars extends StatelessWidget {
     this.size = 16,
     this.showValue = false,
     this.reviewCount,
+    this.fillColor = BrandColors.warning,
   });
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.star_rounded, size: size, color: BrandColors.warning),
+        Icon(Icons.star_rounded, size: size, color: fillColor),
         const SizedBox(width: 2),
-        if (showValue)
+        if (showValue) ...[
           Text(
             rating.toStringAsFixed(1),
-            style: TextStyle(
-              fontSize: size * 0.85,
-              fontWeight: FontWeight.w600,
+            style: text.bodySmall?.copyWith(
               color: BrandColors.foreground,
+              fontWeight: FontWeight.w600,
+              fontSize: size * 0.85,
             ),
           ),
+        ],
         if (reviewCount != null) ...[
           const SizedBox(width: 2),
           Text(
             '($reviewCount)',
-            style: TextStyle(fontSize: size * 0.8, color: BrandColors.mutedFg),
+            style: text.bodySmall?.copyWith(fontSize: size * 0.8),
           ),
         ],
       ],
@@ -51,7 +60,7 @@ class StarRatingInput extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final double size;
 
-  /// Fill colour for selected stars. Defaults to the brand [BrandColors.warning].
+  /// Fill colour for selected stars — defaults to [BrandColors.warning].
   final Color fillColor;
 
   const StarRatingInput({

@@ -2,35 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Brand colour tokens from the Drivly design system v2 (dark-first).
+/// Brand colour tokens — drivly Flutter Build Spec v2 §1.1 (dark-first).
 ///
-/// Use these directly for bespoke colours; semantic colours
-/// (`colorScheme.primary`, etc.) are wired from these in [DrivlyTheme].
+/// Hex values are taken verbatim from the spec table. Never hardcode hex in
+/// widgets — use these tokens (Acceptance Checklist §9). Tonal background pairs
+/// (e.g. [successBg]) MUST be used with their matching foreground.
 class BrandColors {
   BrandColors._();
 
-  static const Color background = Color(0xFF0B0D14); // scaffold (cool near-black)
-  static const Color surface = Color(0xFF14171F); // cards (1 step above bg)
-  static const Color surface2 = Color(0xFF1C2029); // nested / input fills
-  static const Color surface3 = Color(0xFF252934); // hover / pressed / row hl
-  static const Color foreground = Color(0xFFF5F6FA);
-  static const Color mutedFg = Color(0xFF9BA0AE); // secondary text
-  static const Color subtleFg = Color(0xFF6B7080); // placeholder / disabled
-  static const Color primary = Color(0xFFCBF24A); // Electric Lime
-  static const Color primaryFg = Color(0xFF0B0D14); // on-lime text
-  static const Color primaryDim = Color(0xFF8FA833); // disabled / pressed CTA
-  static const Color accent = Color(0xFFFB6F5A); // Coral
-  static const Color success = Color(0xFF6FE0A1);
-  static const Color successBg = Color(0xFF153026); // tonal badge bg
-  static const Color warning = Color(0xFFF0C75A);
-  static const Color warningBg = Color(0xFF332813);
-  static const Color destructive = Color(0xFFE5604F);
-  static const Color destructiveBg = Color(0xFF351A18); // error banner bg
-  static const Color border = Color(0xFF262A36);
-  static const Color borderStrong = Color(0xFF353A48); // handles / focus rows
+  static const Color background = Color(0xFF0B0D14); // scaffold
+  static const Color surface = Color(0xFF14171F); // cards, sheets, list tiles
+  static const Color surface2 = Color(0xFF1B1F2A); // input fill, chips
+  static const Color surface3 = Color(0xFF242936); // hover/pressed, elevated
+  static const Color border = Color(0xFF262A36); // hairlines, dividers, outline
+  static const Color borderStrong = Color(0xFF3A4051); // focus, segmented
+  static const Color foreground = Color(0xFFF4F5F7); // primary text/icons
+  static const Color mutedFg = Color(0xFF8A8F9C); // secondary text, helper
+  static const Color subtleFg = Color(0xFF5F6472); // disabled, tertiary
+  static const Color primary = Color(0xFFCBF24A); // lime brand
+  static const Color primaryFg = Color(0xFF0B0D14); // on-primary (near-black)
+  static const Color primaryGlow = Color(0xFFE4FF7A); // hover/pressed, glow
+  static const Color accent = Color(0xFF7C5CFF); // premium tier, host charts
+  static const Color success = Color(0xFF22C55E);
+  static const Color successBg = Color(0xFF0F2A1A);
+  static const Color warning = Color(0xFFFFB020);
+  static const Color warningBg = Color(0xFF2A1F0A);
+  static const Color destructive = Color(0xFFFF5A5F);
+  static const Color destructiveBg = Color(0xFF2A0F11);
+  static const Color info = Color(0xFF3FA9FF); // toasts, route polyline
+  static const Color overlay = Color(0xFF000000); // modal scrim @60%
+
+  /// Back-compat: dim lime for legacy call sites (disabled now uses surface2).
+  static const Color primaryDim = Color(0xFF8FA833);
 }
 
-/// Reusable gradients (hero backgrounds, CTAs, badges).
+/// Reusable gradients (hero backgrounds, balance/earnings cards, premium).
 class BrandGradients {
   BrandGradients._();
 
@@ -42,57 +48,66 @@ class BrandGradients {
     stops: [0.0, 0.55, 1.0],
   );
 
-  /// Primary CTA / balance card (lime → mint).
+  /// Lime CTA / highlight gradient.
   static const LinearGradient primary = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFCBF24A), Color(0xFF8FE6A0)],
+    colors: [BrandColors.primaryGlow, BrandColors.primary],
   );
 
-  /// Coral → red, for live/hot badges.
+  /// Wallet/earnings hero — surface → surface2 (spec §4.4).
+  static const LinearGradient surfaceCard = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [BrandColors.surface, BrandColors.surface2],
+  );
+
+  /// Premium / accent (purple) gradient — host insights, premium tier.
   static const LinearGradient accent = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFB6F5A), Color(0xFFE5604F)],
+    colors: [Color(0xFF9B85FF), BrandColors.accent],
   );
 }
 
-/// Reusable shadows. Applied manually (theme keeps elevation flat).
+/// Reusable shadows — spec §1.3 (applied manually; theme keeps elevation flat).
 class BrandShadows {
   BrandShadows._();
 
-  /// Soft dark drop for elevated cards.
+  /// cardShadow: 0 8 24 rgba(0,0,0,.35).
   static const List<BoxShadow> card = [
-    BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 10)),
+    BoxShadow(color: Color(0x59000000), blurRadius: 24, offset: Offset(0, 8)),
   ];
 
-  /// Lime halo behind primary CTAs / active map pins.
+  /// limeGlow: 0 12 40 rgba(203,242,74,.25).
   static const List<BoxShadow> glow = [
-    BoxShadow(
-      color: Color(0x59CBF24A),
-      blurRadius: 28,
-      spreadRadius: -6,
-      offset: Offset(0, 6),
-    ),
+    BoxShadow(color: Color(0x40CBF24A), blurRadius: 40, offset: Offset(0, 12)),
   ];
 }
 
-/// Canonical component sizes (dp).
+/// Canonical component sizes (dp) — spec §2.
 class Sizes {
   Sizes._();
-  static const double ctaHeight = 56;
-  static const double secondaryHeight = 48;
+  static const double ctaHeight = 56; // PrimaryButton
+  static const double secondaryHeight = 52; // tonal / outlined
+  static const double socialHeight = 56; // OAuth row
   static const double fieldHeight = 56;
+  static const double searchBar = 52; // SearchBar pill
+  static const double filterChip = 36;
   static const double bottomNavHeight = 72;
   static const double appBarHeight = 56;
+  static const double iconRoundButton = 44; // back/share/favorite
   static const double icon = 24;
   static const double iconLg = 26;
-  static const double avatarSm = 32;
+  static const double iconSm = 20;
+  static const double avatarSm = 32; // AvatarStack
   static const double avatar = 44;
+  static const double avatarMd = 48; // host row, contact icons
   static const double avatarLg = 64;
+  static const double avatarXl = 96; // profile header
 }
 
-/// Spacing scale (dp).
+/// Spacing scale (dp) — spec §1.3.
 class Spacing {
   Spacing._();
   static const double x1 = 4;
@@ -103,22 +118,41 @@ class Spacing {
   static const double x6 = 24;
   static const double x8 = 32;
   static const double x10 = 40;
+  static const double x12 = 48;
+  static const double x16 = 64;
 }
 
-/// Corner radii scale. (`btn`/`card` kept as aliases for existing call sites.)
+/// Corner radii scale — spec §1.3.
 class Radii {
   Radii._();
   static const double xs = 8; // checkboxes, tiny chips
   static const double sm = 12; // small badges, list rows
-  static const double md = 14; // text fields
-  static const double lg = 18; // secondary buttons, segmented
-  static const double xl = 20; // cards
-  static const double xxl = 28; // primary CTA, modals, sheets
-  static const double pill = 999;
+  static const double md = 16; // text fields (input radius)
+  static const double lg = 20; // cards (card radius)
+  static const double xl = 24; // dialogs, large cards
+  static const double xxl = 28; // bottom sheets, modals
+  static const double pill = 999; // CTA — always full pill
 
   // Back-compat aliases (used across feature screens).
-  static const double btn = lg; // 18 → secondary
-  static const double card = xl; // 20
+  static const double btn = lg; // 20 → secondary buttons
+  static const double card = lg; // 20 → card radius
+}
+
+/// JetBrains Mono helper — OTP digits, license plate, booking ID (spec §1.2).
+class BrandText {
+  BrandText._();
+  static TextStyle mono({
+    double size = 22,
+    FontWeight weight = FontWeight.w600,
+    Color color = BrandColors.foreground,
+    double spacing = 0,
+  }) =>
+      GoogleFonts.jetBrainsMono(
+        fontSize: size,
+        fontWeight: weight,
+        color: color,
+        letterSpacing: spacing,
+      );
 }
 
 class DrivlyTheme {
@@ -129,7 +163,8 @@ class DrivlyTheme {
     primary: BrandColors.primary,
     onPrimary: BrandColors.primaryFg,
     secondary: BrandColors.accent,
-    onSecondary: BrandColors.primaryFg,
+    onSecondary: Colors.white,
+    tertiary: BrandColors.info,
     error: BrandColors.destructive,
     onError: Colors.white,
     surface: BrandColors.surface,
@@ -158,41 +193,48 @@ class DrivlyTheme {
         systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: GoogleFonts.spaceGrotesk(
           color: BrandColors.foreground,
-          fontSize: 19,
+          fontSize: 20,
           fontWeight: FontWeight.w600,
-          letterSpacing: -0.3,
+          letterSpacing: -0.2,
         ),
       ),
+      // PrimaryButton — full pill, h56, primary/primaryFg, disabled surface2.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: BrandColors.primary,
           foregroundColor: BrandColors.primaryFg,
-          disabledBackgroundColor: BrandColors.primaryDim,
-          disabledForegroundColor: BrandColors.primaryFg.withValues(alpha: 0.7),
+          disabledBackgroundColor: BrandColors.surface2,
+          disabledForegroundColor: BrandColors.subtleFg,
           minimumSize: const Size.fromHeight(Sizes.ctaHeight),
           elevation: 0,
-          textStyle: GoogleFonts.inter(fontSize: 15.5, fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Radii.xxl),
+          textStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
           ),
+          shape: const StadiumBorder(),
         ),
       ),
+      // Tonal / outlined — surface2 fill, border, pill.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: BrandColors.foreground,
-          backgroundColor: BrandColors.surface,
+          backgroundColor: BrandColors.surface2,
           minimumSize: const Size.fromHeight(Sizes.secondaryHeight),
           side: const BorderSide(color: BrandColors.border),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Radii.lg),
+          textStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
           ),
+          shape: const StadiumBorder(),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: BrandColors.primary,
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle:
+              GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       cardTheme: CardThemeData(
@@ -200,30 +242,38 @@ class DrivlyTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Radii.xl),
-          side: const BorderSide(color: BrandColors.border),
+          borderRadius: BorderRadius.circular(Radii.lg),
         ),
       ),
+      // FilterChip — pill 36h, surface2/border, selected primary/primaryFg.
       chipTheme: ChipThemeData(
-        backgroundColor: BrandColors.surface,
+        backgroundColor: BrandColors.surface2,
         selectedColor: BrandColors.primary,
         side: const BorderSide(color: BrandColors.border),
-        labelStyle:
-            GoogleFonts.inter(color: BrandColors.foreground, fontSize: 13, fontWeight: FontWeight.w500),
-        secondaryLabelStyle:
-            GoogleFonts.inter(color: BrandColors.primaryFg, fontSize: 13, fontWeight: FontWeight.w700),
+        labelStyle: GoogleFonts.inter(
+            color: BrandColors.foreground,
+            fontSize: 13,
+            fontWeight: FontWeight.w500),
+        secondaryLabelStyle: GoogleFonts.inter(
+            color: BrandColors.primaryFg,
+            fontSize: 13,
+            fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         shape: const StadiumBorder(),
       ),
+      // BrandTextField — surface2 fill, radius 16, focus 1.6 primary, pad 16/14.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: BrandColors.surface2,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: GoogleFonts.inter(color: BrandColors.subtleFg),
-        labelStyle: GoogleFonts.inter(color: BrandColors.mutedFg),
+        labelStyle: GoogleFonts.inter(
+            color: BrandColors.mutedFg, fontWeight: FontWeight.w500),
         floatingLabelStyle: GoogleFonts.inter(
             color: BrandColors.primary, fontWeight: FontWeight.w600),
+        helperStyle: GoogleFonts.inter(
+            color: BrandColors.mutedFg, fontSize: 12),
         prefixIconColor: BrandColors.mutedFg,
         suffixIconColor: BrandColors.mutedFg,
         enabledBorder: OutlineInputBorder(
@@ -236,7 +286,8 @@ class DrivlyTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Radii.md),
-          borderSide: const BorderSide(color: BrandColors.destructive, width: 1.4),
+          borderSide:
+              const BorderSide(color: BrandColors.destructive, width: 1.4),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Radii.md),
@@ -244,19 +295,20 @@ class DrivlyTheme {
               const BorderSide(color: BrandColors.destructive, width: 1.8),
         ),
         errorStyle:
-            GoogleFonts.inter(color: BrandColors.destructive, fontSize: 12.5),
+            GoogleFonts.inter(color: BrandColors.destructive, fontSize: 12),
       ),
+      // BottomNavBar — M3, h72, surface, indicator primary/15.
       navigationBarTheme: NavigationBarThemeData(
         height: Sizes.bottomNavHeight,
         backgroundColor: BrandColors.surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: BrandColors.primary.withValues(alpha: 0.18),
+        indicatorColor: BrandColors.primary.withValues(alpha: 0.15),
         elevation: 0,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            size: 24,
+            size: Sizes.icon,
             color: selected ? BrandColors.primary : BrandColors.mutedFg,
           );
         }),
@@ -276,6 +328,7 @@ class DrivlyTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
+      // BottomSheetShell — surface, top radius 28.
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: BrandColors.surface,
         surfaceTintColor: Colors.transparent,
@@ -283,18 +336,21 @@ class DrivlyTheme {
           borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
         ),
       ),
+      // ConfirmDialog — surface, radius 24.
       dialogTheme: DialogThemeData(
         backgroundColor: BrandColors.surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Radii.xl),
-          side: const BorderSide(color: BrandColors.border),
         ),
         titleTextStyle: GoogleFonts.spaceGrotesk(
-            color: BrandColors.foreground, fontSize: 20, fontWeight: FontWeight.w700),
+            color: BrandColors.foreground,
+            fontSize: 20,
+            fontWeight: FontWeight.w600),
         contentTextStyle: GoogleFonts.inter(
-            color: BrandColors.mutedFg, fontSize: 14.5, height: 1.45),
+            color: BrandColors.mutedFg, fontSize: 14, height: 1.45),
       ),
+      // BrandSnackbar — floating, radius 16.
       snackBarTheme: SnackBarThemeData(
         backgroundColor: BrandColors.surface2,
         contentTextStyle: GoogleFonts.inter(color: BrandColors.foreground),
@@ -319,8 +375,7 @@ class DrivlyTheme {
             states.contains(WidgetState.selected)
                 ? BrandColors.primary
                 : BrandColors.surface2),
-        trackOutlineColor:
-            WidgetStateProperty.all(Colors.transparent),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) =>
@@ -337,7 +392,7 @@ class DrivlyTheme {
         labelColor: BrandColors.foreground,
         unselectedLabelColor: BrandColors.mutedFg,
         indicatorColor: BrandColors.primary,
-        labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+        labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
         unselectedLabelStyle:
             GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
       ),
@@ -352,51 +407,66 @@ class DrivlyTheme {
     );
   }
 
+  /// Type ramp — spec §1.2. Space Grotesk for h1–h4 (display/headline/title),
+  /// Inter for body/labels/buttons. Sizes/heights/weights are verbatim.
   static TextTheme _textTheme(TextTheme base) {
-    // Inter for body/labels; Space Grotesk for display/headlines/titleLarge —
-    // the exact pairing from the design. (Space Grotesk maxes at w700, so the
-    // spec's w800 displays use w700 — the heaviest weight the font ships.)
     final body = GoogleFonts.interTextTheme(base).apply(
       bodyColor: BrandColors.foreground,
       displayColor: BrandColors.foreground,
     );
 
-    TextStyle grotesk(double size, FontWeight weight, double spacing) =>
+    TextStyle grotesk(double size, double lineHeight, FontWeight weight,
+            double spacing,
+            {Color color = BrandColors.foreground}) =>
         GoogleFonts.spaceGrotesk(
           fontSize: size,
+          height: lineHeight / size,
           fontWeight: weight,
           letterSpacing: spacing,
-          color: BrandColors.foreground,
-          height: 1.05,
+          color: color,
         );
 
-    TextStyle inter(double size, FontWeight weight,
-            {double spacing = 0, Color? color, double? height}) =>
+    TextStyle inter(double size, double lineHeight, FontWeight weight,
+            {double spacing = 0, Color? color}) =>
         GoogleFonts.inter(
           fontSize: size,
+          height: lineHeight / size,
           fontWeight: weight,
           letterSpacing: spacing,
           color: color ?? BrandColors.foreground,
-          height: height,
         );
 
     return body.copyWith(
-      displayLarge: grotesk(40, FontWeight.w700, -1.0),
-      displayMedium: grotesk(34, FontWeight.w700, -0.8),
-      displaySmall: grotesk(28, FontWeight.w700, -0.6),
-      headlineLarge: grotesk(26, FontWeight.w700, -0.5),
-      headlineMedium: grotesk(22, FontWeight.w700, -0.4),
-      headlineSmall: grotesk(19, FontWeight.w600, -0.3),
-      titleLarge: grotesk(17, FontWeight.w600, -0.2),
-      titleMedium: inter(15.5, FontWeight.w600, spacing: -0.1),
-      titleSmall: inter(13.5, FontWeight.w600, spacing: 0.1),
-      bodyLarge: inter(15, FontWeight.w400, height: 1.5),
-      bodyMedium: inter(14, FontWeight.w400, height: 1.45),
-      bodySmall: inter(12.5, FontWeight.w400,
-          color: BrandColors.mutedFg, height: 1.4),
-      labelLarge: inter(14, FontWeight.w600),
-      labelMedium: inter(12.5, FontWeight.w600, spacing: 0.3),
-      labelSmall: inter(11, FontWeight.w700, spacing: 0.8),
+      // h1 / displayLarge — 32 / 38 · w700 · -0.5
+      displayLarge: grotesk(32, 38, FontWeight.w700, -0.5),
+      // h2 / displayMedium — 26 / 32 · w700 · -0.4
+      displayMedium: grotesk(26, 32, FontWeight.w700, -0.4),
+      // (interp) displaySmall — used for big success/celebration titles
+      displaySmall: grotesk(22, 28, FontWeight.w700, -0.3),
+      // (interp) headlineLarge — trip timers / large numerics
+      headlineLarge: grotesk(24, 30, FontWeight.w700, -0.3),
+      // (interp) headlineMedium — sticky-bar prices, section totals
+      headlineMedium: grotesk(20, 26, FontWeight.w700, -0.2),
+      // h3 / headlineSmall — 20 / 26 · w600 · -0.2
+      headlineSmall: grotesk(20, 26, FontWeight.w600, -0.2),
+      // h4 / titleLarge — 17 / 22 · w600 · 0
+      titleLarge: grotesk(17, 22, FontWeight.w600, 0),
+      // titleMedium — card prices / emphasised body
+      titleMedium: inter(15, 20, FontWeight.w600, spacing: -0.1),
+      titleSmall: inter(13, 18, FontWeight.w600, spacing: 0.1),
+      // bodyLarge — 15 / 22 · w400
+      bodyLarge: inter(15, 22, FontWeight.w400),
+      // bodyMedium — 14 / 20 · w400 (default Text)
+      bodyMedium: inter(14, 20, FontWeight.w400),
+      // bodySmall / caption — 12 / 16 · w500 · mutedFg · 0.2
+      bodySmall: inter(12, 16, FontWeight.w500,
+          spacing: 0.2, color: BrandColors.mutedFg),
+      // labelLarge / button — 15 / 18 · w600 · 0.2
+      labelLarge: inter(15, 18, FontWeight.w600, spacing: 0.2),
+      labelMedium: inter(12, 16, FontWeight.w600, spacing: 0.3),
+      // overline — 11 / 14 · w700 · 1.2 (UPPERCASE applied at call site)
+      labelSmall: inter(11, 14, FontWeight.w700,
+          spacing: 1.2, color: BrandColors.mutedFg),
     );
   }
 }

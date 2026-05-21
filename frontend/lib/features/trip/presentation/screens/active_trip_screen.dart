@@ -16,8 +16,8 @@ import '../../../../shared/widgets/status_badge.dart';
 import '../../data/trip_service.dart';
 import '../../domain/providers/trip_provider.dart';
 
-/// Live trip view: status, return countdown, host contact and trip actions.
-/// Updates over the realtime channel when available, with a 30s REST poll.
+/// Live trip view: map, timer/ETA, host contact, unlock + end trip actions.
+/// Spec §7.18 — realtime + 30 s polling preserved.
 class ActiveTripScreen extends ConsumerStatefulWidget {
   final String tripId;
   const ActiveTripScreen({super.key, required this.tripId});
@@ -35,15 +35,12 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   @override
   void initState() {
     super.initState();
-    // Keep the countdown fresh.
     _tick = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
-    // REST polling fallback for live status/location.
     _poll = Timer.periodic(const Duration(seconds: 30), (_) {
       ref.invalidate(tripDetailProvider(widget.tripId));
     });
-    // Best-effort realtime updates.
     final client = ref.read(realtimeClientProvider);
     client.subscribePrivate('trip.${widget.tripId}');
     _rt = client.events.listen((event) {
@@ -74,8 +71,13 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Not yet')),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('End trip')),
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: BrandColors.destructive,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('End trip'),
+          ),
         ],
       ),
     );
@@ -173,6 +175,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
 
     return Column(
       children: [
+        // App bar row
         Padding(
           padding: const EdgeInsets.fromLTRB(
               Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x2),
@@ -184,6 +187,10 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                 'Active trip',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
+              const Spacer(),
+              // Live indicator — spec §7.18: destructive tonal.
+              const StatusBadge('LIVE',
+                  tone: BadgeTone.live, icon: Icons.circle),
             ],
           ),
         ),
@@ -196,6 +203,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
               const SizedBox(height: Spacing.x4),
               _carCard(trip, from, to),
               const SizedBox(height: Spacing.x4),
+              // Host contact + quick-action row
               Row(
                 children: [
                   Expanded(
@@ -225,6 +233,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
               ),
               if (trip.isInProgress) ...[
                 const SizedBox(height: Spacing.x4),
+                // Extend trip — tonal outlined button
                 OutlinedButton.icon(
                   onPressed: _busy ? null : () => _extend(trip),
                   icon: const Icon(Icons.more_time),
@@ -243,25 +252,40 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
             ],
           ),
         ),
+        // Sticky 'End trip' — spec: BrandColors.destructive filled button.
         if (trip.isInProgress)
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 Spacing.x5, 0, Spacing.x5, Spacing.x4),
-            child: FilledButton(
-              onPressed: _busy ? null : () => _endTrip(trip),
-              style: FilledButton.styleFrom(
-                backgroundColor: BrandColors.accent,
-                foregroundColor: BrandColors.primaryFg,
-                disabledBackgroundColor:
-                    BrandColors.accent.withValues(alpha: 0.4),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(Radii.pill),
+                boxShadow: [
+                  BoxShadow(
+                    color: BrandColors.destructive.withValues(alpha: 0.25),
+                    blurRadius: 32,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: _busy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: BrandColors.primaryFg))
-                  : const Text('End trip'),
+              child: FilledButton(
+                onPressed: _busy ? null : () => _endTrip(trip),
+                style: FilledButton.styleFrom(
+                  backgroundColor: BrandColors.destructive,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      BrandColors.destructive.withValues(alpha: 0.4),
+                  disabledForegroundColor:
+                      Colors.white.withValues(alpha: 0.5),
+                ),
+                child: _busy
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Text('End trip'),
+              ),
             ),
           ),
       ],
@@ -291,7 +315,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(Radii.xl),
       child: Container(
-        height: 200,
+        height: 220,
         color: BrandColors.surface2,
         child: Stack(
           children: [
@@ -299,23 +323,25 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
             Positioned.fill(
               child: CustomPaint(painter: _RoutePainter()),
             ),
+            // ETA chip — surface@80 + primary clock icon, spec §7.18.
             Positioned(
               left: Spacing.x4,
               top: Spacing.x4,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const StatusBadge('LIVE',
-                      tone: BadgeTone.live, icon: Icons.navigation),
-                  const SizedBox(height: Spacing.x2),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.x3, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: BrandColors.background.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(Radii.lg),
-                    ),
-                    child: Column(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.x3, vertical: Spacing.x2),
+                decoration: BoxDecoration(
+                  color: BrandColors.surface.withValues(alpha: 0.82),
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                  border: Border.all(color: BrandColors.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.access_time_rounded,
+                        size: 16, color: BrandColors.primary),
+                    const SizedBox(width: Spacing.x2),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -328,10 +354,11 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+            // User location dot — spec: primary colour.
             Positioned(
               right: Spacing.x4,
               bottom: Spacing.x4,
@@ -347,13 +374,15 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
               ),
             ),
             if (!hasLoc)
-              const Positioned(
+              Positioned(
                 left: Spacing.x4,
                 bottom: Spacing.x4,
                 child: Text(
                   'Live location unavailable',
-                  style:
-                      TextStyle(color: BrandColors.mutedFg, fontSize: 11),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: BrandColors.mutedFg),
                 ),
               ),
           ],
@@ -365,7 +394,8 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   Widget _carCard(Trip trip, String? from, String? to) {
     final car = trip.booking?.car;
     final name = car?.displayNameWithYear ?? 'Your car';
-    final route = (from != null && to != null) ? '$from → $to' : (from ?? to);
+    final route =
+        (from != null && to != null) ? '$from → $to' : (from ?? to);
     return Container(
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
@@ -415,15 +445,11 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
           ),
           child: Column(
             children: [
-              Icon(icon, color: BrandColors.primary, size: 24),
+              Icon(icon, color: BrandColors.primary, size: Sizes.icon),
               const SizedBox(height: Spacing.x2),
               Text(
                 label,
-                style: const TextStyle(
-                  color: BrandColors.foreground,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),
@@ -434,6 +460,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
 }
 
 /// Decorative lime route polyline drawn across the map card.
+/// End dot is now primary (spec: user dot = primary, no accent).
 class _RoutePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -458,13 +485,14 @@ class _RoutePainter extends CustomPainter {
       );
     canvas.drawPath(path, paint);
 
+    // Both dots: primary (spec: user dot = primary, no coral/accent).
     final dot = Paint()..color = BrandColors.primary;
     canvas.drawCircle(
         Offset(size.width * 0.12, size.height * 0.82), 6, dot);
     canvas.drawCircle(
       Offset(size.width * 0.9, size.height * 0.2),
       6,
-      Paint()..color = BrandColors.accent,
+      dot,
     );
   }
 

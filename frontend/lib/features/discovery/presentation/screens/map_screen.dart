@@ -6,15 +6,16 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/car.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_network_image.dart';
+import '../../../../shared/widgets/car_card.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../domain/providers/car_provider.dart';
 
-/// Map browse screen.
+/// Map browse screen — spec §5, §7.9.
 ///
-/// A full interactive map (`google_maps_flutter`) requires a platform Maps API
-/// key; to keep the app runnable in any environment this presents the same
-/// result set over a styled map surface with price markers. Swap
-/// [_MapCanvas] for a `GoogleMap` once a key is configured.
+/// Full-screen styled map canvas with price-pin markers; user-location dot is
+/// [BrandColors.primary] (spec §5.2). My-location FAB = 44 surface2/border.
+/// Bottom [DraggableScrollableSheet] with a [CarCard] pager when a pin is
+/// selected, or a mini-card summary strip when nothing is selected.
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
@@ -24,6 +25,13 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   String? _selectedId;
+  final _sheetController = DraggableScrollableController();
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,18 +41,23 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(message: e.toString()),
         data: (list) {
-          // Keep selection valid as the list changes.
           final selected = list.where((c) => c.id == _selectedId).isNotEmpty
               ? list.firstWhere((c) => c.id == _selectedId)
               : null;
+
           return Stack(
             children: [
-              _MapCanvas(
-                cars: list,
-                selectedId: _selectedId,
-                onTapMarker: (id) => setState(() => _selectedId = id),
+              // ── Map canvas ───────────────────────────────────────────────
+              Positioned.fill(
+                child: _MapCanvas(
+                  cars: list,
+                  selectedId: _selectedId,
+                  onTapMarker: (id) => setState(
+                      () => _selectedId = _selectedId == id ? null : id),
+                ),
               ),
-              // ── Floating top search bar + layers button ─────────────────
+
+              // ── Floating top bar: back + search pill + layers ────────────
               Positioned(
                 top: 0,
                 left: 0,
@@ -63,25 +76,30 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         const SizedBox(width: Spacing.x3),
                         Expanded(
                           child: Container(
-                            height: Sizes.secondaryHeight,
+                            height: Sizes.searchBar,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: Spacing.x4),
                             decoration: BoxDecoration(
                               color: BrandColors.surface2,
-                              borderRadius: BorderRadius.circular(Radii.pill),
+                              borderRadius:
+                                  BorderRadius.circular(Radii.pill),
                               border: Border.all(color: BrandColors.border),
                             ),
                             child: Row(
                               children: [
                                 const Icon(Icons.search,
-                                    color: BrandColors.mutedFg, size: 20),
+                                    color: BrandColors.mutedFg,
+                                    size: Sizes.iconSm),
                                 const SizedBox(width: Spacing.x2),
                                 Expanded(
                                   child: Text(
                                     'Cars near ${_areaLabel(list)}',
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: BrandColors.foreground),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
+                                            color: BrandColors.foreground),
                                   ),
                                 ),
                               ],
@@ -98,43 +116,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
                 ),
               ),
-              // ── Zoom + locate controls ──────────────────────────────────
+
+              // ── My-location FAB (44 dp, surface2/border) ─────────────────
               Positioned(
                 right: Spacing.x4,
-                bottom: selected != null ? 200 : Spacing.x6,
-                child: Column(
-                  children: [
-                    _MapControl(
-                      icon: Icons.add,
-                      onTap: () {},
-                      top: true,
-                    ),
-                    Container(
-                        width: 44, height: 1, color: BrandColors.border),
-                    _MapControl(
-                      icon: Icons.remove,
-                      onTap: () {},
-                      bottom: true,
-                    ),
-                    const SizedBox(height: Spacing.x3),
-                    _LocateFab(onTap: () {}),
-                  ],
-                ),
+                bottom: selected != null ? 220 : 100,
+                child: _LocateFab(onTap: () {}),
               ),
-              // ── Bottom selected-car card ────────────────────────────────
-              if (selected != null)
-                Positioned(
-                  left: Spacing.x4,
-                  right: Spacing.x4,
-                  bottom: Spacing.x4,
-                  child: SafeArea(
-                    top: false,
-                    child: _SelectedCarCard(
-                      car: selected,
-                      onView: () => context.push('/car/${selected.id}'),
-                    ),
-                  ),
-                ),
+
+              // ── Empty state overlay ──────────────────────────────────────
               if (list.isEmpty)
                 const Center(
                   child: EmptyView(
@@ -142,6 +132,26 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     title: 'No cars in this area',
                     subtitle: 'Zoom out or change your filters.',
                   ),
+                ),
+
+              // ── Bottom draggable sheet with CarCard pager ────────────────
+              if (list.isNotEmpty)
+                DraggableScrollableSheet(
+                  controller: _sheetController,
+                  initialChildSize: selected != null ? 0.38 : 0.14,
+                  minChildSize: 0.10,
+                  maxChildSize: 0.75,
+                  snap: true,
+                  snapSizes: const [0.14, 0.38, 0.75],
+                  builder: (_, scrollController) =>
+                      _BottomCarSheet(
+                        cars: list,
+                        selectedCar: selected,
+                        scrollController: scrollController,
+                        onView: (id) => context.push('/car/$id'),
+                        onDismiss: () =>
+                            setState(() => _selectedId = null),
+                      ),
                 ),
             ],
           );
@@ -154,7 +164,254 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       cars.isNotEmpty ? cars.first.city : 'you';
 }
 
-/// Styled stand-in map surface that scatters price markers across the canvas.
+// ── Bottom draggable sheet ────────────────────────────────────────────────────
+
+class _BottomCarSheet extends StatelessWidget {
+  final List<Car> cars;
+  final Car? selectedCar;
+  final ScrollController scrollController;
+  final ValueChanged<String> onView;
+  final VoidCallback onDismiss;
+
+  const _BottomCarSheet({
+    required this.cars,
+    required this.selectedCar,
+    required this.scrollController,
+    required this.onView,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Container(
+      decoration: const BoxDecoration(
+        color: BrandColors.surface,
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(Radii.xxl)),
+        boxShadow: BrandShadows.card,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle.
+          Padding(
+            padding: const EdgeInsets.only(
+                top: Spacing.x3, bottom: Spacing.x2),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: BrandColors.borderStrong,
+                borderRadius:
+                    BorderRadius.circular(Radii.pill),
+              ),
+            ),
+          ),
+          // Header row.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                Spacing.x5, 0, Spacing.x5, Spacing.x3),
+            child: Row(
+              children: [
+                Text(
+                  selectedCar != null
+                      ? selectedCar!.displayName
+                      : '${cars.length} cars nearby',
+                  style: text.titleLarge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                if (selectedCar != null)
+                  GestureDetector(
+                    onTap: onDismiss,
+                    child: const Icon(Icons.close,
+                        size: Sizes.iconSm,
+                        color: BrandColors.mutedFg),
+                  ),
+              ],
+            ),
+          ),
+          // CarCard pager (horizontal for selected, vertical list otherwise).
+          Expanded(
+            child: selectedCar != null
+                ? _CarPager(
+                    cars: cars,
+                    initialId: selectedCar!.id,
+                    onView: onView,
+                    scrollController: scrollController,
+                  )
+                : ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(
+                        Spacing.x4, 0, Spacing.x4, Spacing.x5),
+                    itemCount: cars.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: Spacing.x3),
+                    itemBuilder: (_, i) => CarCard(
+                      car: cars[i],
+                      onTap: () => onView(cars[i].id),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Car horizontal pager ─────────────────────────────────────────────────────
+
+class _CarPager extends StatefulWidget {
+  final List<Car> cars;
+  final String initialId;
+  final ValueChanged<String> onView;
+  final ScrollController scrollController;
+
+  const _CarPager({
+    required this.cars,
+    required this.initialId,
+    required this.onView,
+    required this.scrollController,
+  });
+
+  @override
+  State<_CarPager> createState() => _CarPagerState();
+}
+
+class _CarPagerState extends State<_CarPager> {
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    final idx = widget.cars.indexWhere((c) => c.id == widget.initialId);
+    _pageController = PageController(
+      initialPage: idx < 0 ? 0 : idx,
+      viewportFraction: 0.88,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView.builder(
+      controller: _pageController,
+      itemCount: widget.cars.length,
+      itemBuilder: (_, i) {
+        final car = widget.cars[i];
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.x2),
+          child: _MapCarCard(
+            car: car,
+            onView: () => widget.onView(car.id),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Compact map card for the pager.
+class _MapCarCard extends StatelessWidget {
+  final Car car;
+  final VoidCallback onView;
+
+  const _MapCarCard({required this.car, required this.onView});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: Spacing.x4),
+      padding: const EdgeInsets.all(Spacing.x3),
+      decoration: BoxDecoration(
+        color: BrandColors.surface2,
+        borderRadius: BorderRadius.circular(Radii.lg),
+        border: Border.all(color: BrandColors.border),
+        boxShadow: BrandShadows.card,
+      ),
+      child: Row(
+        children: [
+          AppNetworkImage(
+            url: car.coverPhotoUrl,
+            width: 80,
+            height: 80,
+            borderRadius: BorderRadius.circular(Radii.md),
+          ),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  car.displayName,
+                  style: text.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: Spacing.x1),
+                Row(
+                  children: [
+                    const Icon(Icons.star_rounded,
+                        size: 14, color: BrandColors.warning),
+                    const SizedBox(width: 2),
+                    Text(
+                      car.averageRating.toStringAsFixed(1),
+                      style: text.titleSmall,
+                    ),
+                    const SizedBox(width: Spacing.x1),
+                    Flexible(
+                      child: Text(
+                        '· ${car.city}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Spacing.x2),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: Formatters.money(car.dailyPrice),
+                        style: text.titleMedium
+                            ?.copyWith(color: BrandColors.primary),
+                      ),
+                      TextSpan(text: '/day', style: text.bodySmall),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: Spacing.x2),
+          FilledButton(
+            onPressed: onView,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, Sizes.filterChip),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: Spacing.x4),
+            ),
+            child: const Text('View'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Map canvas (styled stand-in until Google Maps key is set) ────────────────
+
 class _MapCanvas extends StatelessWidget {
   final List<Car> cars;
   final String? selectedId;
@@ -184,11 +441,11 @@ class _MapCanvas extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              // Subtle "grid" texture so it reads as a map surface.
+              // Subtle grid texture so it reads as a map surface.
               const Positioned.fill(
-                child: CustomPaint(painter: _GridPainter()),
-              ),
-              // Price markers, deterministically scattered.
+                  child: CustomPaint(painter: _GridPainter())),
+
+              // Price markers — deterministically scattered.
               for (var i = 0; i < cars.length; i++)
                 Positioned(
                   left: _scatterX(i, cars.length, w),
@@ -199,18 +456,35 @@ class _MapCanvas extends StatelessWidget {
                     onTap: () => onTapMarker(cars[i].id),
                   ),
                 ),
-              // The user's own location marker (coral).
+
+              // User-location dot — primary (spec §5.2).
               Positioned(
                 left: w * 0.5 - 9,
                 top: h * 0.55 - 9,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: BrandColors.accent,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
-                  ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Soft halo.
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: BrandColors.primary.withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    // 16 dp dot.
+                    Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: BrandColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: BrandColors.background, width: 3),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -221,7 +495,7 @@ class _MapCanvas extends StatelessWidget {
   }
 
   double _scatterX(int i, int n, double w) {
-    final cols = (n <= 1) ? 1 : 3;
+    final cols = n <= 1 ? 1 : 3;
     final col = i % cols;
     final frac = cols == 1 ? 0.5 : 0.18 + col * 0.32;
     final jitter = ((i * 37) % 11 - 5) * 0.012;
@@ -229,7 +503,7 @@ class _MapCanvas extends StatelessWidget {
   }
 
   double _scatterY(int i, int n, double h) {
-    final cols = (n <= 1) ? 1 : 3;
+    final cols = n <= 1 ? 1 : 3;
     final row = i ~/ cols;
     final frac = 0.16 + (row * 0.16);
     final jitter = ((i * 53) % 9 - 4) * 0.014;
@@ -237,11 +511,15 @@ class _MapCanvas extends StatelessWidget {
   }
 }
 
-/// Price pill marker: active = lime with a lime glow, inactive = surface2.
+// ── Price pill marker ────────────────────────────────────────────────────────
+
+/// Active = primary pill with glow; inactive = surface2 with border.
+/// Selected pin scales up per spec §5.
 class _PriceMarker extends StatelessWidget {
   final double price;
   final bool selected;
   final VoidCallback onTap;
+
   const _PriceMarker({
     required this.price,
     required this.selected,
@@ -254,22 +532,26 @@ class _PriceMarker extends StatelessWidget {
     final fg = selected ? BrandColors.primaryFg : BrandColors.foreground;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(Radii.pill),
-          border: selected
-              ? null
-              : Border.all(color: BrandColors.border),
-          boxShadow: selected ? BrandShadows.glow : null,
-        ),
-        child: Text(
-          Formatters.moneyCompact(price),
-          style: TextStyle(
-            color: fg,
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
+      child: AnimatedScale(
+        scale: selected ? 1.2 : 1.0,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutBack,
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(Radii.pill),
+            border:
+                selected ? null : Border.all(color: BrandColors.border),
+            boxShadow: selected ? BrandShadows.glow : null,
+          ),
+          child: Text(
+            Formatters.moneyCompact(price),
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(color: fg),
           ),
         ),
       ),
@@ -277,103 +559,63 @@ class _PriceMarker extends StatelessWidget {
   }
 }
 
-/// Compact map card for the currently selected car.
-class _SelectedCarCard extends StatelessWidget {
-  final Car car;
-  final VoidCallback onView;
-  const _SelectedCarCard({required this.car, required this.onView});
+// ── My-location FAB ──────────────────────────────────────────────────────────
+
+/// 44 dp circular surface2/border button with target icon — spec §5.
+class _LocateFab extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LocateFab({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.all(Spacing.x3),
-      decoration: BoxDecoration(
-        color: BrandColors.surface,
-        borderRadius: BorderRadius.circular(Radii.xl),
-        border: Border.all(color: BrandColors.border),
-        boxShadow: BrandShadows.card,
-      ),
-      child: Row(
-        children: [
-          AppNetworkImage(
-            url: car.coverPhotoUrl,
-            width: 72,
-            height: 72,
-            borderRadius: BorderRadius.circular(Radii.md),
-          ),
-          const SizedBox(width: Spacing.x3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  car.displayName,
-                  style: text.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.star_rounded,
-                        size: 14, color: BrandColors.warning),
-                    const SizedBox(width: 2),
-                    Text(
-                      car.averageRating.toStringAsFixed(1),
-                      style: text.titleSmall,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        car.distance != null
-                            ? '· ${Formatters.distance(car.distance!)} away · ${car.city}'
-                            : '· ${car.city}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.bodySmall,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: Formatters.money(car.dailyPrice),
-                        style: text.titleMedium?.copyWith(
-                          color: BrandColors.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      TextSpan(text: '/day', style: text.bodySmall),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: Spacing.x2),
-          SizedBox(
-            height: Sizes.secondaryHeight,
-            child: FilledButton(
-              onPressed: onView,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(0, Sizes.secondaryHeight),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: Spacing.x5),
-              ),
-              child: const Text('View'),
-            ),
-          ),
-        ],
+    return Material(
+      color: BrandColors.surface2,
+      shape: const CircleBorder(
+          side: BorderSide(color: BrandColors.border)),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const SizedBox(
+          width: Sizes.iconRoundButton,
+          height: Sizes.iconRoundButton,
+          child: Icon(Icons.my_location,
+              color: BrandColors.primary, size: Sizes.iconSm),
+        ),
       ),
     );
   }
 }
+
+// ── Circle icon button ───────────────────────────────────────────────────────
+
+class _CircleButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BrandColors.surface2,
+      shape: const CircleBorder(
+          side: BorderSide(color: BrandColors.border)),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: Sizes.iconRoundButton,
+          height: Sizes.iconRoundButton,
+          child: Icon(icon,
+              color: BrandColors.foreground, size: Sizes.iconSm),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Grid painter ─────────────────────────────────────────────────────────────
 
 class _GridPainter extends CustomPainter {
   const _GridPainter();
@@ -394,89 +636,4 @@ class _GridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// 44px circular icon button on a surface tile (top overlays).
-class _CircleButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _CircleButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: BrandColors.surface,
-      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(icon, color: BrandColors.foreground, size: 20),
-        ),
-      ),
-    );
-  }
-}
-
-/// A stacked zoom control button (rounded on the outer edge).
-class _MapControl extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool top;
-  final bool bottom;
-  const _MapControl({
-    required this.icon,
-    required this.onTap,
-    this.top = false,
-    this.bottom = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.vertical(
-      top: Radius.circular(top ? Radii.md : 0),
-      bottom: Radius.circular(bottom ? Radii.md : 0),
-    );
-    return Material(
-      color: BrandColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: const BorderSide(color: BrandColors.border),
-      ),
-      child: InkWell(
-        borderRadius: radius,
-        onTap: onTap,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(icon, color: BrandColors.foreground, size: 22),
-        ),
-      ),
-    );
-  }
-}
-
-/// Recenter FAB: 48px surface circle with a lime icon.
-class _LocateFab extends StatelessWidget {
-  final VoidCallback onTap;
-  const _LocateFab({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: BrandColors.surface,
-      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: const SizedBox(
-          width: Sizes.secondaryHeight,
-          height: Sizes.secondaryHeight,
-          child: Icon(Icons.my_location, color: BrandColors.primary),
-        ),
-      ),
-    );
-  }
 }

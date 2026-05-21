@@ -75,11 +75,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               children: [
                 const _StepHeader(label: 'Step 1 of 3'),
                 const SizedBox(height: Spacing.x6),
+                // Title — displayMedium (no hardcoded fontSize/weight).
                 Text(
                   'Create\nyour account',
                   style: textTheme.displayMedium?.copyWith(height: 1.1),
                 ),
                 const SizedBox(height: Spacing.x6),
+                // Role toggle — surface2 pill track, selected = primary/primaryFg.
                 _RoleToggle(
                   role: _role,
                   onChanged: (r) => setState(() => _role = r),
@@ -136,8 +138,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: Spacing.x3),
+                // 4-bar strength meter.
                 _StrengthMeter(strength: _strength),
                 const SizedBox(height: Spacing.x4),
+                // Terms checkbox.
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -166,7 +170,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              TextSpan(text: ' and '),
+                              TextSpan(text: ' & '),
                               TextSpan(
                                 text: 'Privacy Policy',
                                 style: TextStyle(
@@ -182,11 +186,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ],
                 ),
                 const SizedBox(height: Spacing.x5),
-                // Primary CTA wired to the existing register flow with busy state.
+                // Primary CTA with glow — radius Radii.pill (spec §shared rules).
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(Radii.xxl),
+                    borderRadius: BorderRadius.circular(Radii.pill),
                     boxShadow: BrandShadows.glow,
                   ),
                   child: FilledButton(
@@ -235,6 +239,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Role toggle — surface2 pill track, selected segment = primary/primaryFg.
+// ---------------------------------------------------------------------------
+
 class _RoleToggle extends StatelessWidget {
   final String role;
   final ValueChanged<String> onChanged;
@@ -245,7 +253,7 @@ class _RoleToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: BrandColors.surface,
+        color: BrandColors.surface2,
         borderRadius: BorderRadius.circular(Radii.pill),
         border: Border.all(color: BrandColors.border),
       ),
@@ -274,8 +282,7 @@ class _RoleToggle extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color:
-                      selected ? BrandColors.primaryFg : BrandColors.mutedFg,
+                  color: selected ? BrandColors.primaryFg : BrandColors.mutedFg,
                 ),
           ),
         ),
@@ -284,48 +291,70 @@ class _RoleToggle extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Strength meter — 4-bar style (spec §7.4).
+// ---------------------------------------------------------------------------
+
 class _StrengthMeter extends StatelessWidget {
   final int strength; // 0..4
   const _StrengthMeter({required this.strength});
 
   @override
   Widget build(BuildContext context) {
-    final color = strength <= 1
-        ? BrandColors.destructive
-        : strength == 2
-            ? BrandColors.warning
-            : BrandColors.success;
-    final label = strength <= 1
-        ? 'Weak'
-        : strength == 2
-            ? 'Medium'
-            : 'Strong';
+    final Color barColor;
+    final String label;
+
+    if (strength <= 1) {
+      barColor = BrandColors.destructive;
+      label = 'Weak';
+    } else if (strength == 2) {
+      barColor = BrandColors.warning;
+      label = 'Medium';
+    } else {
+      barColor = BrandColors.success;
+      label = 'Strong';
+    }
+
     return Row(
       children: [
+        // Four individual bars.
         Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(Radii.pill),
-            child: LinearProgressIndicator(
-              value: strength / 4,
-              minHeight: 6,
-              backgroundColor: BrandColors.surface2,
-              valueColor: AlwaysStoppedAnimation(color),
-            ),
+          child: Row(
+            children: List.generate(4, (i) {
+              final filled = i < strength;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: i < 3 ? Spacing.x1 : 0),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: filled ? barColor : BrandColors.surface2,
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                    ),
+                  ),
+                ),
+              );
+            }),
           ),
         ),
         const SizedBox(width: Spacing.x3),
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: color)),
+        Text(
+          label,
+          style: Theme.of(context)
+              .textTheme
+              .labelMedium
+              ?.copyWith(color: barColor),
+        ),
       ],
     );
   }
 }
 
-/// Circular chevron back button followed by a step-progress label, shared
-/// across the multi-step sign-up flow (sign up, OTP, KYC).
+// ---------------------------------------------------------------------------
+// Step header — shared across multi-step sign-up flow.
+// ---------------------------------------------------------------------------
+
 class _StepHeader extends StatelessWidget {
   final String label;
   const _StepHeader({required this.label});

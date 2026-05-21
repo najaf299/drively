@@ -206,15 +206,7 @@ class _TabState extends ConsumerState<_Tab> {
                       Expanded(
                         child: FilledButton(
                           onPressed: _busyId == b.id ? null : () => _approve(b),
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(
-                                Sizes.secondaryHeight),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(Radii.pill),
-                            ),
-                          ),
-                          child: const Text('Accept',
-                              style: TextStyle(fontWeight: FontWeight.w700)),
+                          child: const Text('Accept'),
                         ),
                       ),
                     ],
