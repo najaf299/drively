@@ -12,13 +12,13 @@ class AppConfig {
   /// with `--dart-define=API_URL=...`. (An Android emulator would use 10.0.2.2.)
   static const String apiBaseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://192.168.100.8:8000/api/v1',
+    defaultValue: 'http://192.168.18.58:8000/api/v1',
   );
 
   /// Reverb host (without scheme/port).
   static const String wsHost = String.fromEnvironment(
     'WS_HOST',
-    defaultValue: '192.168.100.8',
+    defaultValue: '192.168.18.58',
   );
 
   /// Reverb port.

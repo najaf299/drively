@@ -13,25 +13,51 @@ class SplashScreen extends StatelessWidget {
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: BrandGradients.hero),
-        child: Center(
+        child: SafeArea(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              // Wordmark — Space Grotesk w700 64px in lime (spec §7.1).
-              // GoogleFonts.spaceGrotesk is used directly because the ramp tops
-              // out at 32px (displayLarge); 64px is only allowed for this one
-              // wordmark per the shared theme rules.
+              const Spacer(flex: 5),
+              // Lime car-icon badge.
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: BrandColors.primary,
+                  borderRadius: BorderRadius.circular(Radii.xl),
+                  boxShadow: BrandShadows.glow,
+                ),
+                child: const Icon(
+                  Icons.directions_car_rounded,
+                  size: 52,
+                  color: BrandColors.primaryFg,
+                ),
+              ),
+              const SizedBox(height: Spacing.x6),
+              // Wordmark — Space Grotesk w700 in lime (spec §7.1). Used directly
+              // because the type ramp tops out at 32px (displayLarge).
               Text(
                 'drivly',
                 style: GoogleFonts.spaceGrotesk(
-                  fontSize: 64,
+                  fontSize: 56,
                   fontWeight: FontWeight.w700,
                   color: BrandColors.primary,
-                  letterSpacing: -1.0,
+                  letterSpacing: -1.5,
+                  height: 1.0,
                 ),
               ),
-              const SizedBox(height: Spacing.x8),
-              // Thin progress indicator anchored below the wordmark.
+              const SizedBox(height: Spacing.x3),
+              // Tagline.
+              Text(
+                'Drive anywhere',
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: BrandColors.mutedFg,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const Spacer(flex: 5),
+              // Thin progress indicator anchored above the bottom.
               const SizedBox(
                 width: 24,
                 height: 24,
@@ -40,6 +66,7 @@ class SplashScreen extends StatelessWidget {
                   color: BrandColors.primary,
                 ),
               ),
+              const SizedBox(height: Spacing.x10),
             ],
           ),
         ),
