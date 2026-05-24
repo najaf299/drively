@@ -11,9 +11,11 @@ import '../../../../core/errors/app_exception.dart';
 import '../../../../core/models/trip.dart';
 import '../../../../core/network/realtime_client.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../data/trip_service.dart';
+import '../../domain/providers/gps_device_provider.dart';
 import '../../domain/providers/trip_provider.dart';
 
 /// Live trip view: map, timer/ETA, host contact, unlock + end trip actions.
@@ -203,6 +205,8 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
               const SizedBox(height: Spacing.x4),
               _carCard(trip, from, to),
               const SizedBox(height: Spacing.x4),
+              _gpsControlCard(trip),
+              const SizedBox(height: Spacing.x4),
               // Host contact + quick-action row
               Row(
                 children: [
@@ -218,7 +222,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                     child: _actionTile(
                       Icons.photo_camera_outlined,
                       'Photos',
-                      onTap: () {},
+                      onTap: () => AppSnack.soon(context),
                     ),
                   ),
                   const SizedBox(width: Spacing.x3),
@@ -226,7 +230,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                     child: _actionTile(
                       Icons.support_agent_outlined,
                       'Support',
-                      onTap: () {},
+                      onTap: () => AppSnack.soon(context),
                     ),
                   ),
                 ],
@@ -391,11 +395,83 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
     );
   }
 
+  /// Opens the GPS car-control screen, seeding it with this trip's context.
+  void _openGps(Trip trip) {
+    final car = trip.booking?.car;
+    context.push('/gps/${trip.id}', extra: {
+      'lat': trip.lastKnownLat,
+      'lng': trip.lastKnownLng,
+      'carName': car?.displayNameWithYear,
+      'plate': car?.plateNumber,
+    });
+  }
+
+  /// Prominent entry point to the connected-car controls (lock/unlock/GPS).
+  Widget _gpsControlCard(Trip trip) {
+    final gps = ref.watch(gpsDeviceProvider(trip.id));
+    final unlocked = !gps.locked;
+    final accent = unlocked ? BrandColors.primary : BrandColors.foreground;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _openGps(trip),
+        borderRadius: BorderRadius.circular(Radii.xl),
+        child: Container(
+          padding: const EdgeInsets.all(Spacing.x4),
+          decoration: BoxDecoration(
+            gradient: BrandGradients.surfaceCard,
+            borderRadius: BorderRadius.circular(Radii.xl),
+            border: Border.all(
+              color: unlocked
+                  ? BrandColors.primary.withValues(alpha: 0.4)
+                  : BrandColors.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: Sizes.avatarMd,
+                height: Sizes.avatarMd,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(Radii.md),
+                ),
+                child: Icon(
+                  unlocked ? Icons.lock_open_rounded : Icons.lock_rounded,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: Spacing.x3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Car control',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(
+                      unlocked
+                          ? 'Doors unlocked · tap to manage'
+                          : 'Doors locked · tap to unlock',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _carCard(Trip trip, String? from, String? to) {
     final car = trip.booking?.car;
     final name = car?.displayNameWithYear ?? 'Your car';
     final route =
         (from != null && to != null) ? '$from → $to' : (from ?? to);
+    final unlocked = !ref.watch(gpsDeviceProvider(trip.id)).locked;
     return Container(
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
@@ -423,8 +499,11 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
             ),
           ),
           const SizedBox(width: Spacing.x3),
-          const StatusBadge('UNLOCKED',
-              tone: BadgeTone.success, icon: Icons.lock_open),
+          StatusBadge(
+            unlocked ? 'UNLOCKED' : 'LOCKED',
+            tone: unlocked ? BadgeTone.success : BadgeTone.neutral,
+            icon: unlocked ? Icons.lock_open : Icons.lock,
+          ),
         ],
       ),
     );

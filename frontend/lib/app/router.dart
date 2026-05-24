@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../core/models/booking.dart';
 import '../core/models/car.dart';
 import '../features/auth/domain/providers/auth_provider.dart';
+import '../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../features/auth/presentation/screens/kyc_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/onboarding_screen.dart';
@@ -33,6 +34,7 @@ import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/profile/presentation/screens/settings_screen.dart';
 import '../features/trip/presentation/screens/active_trip_screen.dart';
 import '../features/trip/presentation/screens/booking_detail_screen.dart';
+import '../features/trip/presentation/screens/gps_control_screen.dart';
 import '../features/trip/presentation/screens/rate_trip_screen.dart';
 import '../features/trip/presentation/screens/reviews_screen.dart';
 import '../features/trip/presentation/screens/trips_screen.dart';
@@ -50,7 +52,8 @@ const _publicRoutes = {
   '/onboarding',
   '/login',
   '/register',
-  '/verify'
+  '/verify',
+  '/forgot-password',
 };
 
 /// Bridges Riverpod auth-state changes into a [Listenable] for GoRouter.
@@ -93,6 +96,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(
+          path: '/forgot-password',
+          builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
       GoRoute(
         path: '/verify',
@@ -154,6 +160,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/trip/:id',
         builder: (_, state) =>
             ActiveTripScreen(tripId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/gps/:id',
+        builder: (_, state) {
+          final extra = (state.extra as Map?) ?? const {};
+          return GpsControlScreen(
+            tripId: state.pathParameters['id']!,
+            seedLat: extra['lat'] as double?,
+            seedLng: extra['lng'] as double?,
+            carName: extra['carName'] as String?,
+            plate: extra['plate'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: '/rate/:bookingId',

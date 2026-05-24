@@ -85,6 +85,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> loginWithApple(String token) =>
       _run(() => _service.loginWithApple(token));
 
+  /// Requests a password-reset code. Returns the dev code in debug builds
+  /// (so it can be prefilled), otherwise null. Throws on failure.
+  Future<String?> forgotPassword(String email) =>
+      _service.forgotPassword(email);
+
+  /// Verifies the reset code, sets the new password and signs the user in.
+  Future<bool> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  }) =>
+      _run(() => _service.resetPassword(
+            email: email,
+            code: code,
+            password: password,
+          ));
+
   /// Sends an OTP code; throws [AppException] on failure for the UI to surface.
   Future<void> sendOtp(String phone) => _service.sendOtp(phone);
 

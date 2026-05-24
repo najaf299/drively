@@ -115,11 +115,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ?.copyWith(color: BrandColors.mutedFg),
                   ),
                   const SizedBox(height: Spacing.x8),
-                  // Inline error banner when auth.error != null.
-                  if (auth.error != null) ...[
-                    _ErrorBanner(message: auth.error!),
-                    const SizedBox(height: Spacing.x5),
-                  ],
                   // Email field — uses global InputDecoration theme.
                   TextFormField(
                     controller: _email,
@@ -156,8 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => _snack(
-                          'Password reset is coming soon. Contact support.'),
+                      onPressed: () => context.push('/forgot-password'),
                       child: const Text('Forgot password?'),
                     ),
                   ),
@@ -250,44 +244,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Inline error banner shown when `auth.error != null` (spec §7.3).
-class _ErrorBanner extends StatelessWidget {
-  final String message;
-  const _ErrorBanner({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.x4, vertical: Spacing.x3),
-      decoration: BoxDecoration(
-        color: BrandColors.destructiveBg,
-        borderRadius: BorderRadius.circular(Radii.md),
-        border: Border.all(
-            color: BrandColors.destructive.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.error_outline,
-              color: BrandColors.destructive, size: Sizes.icon),
-          const SizedBox(width: Spacing.x3),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: BrandColors.destructive),
-            ),
-          ),
-        ],
       ),
     );
   }

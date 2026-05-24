@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/car_card.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
+import '../../../profile/domain/providers/notification_provider.dart';
 import '../../domain/car_filters.dart';
 import '../../domain/providers/car_provider.dart';
 import 'filters_sheet.dart';
@@ -69,7 +71,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final cars = ref.watch(carListProvider);
     final filters = ref.watch(carFiltersProvider);
-    final user = ref.watch(authProvider).user;
     final text = Theme.of(context).textTheme;
 
     return SafeArea(
@@ -80,42 +81,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: CustomScrollView(
           controller: _scroll,
           slivers: [
-            // ── AppBar greeting: 'Hi, {name}' titleLarge + location chip ──
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x5),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 'Hi, {name}' — headline, name in primary.
-                    Text.rich(
-                      TextSpan(
-                        style: text.headlineSmall,
-                        children: [
-                          const TextSpan(text: 'Hi, '),
-                          TextSpan(
-                            text: (user?.name.trim().isNotEmpty ?? false)
-                                ? user!.name.trim().split(' ').first
-                                : 'there',
-                            style: text.headlineSmall
-                                ?.copyWith(color: BrandColors.primary),
-                          ),
-                        ],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: Spacing.x2),
-                    // Location dropdown — surface2 pill.
-                    _LocationChip(
-                      location: 'Karachi, PK',
-                      onTap: () {},
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // ── Fresh header: avatar · greeting · notifications + location ──
+            const SliverToBoxAdapter(child: _HomeHeader()),
 
             // ── SearchBar: pill 52h, surface2 fill, leading search icon muted ──
             SliverToBoxAdapter(
@@ -298,48 +265,143 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ── Location chip ───────────────────────────────────────────────────────────
+// ── Home header (avatar · greeting · notifications + location) ───────────────
 
-class _LocationChip extends StatelessWidget {
-  final String location;
+class _HomeHeader extends ConsumerWidget {
+  const _HomeHeader();
+
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    final unread = ref.watch(unreadCountProvider);
+    final text = Theme.of(context).textTheme;
+    final firstName = (user?.name.trim().isNotEmpty ?? false)
+        ? user!.name.trim().split(' ').first
+        : 'there';
+
+    // One clean row: avatar · greeting+name (flex) · bell. No location chip —
+    // it crowded the name/bell and forced a half-empty second row.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x5),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => context.go('/profile'),
+            child: AppAvatar(
+              imageUrl: user?.avatarUrl,
+              initials: user?.initials ?? '?',
+              radius: 22,
+            ),
+          ),
+          const SizedBox(width: Spacing.x3),
+          // Greeting + name — flexes to fill the middle, never overflows.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_greeting(),
+                    style: text.bodySmall, maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text.rich(
+                  TextSpan(
+                    style: text.titleLarge,
+                    children: [
+                      TextSpan(
+                        text: firstName,
+                        style: text.titleLarge?.copyWith(
+                          color: BrandColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const TextSpan(text: ' 👋'),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: Spacing.x3),
+          _HeaderIconButton(
+            icon: Icons.notifications_none_rounded,
+            badge: unread,
+            onTap: () => context.push('/notifications'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Circular header action (notification bell) with an optional unread badge.
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final int badge;
   final VoidCallback onTap;
 
-  const _LocationChip({required this.location, required this.onTap});
+  const _HeaderIconButton({
+    required this.icon,
+    this.badge = 0,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: Spacing.x3, vertical: Spacing.x1 + 2),
-        decoration: BoxDecoration(
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
           color: BrandColors.surface2,
-          borderRadius: BorderRadius.circular(Radii.pill),
-          border: Border.all(color: BrandColors.border),
+          shape: const CircleBorder(
+            side: BorderSide(color: BrandColors.border),
+          ),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: SizedBox(
+              width: Sizes.iconRoundButton,
+              height: Sizes.iconRoundButton,
+              child: Icon(icon,
+                  color: BrandColors.foreground, size: Sizes.icon),
+            ),
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.location_on,
-                color: BrandColors.primary, size: Sizes.iconSm),
-            const SizedBox(width: Spacing.x1),
-            Flexible(
-              child: Text(
-                location,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: BrandColors.foreground),
-                overflow: TextOverflow.ellipsis,
+        if (badge > 0)
+          Positioned(
+            right: -1,
+            top: -1,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              decoration: BoxDecoration(
+                color: BrandColors.primary,
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(Radii.pill),
+                border: Border.all(color: BrandColors.background, width: 2),
+              ),
+              child: Center(
+                child: Text(
+                  badge > 9 ? '9+' : '$badge',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: BrandColors.primaryFg,
+                        fontSize: 10,
+                        letterSpacing: 0,
+                      ),
+                ),
               ),
             ),
-            const SizedBox(width: Spacing.x1),
-            const Icon(Icons.expand_more,
-                color: BrandColors.mutedFg, size: 16),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
   }
 }

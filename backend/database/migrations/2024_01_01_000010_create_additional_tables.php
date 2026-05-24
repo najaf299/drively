@@ -110,18 +110,17 @@ return new class extends Migration
             $table->unique(['user_id', 'car_id']);
         });
 
+        // Laravel's standard database-notifications table. The app uses the
+        // Notifiable trait (User->notifications(), unreadNotifications, read_at),
+        // so this MUST match the framework schema. UUID morph because users use
+        // UUID primary keys.
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
             $table->string('type');
-            $table->string('title');
-            $table->text('body');
-            $table->json('data')->nullable();
-            $table->string('action_url')->nullable();
-            $table->boolean('is_read')->default(false);
-            $table->boolean('is_archived')->default(false);
+            $table->uuidMorphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
-            $table->index(['user_id', 'is_read']);
         });
 
         Schema::create('device_tokens', function (Blueprint $table) {

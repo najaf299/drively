@@ -265,14 +265,22 @@ class DrivlyTheme {
         ),
       ),
       // FilterChip — pill 36h, surface2/border, selected primary/primaryFg.
+      // labelStyle is state-aware so a SELECTED chip's text turns near-black on
+      // the lime fill (FilterChip uses labelStyle, not secondaryLabelStyle, for
+      // its label — so this is what keeps selected text readable).
       chipTheme: ChipThemeData(
         backgroundColor: BrandColors.surface2,
         selectedColor: BrandColors.primary,
+        checkmarkColor: BrandColors.primaryFg,
         side: const BorderSide(color: BrandColors.border),
-        labelStyle: GoogleFonts.inter(
-            color: BrandColors.foreground,
+        labelStyle: WidgetStateTextStyle.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return GoogleFonts.inter(
+            color: selected ? BrandColors.primaryFg : BrandColors.foreground,
             fontSize: 13,
-            fontWeight: FontWeight.w500),
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          );
+        }),
         secondaryLabelStyle: GoogleFonts.inter(
             color: BrandColors.primaryFg,
             fontSize: 13,
@@ -296,6 +304,12 @@ class DrivlyTheme {
         prefixIconColor: BrandColors.mutedFg,
         suffixIconColor: BrandColors.mutedFg,
         enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Radii.md),
+          borderSide: const BorderSide(color: BrandColors.border, width: 1),
+        ),
+        // Read-only / disabled fields keep the same rounded outline as enabled
+        // ones (just dimmed) instead of Flutter's default underline.
+        disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Radii.md),
           borderSide: const BorderSide(color: BrandColors.border, width: 1),
         ),

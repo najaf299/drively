@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Customer\CarController;
 use App\Http\Controllers\Customer\BookingController;
 use App\Http\Controllers\Customer\FavoriteController;
@@ -47,6 +48,8 @@ Route::prefix('v1')->group(function () {
         Route::post('apple', [SocialAuthController::class, 'apple']);
         Route::post('otp/send', [OtpController::class, 'sendOtp']);
         Route::post('otp/verify', [OtpController::class, 'verifyOtp']);
+        Route::post('forgot-password', [PasswordResetController::class, 'forgotPassword']);
+        Route::post('reset-password', [PasswordResetController::class, 'resetPassword']);
     });
 
     // ── Public Car Browsing ──

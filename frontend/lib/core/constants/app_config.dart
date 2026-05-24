@@ -7,18 +7,22 @@ class AppConfig {
 
   /// Base URL of the REST API, including the `/api/v1` prefix.
   ///
-  /// Defaults to the dev Mac's LAN IP so the same value works on both the iOS
-  /// simulator and a physical iPhone on the same Wi-Fi. Override per-environment
-  /// with `--dart-define=API_URL=...`. (An Android emulator would use 10.0.2.2.)
+  /// This default is only a fallback for a plain `flutter run`. To avoid editing
+  /// this file every time your Wi-Fi (and Mac IP) changes, use the helper
+  /// scripts instead — they auto-detect the right value at run time:
+  ///   • Simulator:     ./run_sim.sh    (always uses localhost)
+  ///   • Real iPhone:   ./run_phone.sh  (auto-detects the Mac's current LAN IP)
+  /// You can still override manually with `--dart-define=API_URL=...`.
+  /// (An Android emulator would use 10.0.2.2.)
   static const String apiBaseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://192.168.18.58:8000/api/v1',
+    defaultValue: 'http://192.168.1.10:8000/api/v1',
   );
 
   /// Reverb host (without scheme/port).
   static const String wsHost = String.fromEnvironment(
     'WS_HOST',
-    defaultValue: '192.168.18.58',
+    defaultValue: '192.168.1.10',
   );
 
   /// Reverb port.

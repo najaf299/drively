@@ -1,20 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import '../../domain/providers/payment_methods_provider.dart';
+import '../widgets/add_card_sheet.dart';
 
-/// Saved cards — §4.3 / §7.22.
-/// Each saved card is a MiniCard ~96h using BrandGradients.surfaceCard bg.
-class PaymentMethodsScreen extends StatelessWidget {
+/// Saved cards — §4.3 / §7.22. Backed by [savedCardsProvider] so it stays in
+/// sync with the wallet's Cards tab. Each saved card is a MiniCard ~96h using
+/// BrandGradients.surfaceCard bg.
+class PaymentMethodsScreen extends ConsumerWidget {
   const PaymentMethodsScreen({super.key});
 
-  void _soon(BuildContext context) =>
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cards are added securely at checkout.')),
-      );
+  Future<void> _addCard(BuildContext context) async {
+    final added = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (_) => const AddCardSheet(),
+    );
+    if (added == true && context.mounted) {
+      AppSnack.success(context, 'Card added.');
+    }
+  }
+
+  void _cardMenu(BuildContext context, WidgetRef ref, SavedCard card) {
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!card.isDefault)
+              ListTile(
+                leading: const Icon(Icons.star_outline,
+                    color: BrandColors.primary),
+                title: const Text('Set as default'),
+                onTap: () {
+                  ref.read(savedCardsProvider.notifier).setDefault(card.id);
+                  Navigator.pop(context);
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline,
+                  color: BrandColors.destructive),
+              title: const Text('Remove card'),
+              onTap: () {
+                ref.read(savedCardsProvider.notifier).remove(card.id);
+                Navigator.pop(context);
+                AppSnack.show(context, 'Card removed.', type: SnackType.info);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cards = ref.watch(savedCardsProvider);
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -31,25 +78,19 @@ class PaymentMethodsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: Spacing.x6),
-            // Default card — MiniCard with surfaceCard gradient
-            _MiniCard(
-              brand: 'Visa',
-              lastFour: '4829',
-              expiry: '08/27',
-              isDefault: true,
-              onTap: () => _soon(context),
-            ),
-            const SizedBox(height: Spacing.x3),
-            _MiniCard(
-              brand: 'Mastercard',
-              lastFour: '1245',
-              expiry: '09/27',
-              isDefault: false,
-              onTap: () => _soon(context),
-            ),
-            const SizedBox(height: Spacing.x6),
+            for (final card in cards) ...[
+              _MiniCard(
+                brand: card.brand,
+                lastFour: card.lastFour,
+                expiry: card.expiry,
+                isDefault: card.isDefault,
+                onTap: () => _cardMenu(context, ref, card),
+              ),
+              const SizedBox(height: Spacing.x3),
+            ],
+            const SizedBox(height: Spacing.x4),
             // Add payment method — dashed-border tile
-            _AddMethodButton(onTap: () => _soon(context)),
+            _AddMethodButton(onTap: () => _addCard(context)),
           ],
         ),
       ),

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/utils/validators.dart';
@@ -23,6 +26,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _phone;
   late final TextEditingController _bio;
   bool _saving = false;
+  File? _avatarFile;
 
   @override
   void initState() {
@@ -39,6 +43,77 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _phone.dispose();
     _bio.dispose();
     super.dispose();
+  }
+
+  /// Pick a new profile photo from the camera or library (or remove it).
+  /// The image is previewed locally; a production build would upload it on save.
+  Future<void> _changePhoto() async {
+    FocusScope.of(context).unfocus();
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: BrandColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+      ),
+      builder: (_) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: Spacing.x3),
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: Spacing.x2),
+              decoration: BoxDecoration(
+                color: BrandColors.borderStrong,
+                borderRadius: BorderRadius.circular(Radii.pill),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined,
+                  color: BrandColors.primary),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(context, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined,
+                  color: BrandColors.primary),
+              title: const Text('Choose from library'),
+              onTap: () => Navigator.pop(context, 'gallery'),
+            ),
+            if (_avatarFile != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline,
+                    color: BrandColors.destructive),
+                title: const Text('Remove photo'),
+                onTap: () => Navigator.pop(context, 'remove'),
+              ),
+            const SizedBox(height: Spacing.x2),
+          ],
+        ),
+      ),
+    );
+    if (action == null) return;
+    if (action == 'remove') {
+      setState(() => _avatarFile = null);
+      return;
+    }
+    final source =
+        action == 'camera' ? ImageSource.camera : ImageSource.gallery;
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
+      if (picked != null && mounted) {
+        setState(() => _avatarFile = File(picked.path));
+      }
+    } catch (_) {
+      if (mounted) AppSnack.error(context, 'Could not open the camera or library.');
+    }
   }
 
   Future<void> _save() async {
@@ -98,19 +173,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             shape: BoxShape.circle,
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: (user.avatarUrl?.isNotEmpty ?? false)
-                              ? Image.network(user.avatarUrl!, fit: BoxFit.cover)
-                              : Center(
-                                  child: Text(user.initials,
-                                      style: text.headlineLarge?.copyWith(
-                                          color: BrandColors.primaryFg)),
-                                ),
+                          child: _avatarFile != null
+                              ? Image.file(_avatarFile!, fit: BoxFit.cover)
+                              : (user.avatarUrl?.isNotEmpty ?? false)
+                                  ? Image.network(user.avatarUrl!,
+                                      fit: BoxFit.cover)
+                                  : Center(
+                                      child: Text(user.initials,
+                                          style: text.headlineLarge?.copyWith(
+                                              color: BrandColors.primaryFg)),
+                                    ),
                         ),
                         Positioned(
                           right: 0,
                           bottom: 0,
                           child: GestureDetector(
-                            onTap: () => AppSnack.soon(context),
+                            onTap: _changePhoto,
                             child: Container(
                               width: 32,
                               height: 32,

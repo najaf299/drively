@@ -15,6 +15,8 @@ Future<CarFilters?> showFiltersSheet(
   return showModalBottomSheet<CarFilters>(
     context: context,
     isScrollControlled: true,
+    // Present over the whole screen so the bottom nav bar is covered/dimmed.
+    useRootNavigator: true,
     // Let the theme's shape (xxl top corners) apply.
     builder: (_) => _FiltersSheet(initial: current),
   );
@@ -354,7 +356,15 @@ class _ChipGroup extends StatelessWidget {
       children: options.entries.map((e) {
         final isSel = selected == e.key;
         return FilterChip(
-          label: Text(e.value),
+          label: Text(
+            e.value,
+            // Force readable contrast: near-black on the lime selected fill.
+            style: TextStyle(
+              color:
+                  isSel ? BrandColors.primaryFg : BrandColors.foreground,
+              fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
+            ),
+          ),
           selected: isSel,
           onSelected: (_) => onSelect(isSel ? null : e.key),
           showCheckmark: false,

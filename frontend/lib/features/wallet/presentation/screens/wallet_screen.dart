@@ -4,10 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/models/wallet.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/wallet_service.dart';
+import '../../domain/providers/payment_methods_provider.dart';
+import '../../domain/providers/promos_provider.dart';
 import '../../domain/providers/wallet_provider.dart';
+import '../widgets/add_card_sheet.dart';
+import 'payment_methods_screen.dart' show DottedBorderBox;
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -35,6 +40,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
   Future<void> _topUp(BuildContext context) async {
     final amount = await showModalBottomSheet<double>(
       context: context,
+      useRootNavigator: true,
       builder: (_) => const _TopUpSheet(),
     );
     if (amount == null) return;
@@ -149,9 +155,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
                   ref.invalidate(walletTransactionsProvider);
                 }),
                 // Cards tab
-                const _ComingSoonTab(icon: Icons.credit_card_outlined, label: 'Saved cards coming soon.'),
+                const _CardsTab(),
                 // Promos tab
-                const _ComingSoonTab(icon: Icons.local_offer_outlined, label: 'Promos & rewards coming soon.'),
+                const _PromosTab(),
               ],
             ),
           ),
@@ -379,37 +385,446 @@ class _ActivityTab extends StatelessWidget {
   }
 }
 
-class _ComingSoonTab extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _ComingSoonTab({required this.icon, required this.label});
+// ─── Cards tab ─────────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.x6),
+class _CardsTab extends ConsumerWidget {
+  const _CardsTab();
+
+  Future<void> _addCard(BuildContext context, WidgetRef ref) async {
+    final added = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (_) => const AddCardSheet(),
+    );
+    if (added == true && context.mounted) {
+      AppSnack.success(context, 'Card added.');
+    }
+  }
+
+  void _cardMenu(BuildContext context, WidgetRef ref, SavedCard card) {
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: BrandColors.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: BrandColors.border),
+            if (!card.isDefault)
+              ListTile(
+                leading: const Icon(Icons.star_outline,
+                    color: BrandColors.primary),
+                title: const Text('Set as default'),
+                onTap: () {
+                  ref.read(savedCardsProvider.notifier).setDefault(card.id);
+                  Navigator.pop(context);
+                },
               ),
-              child: Icon(icon, color: BrandColors.mutedFg, size: 32),
+            ListTile(
+              leading: const Icon(Icons.delete_outline,
+                  color: BrandColors.destructive),
+              title: const Text('Remove card'),
+              onTap: () {
+                ref.read(savedCardsProvider.notifier).remove(card.id);
+                Navigator.pop(context);
+                AppSnack.show(context, 'Card removed.',
+                    type: SnackType.info);
+              },
             ),
-            const SizedBox(height: Spacing.x4),
-            Text(label,
-                textAlign: TextAlign.center,
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cards = ref.watch(savedCardsProvider);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
+      children: [
+        for (final card in cards) ...[
+          _WalletCardRow(
+            card: card,
+            onMenu: () => _cardMenu(context, ref, card),
+          ),
+          const SizedBox(height: Spacing.x3),
+        ],
+        const SizedBox(height: Spacing.x2),
+        _DashedAddTile(
+          label: 'Add payment method',
+          onTap: () => _addCard(context, ref),
+        ),
+        const SizedBox(height: Spacing.x4),
+        Row(
+          children: [
+            const Icon(Icons.lock_outline,
+                size: Sizes.iconSm, color: BrandColors.mutedFg),
+            const SizedBox(width: Spacing.x2),
+            Expanded(
+              child: Text(
+                'Cards are encrypted and tokenised by Stripe. We never store '
+                'full card numbers.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _WalletCardRow extends StatelessWidget {
+  final SavedCard card;
+  final VoidCallback onMenu;
+  const _WalletCardRow({required this.card, required this.onMenu});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 96,
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.x5, vertical: Spacing.x3),
+      decoration: BoxDecoration(
+        gradient: BrandGradients.surfaceCard,
+        borderRadius: BorderRadius.circular(Radii.xl),
+        border: Border.all(color: BrandColors.border),
+        boxShadow: BrandShadows.card,
+      ),
+      child: Row(
+        children: [
+          _CardBrandMark(brand: card.brand),
+          const SizedBox(width: Spacing.x4),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('•••• ${card.lastFour}',
+                    style: BrandText.mono(size: 17, spacing: 2)),
+                const SizedBox(height: 4),
+                Text('Exp ${card.expiry}',
+                    style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          if (card.isDefault) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.x3, vertical: Spacing.x1),
+              decoration: BoxDecoration(
+                color: BrandColors.success.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(Radii.pill),
+              ),
+              child: Text('Default',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: BrandColors.success, letterSpacing: 0.4)),
+            ),
+            const SizedBox(width: Spacing.x1),
+          ],
+          IconButton(
+            onPressed: onMenu,
+            icon: const Icon(Icons.more_vert, color: BrandColors.mutedFg),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardBrandMark extends StatelessWidget {
+  final String brand;
+  const _CardBrandMark({required this.brand});
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color) = switch (brand.toLowerCase()) {
+      'visa' => (Icons.credit_card, BrandColors.info),
+      'mastercard' => (Icons.credit_card, BrandColors.warning),
+      'amex' => (Icons.credit_card, BrandColors.success),
+      _ => (Icons.credit_card, BrandColors.mutedFg),
+    };
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(Radii.sm),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Icon(icon, color: color, size: Sizes.icon),
+    );
+  }
+}
+
+// ─── Promos tab ────────────────────────────────────────────────────────────
+
+class _PromosTab extends ConsumerStatefulWidget {
+  const _PromosTab();
+
+  @override
+  ConsumerState<_PromosTab> createState() => _PromosTabState();
+}
+
+class _PromosTabState extends ConsumerState<_PromosTab> {
+  final _code = TextEditingController();
+
+  @override
+  void dispose() {
+    _code.dispose();
+    super.dispose();
+  }
+
+  void _applyCode() {
+    final code = _code.text.trim();
+    if (code.isEmpty) return;
+    final notifier = ref.read(promosProvider.notifier);
+    if (!notifier.isValid(code)) {
+      AppSnack.error(context, 'That code isn’t valid.');
+      return;
+    }
+    final offer = notifier.apply(code);
+    _code.clear();
+    FocusScope.of(context).unfocus();
+    AppSnack.success(context, '${offer.code} applied — ${offer.percentOff}% off.');
+  }
+
+  void _applyOffer(PromoOffer offer) {
+    ref.read(promosProvider.notifier).apply(offer.code);
+    AppSnack.success(context, '${offer.code} applied — ${offer.percentOff}% off.');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(promosProvider);
+    final text = Theme.of(context).textTheme;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
+      children: [
+        _RewardsCard(points: state.points),
+        const SizedBox(height: Spacing.x5),
+        // Apply-code row
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _code,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(
+                  hintText: 'Enter promo code',
+                  prefixIcon: Icon(Icons.local_offer_outlined),
+                ),
+                onSubmitted: (_) => _applyCode(),
+              ),
+            ),
+            const SizedBox(width: Spacing.x3),
+            SizedBox(
+              height: Sizes.fieldHeight,
+              child: FilledButton(
+                onPressed: _applyCode,
+                child: const Text('Apply'),
+              ),
+            ),
+          ],
+        ),
+        if (state.applied != null) ...[
+          const SizedBox(height: Spacing.x4),
+          _AppliedBanner(
+            offer: state.applied!,
+            onClear: () => ref.read(promosProvider.notifier).clear(),
+          ),
+        ],
+        const SizedBox(height: Spacing.x6),
+        Text('AVAILABLE OFFERS',
+            style: text.labelSmall?.copyWith(letterSpacing: 1.2)),
+        const SizedBox(height: Spacing.x3),
+        for (final offer in state.offers) ...[
+          _OfferTile(offer: offer, onApply: () => _applyOffer(offer)),
+          const SizedBox(height: Spacing.x3),
+        ],
+      ],
+    );
+  }
+}
+
+class _RewardsCard extends StatelessWidget {
+  final int points;
+  const _RewardsCard({required this.points});
+
+  @override
+  Widget build(BuildContext context) {
+    final value = points / 100; // 100 pts = $1
+    return Container(
+      padding: const EdgeInsets.all(Spacing.x5),
+      decoration: BoxDecoration(
+        gradient: BrandGradients.accent,
+        borderRadius: BorderRadius.circular(Radii.xxl),
+        boxShadow: BrandShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.workspace_premium_outlined,
+                  color: Colors.white, size: 20),
+              const SizedBox(width: Spacing.x2),
+              Text('Drivly rewards',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(color: Colors.white)),
+            ],
+          ),
+          const SizedBox(height: Spacing.x4),
+          Text('$points pts',
+              style: Theme.of(context)
+                  .textTheme
+                  .displayMedium
+                  ?.copyWith(color: Colors.white)),
+          const SizedBox(height: 2),
+          Text('Worth ${Formatters.money(value)} off your next trip',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.white.withValues(alpha: 0.85))),
+        ],
+      ),
+    );
+  }
+}
+
+class _AppliedBanner extends StatelessWidget {
+  final PromoOffer offer;
+  final VoidCallback onClear;
+  const _AppliedBanner({required this.offer, required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(Spacing.x4),
+      decoration: BoxDecoration(
+        color: BrandColors.successBg,
+        borderRadius: BorderRadius.circular(Radii.lg),
+        border: Border.all(color: BrandColors.success.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, color: BrandColors.success, size: 20),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Text(
+              '${offer.code} applied — ${offer.percentOff}% off your next trip.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: BrandColors.foreground),
+            ),
+          ),
+          TextButton(onPressed: onClear, child: const Text('Remove')),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfferTile extends StatelessWidget {
+  final PromoOffer offer;
+  final VoidCallback onApply;
+  const _OfferTile({required this.offer, required this.onApply});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(Spacing.x4),
+      decoration: BoxDecoration(
+        color: BrandColors.surface,
+        borderRadius: BorderRadius.circular(Radii.xl),
+        border: Border.all(
+          color: offer.applied
+              ? BrandColors.primary.withValues(alpha: 0.5)
+              : BrandColors.border,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: Sizes.avatarMd,
+            height: Sizes.avatarMd,
+            decoration: BoxDecoration(
+              color: BrandColors.primary.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(Radii.md),
+            ),
+            child: Text('${offer.percentOff}%',
                 style: Theme.of(context)
                     .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: BrandColors.mutedFg)),
-          ],
+                    .titleSmall
+                    ?.copyWith(color: BrandColors.primary),
+                textAlign: TextAlign.center),
+          ),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(offer.title,
+                    style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(offer.subtitle,
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 4),
+                Text(offer.code,
+                    style: BrandText.mono(
+                        size: 12, color: BrandColors.mutedFg, spacing: 1)),
+              ],
+            ),
+          ),
+          const SizedBox(width: Spacing.x2),
+          offer.applied
+              ? const Icon(Icons.check_circle, color: BrandColors.primary)
+              : OutlinedButton(
+                  onPressed: onApply,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.x4),
+                  ),
+                  child: const Text('Apply'),
+                ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashedAddTile extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _DashedAddTile({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(Radii.xl),
+      child: DottedBorderBox(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Spacing.x4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.add, color: BrandColors.primary, size: 20),
+              const SizedBox(width: Spacing.x2),
+              Text(label,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(color: BrandColors.primary)),
+            ],
+          ),
         ),
       ),
     );
@@ -533,31 +948,85 @@ class _TopUpSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const amounts = [10.0, 25.0, 50.0, 100.0];
+    final text = Theme.of(context).textTheme;
     return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.all(Spacing.x5),
+        padding: const EdgeInsets.fromLTRB(
+            Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Top up wallet',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: Spacing.x4),
-            Wrap(
-              spacing: Spacing.x3,
-              runSpacing: Spacing.x3,
-              children: amounts
-                  .map((a) => SizedBox(
-                        width: 100,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context, a),
-                          child: Text(Formatters.money(a)),
-                        ),
-                      ))
-                  .toList(),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: Spacing.x4),
+                decoration: BoxDecoration(
+                  color: BrandColors.borderStrong,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+              ),
             ),
-            const SizedBox(height: Spacing.x4),
+            Text('Top up wallet', style: text.titleLarge),
+            const SizedBox(height: Spacing.x1),
+            Text('Choose an amount to add to your balance.',
+                style: text.bodySmall),
+            const SizedBox(height: Spacing.x5),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: Spacing.x3,
+              crossAxisSpacing: Spacing.x3,
+              childAspectRatio: 2.4,
+              children: [
+                for (final a in amounts)
+                  _AmountTile(
+                    label: '\$${a.toStringAsFixed(0)}',
+                    onTap: () => Navigator.pop(context, a),
+                  ),
+              ],
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Selectable quick-amount tile for top-up — single line, never wraps.
+class _AmountTile extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _AmountTile({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BrandColors.surface2,
+      borderRadius: BorderRadius.circular(Radii.xl),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Radii.xl),
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Radii.xl),
+            border: Border.all(color: BrandColors.border),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: BrandColors.foreground,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
         ),
       ),
     );

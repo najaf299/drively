@@ -21,6 +21,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
+  final _passwordFocus = FocusNode();
 
   String _role = 'customer';
   bool _obscure = true;
@@ -28,11 +29,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   int _strength = 0;
 
   @override
+  void initState() {
+    super.initState();
+    // Rebuild on focus change so the strength meter shows only while editing.
+    _passwordFocus.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() => setState(() {});
+
+  @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _phone.dispose();
     _password.dispose();
+    _passwordFocus.removeListener(_onFocusChange);
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -124,6 +136,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: Spacing.x4),
                 TextFormField(
                   controller: _password,
+                  focusNode: _passwordFocus,
                   obscureText: _obscure,
                   validator: Validators.password,
                   onChanged: (v) => setState(
@@ -139,9 +152,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: Spacing.x3),
-                // 4-bar strength meter.
-                _StrengthMeter(strength: _strength),
+                // 4-bar strength meter — only while the password field is focused.
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.topCenter,
+                  child: _passwordFocus.hasFocus
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: Spacing.x3),
+                          child: _StrengthMeter(strength: _strength),
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
                 const SizedBox(height: Spacing.x4),
                 // Terms checkbox.
                 Row(

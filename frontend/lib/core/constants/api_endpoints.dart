@@ -7,6 +7,8 @@ class ApiEndpoints {
   static const String appleAuth = '/auth/apple';
   static const String sendOtp = '/auth/otp/send';
   static const String verifyOtp = '/auth/otp/verify';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
 
   // Profile
   static const String profile = '/profile';

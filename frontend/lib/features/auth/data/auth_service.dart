@@ -78,6 +78,44 @@ class AuthService {
     }
   }
 
+  /// Requests a password-reset code for [email]. Returns the dev code when the
+  /// backend is in debug mode (so the flow is testable without an email
+  /// provider); otherwise null.
+  Future<String?> forgotPassword(String email) async {
+    try {
+      final res = await _dio.post(ApiEndpoints.forgotPassword, data: {
+        'email': email,
+      });
+      final data = ApiResponse.data(res.data);
+      if (data is Map && data['dev_code'] != null) {
+        return data['dev_code'].toString();
+      }
+      return null;
+    } catch (e) {
+      throw mapError(e);
+    }
+  }
+
+  /// Verifies the reset [code] and sets a new [password]. On success the backend
+  /// returns a fresh session so the user lands signed in.
+  Future<AuthResult> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  }) async {
+    try {
+      final res = await _dio.post(ApiEndpoints.resetPassword, data: {
+        'email': email,
+        'code': code,
+        'password': password,
+        'password_confirmation': password,
+      });
+      return AuthResult.fromJson(ApiResponse.data(res.data));
+    } catch (e) {
+      throw mapError(e);
+    }
+  }
+
   Future<void> sendOtp(String phone) async {
     try {
       await _dio.post(ApiEndpoints.sendOtp, data: {'phone': phone});
