@@ -7,8 +7,44 @@ use App\Models\Payment;
 
 class PaymentService
 {
+    /** Whether real Stripe API calls are configured. */
+    private function stripeConfigured(): bool
+    {
+        return !empty(config('services.stripe.secret'));
+    }
+
     public function createPaymentIntent(Booking $booking, string $method = 'card'): array
     {
+        // Demo mode: without Stripe keys, simulate a succeeded payment so the
+        // booking flow is fully testable end-to-end. Wire STRIPE_SECRET in .env
+        // to switch to real Stripe PaymentIntents.
+        if (!$this->stripeConfigured()) {
+            $reference = 'pi_demo_' . \Illuminate\Support\Str::random(24);
+
+            $payment = Payment::create([
+                'booking_id' => $booking->id,
+                'method' => $method,
+                'amount' => $booking->total_amount,
+                'currency' => 'USD',
+                'status' => 'succeeded',
+                'paid_at' => now(),
+                'stripe_payment_intent_id' => $reference,
+            ]);
+
+            $booking->update([
+                'status' => 'confirmed',
+                'confirmed_at' => now(),
+            ]);
+
+            return [
+                'payment_id' => $payment->id,
+                'client_secret' => $reference . '_secret_demo',
+                'amount' => $booking->total_amount,
+                'currency' => 'USD',
+                'demo' => true,
+            ];
+        }
+
         $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
 
         $paymentIntent = $stripe->paymentIntents->create([
@@ -75,13 +111,16 @@ class PaymentService
 
     public function refund(Payment $payment, float $amount, string $reason): Payment
     {
-        $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+        // Demo mode: skip the live Stripe refund call when no keys are set.
+        if ($this->stripeConfigured()) {
+            $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
 
-        $stripe->refunds->create([
-            'payment_intent' => $payment->stripe_payment_intent_id,
-            'amount' => (int) ($amount * 100),
-            'reason' => 'requested_by_customer',
-        ]);
+            $stripe->refunds->create([
+                'payment_intent' => $payment->stripe_payment_intent_id,
+                'amount' => (int) ($amount * 100),
+                'reason' => 'requested_by_customer',
+            ]);
+        }
 
         $status = $amount >= $payment->amount ? 'refunded' : 'partially_refunded';
         $payment->update([
