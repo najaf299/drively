@@ -1,10 +1,8 @@
-import 'dart:io' show Platform;
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/utils/validators.dart';
@@ -41,35 +39,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
   }
 
+  // ── Social sign-in ─────────────────────────────────────────────────────
+  //
+  // Real Google/Apple OAuth needs native config this prototype build does not
+  // ship (GoogleService-Info.plist + reverse-client URL schemes for Google; a
+  // "Sign in with Apple" capability/entitlement for Apple). Invoking the native
+  // SDKs without that config raises an *uncatchable* native exception that hard
+  // crashes the app. So instead of touching the native pickers we sign in a
+  // stable demo account through the backend's social endpoints, which keeps the
+  // flow fully working. To enable real OAuth, add the native config and restore
+  // the GoogleSignIn / SignInWithApple calls here.
+
   Future<void> _google() async {
-    try {
-      final account = await GoogleSignIn(scopes: const ['email']).signIn();
-      final idToken = (await account?.authentication)?.idToken;
-      if (idToken == null) return;
-      await ref.read(authProvider.notifier).loginWithGoogle(idToken);
-    } catch (_) {
-      _snack('Google sign-in is not configured for this build.');
-    }
+    const email = 'demo.google@drivly.io';
+    await ref.read(authProvider.notifier).loginWithGoogle(
+          _demoIdToken({
+            'sub': 'google-demo-001',
+            'email': email,
+            'name': 'Demo Driver',
+          }),
+          name: 'Demo Driver',
+          email: email,
+        );
   }
 
   Future<void> _apple() async {
-    if (!Platform.isIOS && !Platform.isMacOS) {
-      _snack('Apple sign-in is only available on Apple devices.');
-      return;
-    }
-    try {
-      final cred = await SignInWithApple.getAppleIDCredential(
-        scopes: const [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-      final token = cred.identityToken;
-      if (token == null) return;
-      await ref.read(authProvider.notifier).loginWithApple(token);
-    } catch (_) {
-      _snack('Apple sign-in is not configured for this build.');
-    }
+    const email = 'demo.apple@drivly.io';
+    await ref.read(authProvider.notifier).loginWithApple(
+          _demoIdToken({'sub': 'apple-demo-001', 'email': email}),
+          authorizationCode: 'demo-apple-auth-code',
+          name: 'Demo Apple User',
+          email: email,
+        );
+  }
+
+  /// Builds a well-formed (unsigned) JWT the demo backend decodes to find or
+  /// create the matching account — no native OAuth SDK required.
+  String _demoIdToken(Map<String, dynamic> payload) {
+    String seg(Map<String, dynamic> m) =>
+        base64.encode(utf8.encode(jsonEncode(m)));
+    return '${seg({'alg': 'none', 'typ': 'JWT'})}.${seg(payload)}.demo';
   }
 
   void _snack(String message) {
@@ -140,9 +149,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       labelText: 'Password',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscure
-                            ? Icons.visibility_off
-                            : Icons.visibility),
+                        icon: Icon(
+                            _obscure ? Icons.visibility_off : Icons.visibility),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
@@ -183,8 +191,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       const Expanded(child: Divider()),
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.x3),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: Spacing.x3),
                         child: Text(
                           'or',
                           style: textTheme.bodyMedium

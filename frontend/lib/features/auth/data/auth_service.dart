@@ -56,10 +56,16 @@ class AuthService {
     }
   }
 
-  Future<AuthResult> loginWithGoogle(String idToken) async {
+  Future<AuthResult> loginWithGoogle(
+    String idToken, {
+    String? name,
+    String? email,
+  }) async {
     try {
       final res = await _dio.post(ApiEndpoints.googleAuth, data: {
         'id_token': idToken,
+        if (name != null) 'name': name,
+        if (email != null) 'email': email,
       });
       return AuthResult.fromJson(ApiResponse.data(res.data));
     } catch (e) {
@@ -67,10 +73,19 @@ class AuthService {
     }
   }
 
-  Future<AuthResult> loginWithApple(String identityToken) async {
+  Future<AuthResult> loginWithApple(
+    String identityToken, {
+    required String authorizationCode,
+    String? name,
+    String? email,
+  }) async {
     try {
       final res = await _dio.post(ApiEndpoints.appleAuth, data: {
         'identity_token': identityToken,
+        // The backend requires an authorization_code alongside the token.
+        'authorization_code': authorizationCode,
+        if (name != null) 'name': name,
+        if (email != null) 'email': email,
       });
       return AuthResult.fromJson(ApiResponse.data(res.data));
     } catch (e) {

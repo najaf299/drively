@@ -79,11 +79,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
             role: role,
           ));
 
-  Future<bool> loginWithGoogle(String idToken) =>
-      _run(() => _service.loginWithGoogle(idToken));
+  Future<bool> loginWithGoogle(String idToken, {String? name, String? email}) =>
+      _run(() => _service.loginWithGoogle(idToken, name: name, email: email));
 
-  Future<bool> loginWithApple(String token) =>
-      _run(() => _service.loginWithApple(token));
+  Future<bool> loginWithApple(
+    String token, {
+    required String authorizationCode,
+    String? name,
+    String? email,
+  }) =>
+      _run(() => _service.loginWithApple(
+            token,
+            authorizationCode: authorizationCode,
+            name: name,
+            email: email,
+          ));
 
   /// Requests a password-reset code. Returns the dev code in debug builds
   /// (so it can be prefilled), otherwise null. Throws on failure.
