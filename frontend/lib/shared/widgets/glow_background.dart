@@ -71,8 +71,10 @@ class GlowBackground extends StatelessWidget {
   }
 }
 
-/// The Drivly wordmark used on auth screens — lowercase "drivly" with an
-/// optional lime period accent (matches the brand reference).
+/// The Drivly wordmark used on auth screens — lowercase "drivly" with the
+/// signature lime accent dot (matches the brand reference). The dot is drawn
+/// as a real glowing lime circle (not a text period) so it always reads as a
+/// clear green dot, at any size, regardless of font loading.
 class DrivlyWordmark extends StatelessWidget {
   final double size;
   final bool showDot;
@@ -80,28 +82,41 @@ class DrivlyWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        style: BrandText.display(
-          size: size,
-          weight: FontWeight.w700,
-          color: BrandColors.foreground,
-          spacing: -0.5,
+    final dot = size * 0.17;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          'drivly',
+          style: BrandText.display(
+            size: size,
+            weight: FontWeight.w700,
+            color: BrandColors.foreground,
+            spacing: -0.5,
+          ),
         ),
-        children: [
-          const TextSpan(text: 'drivly'),
-          if (showDot)
-            TextSpan(
-              text: '.',
-              style: BrandText.display(
-                size: size,
-                weight: FontWeight.w700,
+        if (showDot)
+          Padding(
+            // Lift the dot off the descender line so it sits like a period,
+            // with a small gap after the wordmark.
+            padding: EdgeInsets.only(left: size * 0.05, bottom: size * 0.13),
+            child: Container(
+              width: dot,
+              height: dot,
+              decoration: BoxDecoration(
                 color: BrandColors.primary,
-                spacing: -0.5,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: BrandColors.primary.withValues(alpha: 0.55),
+                    blurRadius: size * 0.22,
+                  ),
+                ],
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
