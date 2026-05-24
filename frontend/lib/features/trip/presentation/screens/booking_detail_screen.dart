@@ -10,6 +10,7 @@ import '../../../../app/theme.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/models/booking.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/status_badge.dart';
@@ -87,12 +88,12 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           maxLines: 3,
           decoration: InputDecoration(hintText: hint),
         ),
+        actionsPadding: kDialogActionsPadding,
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Back')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Confirm'),
+          DialogActions(
+            confirmLabel: 'Confirm',
+            onCancel: () => Navigator.pop(ctx),
+            onConfirm: () => Navigator.pop(ctx, controller.text.trim()),
           ),
         ],
       ),
@@ -129,8 +130,8 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       children: [
         // Header
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-              Spacing.x5, Spacing.x3, Spacing.x5, 0),
+          padding:
+              const EdgeInsets.fromLTRB(Spacing.x5, Spacing.x3, Spacing.x5, 0),
           child: Row(
             children: [
               _circleBack(),
@@ -236,8 +237,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 Text(car.displayNameWithYear,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 2),
-                Text(car.city,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(car.city, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -284,8 +284,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Trip timeline',
-              style: Theme.of(context).textTheme.titleLarge),
+          Text('Trip timeline', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: Spacing.x4),
           for (var i = 0; i < steps.length; i++)
             _timelineItem(steps[i], isLast: i == steps.length - 1),
@@ -344,8 +343,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                         )),
                 if (step.sub != null) ...[
                   const SizedBox(height: 2),
-                  Text(step.sub!,
-                      style: Theme.of(context).textTheme.bodySmall),
+                  Text(step.sub!, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ],
             ),
@@ -389,16 +387,13 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(host.name,
-                    style: Theme.of(context).textTheme.titleSmall),
-                Text('Host',
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(host.name, style: Theme.of(context).textTheme.titleSmall),
+                Text('Host', style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
           // 44-dp tonal icon buttons — spec §7.17.
-          _iconRoundButton(
-              Icons.call_outlined, onTap: () => _callHost(b)),
+          _iconRoundButton(Icons.call_outlined, onTap: () => _callHost(b)),
           const SizedBox(width: Spacing.x2),
           _iconRoundButton(
             Icons.chat_bubble_outline,
@@ -426,8 +421,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         child: SizedBox(
           width: Sizes.iconRoundButton,
           height: Sizes.iconRoundButton,
-          child: Icon(icon,
-              size: Sizes.iconSm, color: BrandColors.foreground),
+          child: Icon(icon, size: Sizes.iconSm, color: BrandColors.foreground),
         ),
       ),
     );
@@ -520,7 +514,9 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   Widget _priceRow(String label, double amount,
       {bool bold = false, Color? valueColor}) {
     final t = Theme.of(context).textTheme;
-    final labelStyle = bold ? t.titleMedium : t.bodyMedium?.copyWith(color: BrandColors.mutedFg);
+    final labelStyle = bold
+        ? t.titleMedium
+        : t.bodyMedium?.copyWith(color: BrandColors.mutedFg);
     final valueStyle = bold
         ? t.headlineMedium?.copyWith(color: BrandColors.primary)
         : t.bodyMedium?.copyWith(

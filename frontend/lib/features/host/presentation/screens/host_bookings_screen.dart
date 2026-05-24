@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/models/booking.dart';
+import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/trip_card.dart';
 import '../../data/host_service.dart';
@@ -147,12 +148,13 @@ class _TabState extends ConsumerState<_Tab> {
           controller: controller,
           decoration: const InputDecoration(hintText: 'Reason'),
         ),
+        actionsPadding: kDialogActionsPadding,
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Decline'),
+          DialogActions(
+            confirmLabel: 'Decline',
+            destructive: true,
+            onCancel: () => Navigator.pop(ctx),
+            onConfirm: () => Navigator.pop(ctx, controller.text.trim()),
           ),
         ],
       ),

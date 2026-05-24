@@ -11,6 +11,7 @@ import '../../../../core/errors/app_exception.dart';
 import '../../../../core/models/trip.dart';
 import '../../../../core/network/realtime_client.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/status_badge.dart';
@@ -62,28 +63,14 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   }
 
   Future<void> _endTrip(Trip trip) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Return car'),
-        content:
-            const Text('Confirm you have returned the car and ended the trip?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Not yet')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: BrandColors.destructive,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('End trip'),
-          ),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: 'Return car',
+      message: 'Confirm you have returned the car and ended the trip?',
+      confirmLabel: 'End trip',
+      destructive: true,
     );
-    if (confirm != true) return;
+    if (!confirm) return;
     setState(() => _busy = true);
     try {
       await ref.read(tripServiceProvider).end(trip.id);
@@ -113,13 +100,13 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(labelText: 'Extra days'),
         ),
+        actionsPadding: kDialogActionsPadding,
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () =>
+          DialogActions(
+            confirmLabel: 'Extend',
+            onCancel: () => Navigator.pop(ctx),
+            onConfirm: () =>
                 Navigator.pop(ctx, int.tryParse(controller.text) ?? 0),
-            child: const Text('Extend'),
           ),
         ],
       ),
@@ -279,8 +266,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                   foregroundColor: Colors.white,
                   disabledBackgroundColor:
                       BrandColors.destructive.withValues(alpha: 0.4),
-                  disabledForegroundColor:
-                      Colors.white.withValues(alpha: 0.5),
+                  disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
                 ),
                 child: _busy
                     ? const SizedBox(
@@ -298,8 +284,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
 
   Widget _circleBack() {
     return InkWell(
-      onTap: () =>
-          context.canPop() ? context.pop() : context.go('/trips'),
+      onTap: () => context.canPop() ? context.pop() : context.go('/trips'),
       customBorder: const CircleBorder(),
       child: Container(
         width: 40,
@@ -469,8 +454,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   Widget _carCard(Trip trip, String? from, String? to) {
     final car = trip.booking?.car;
     final name = car?.displayNameWithYear ?? 'Your car';
-    final route =
-        (from != null && to != null) ? '$from → $to' : (from ?? to);
+    final route = (from != null && to != null) ? '$from → $to' : (from ?? to);
     final unlocked = !ref.watch(gpsDeviceProvider(trip.id)).locked;
     return Container(
       padding: const EdgeInsets.all(Spacing.x4),
@@ -553,21 +537,26 @@ class _RoutePainter extends CustomPainter {
     final path = Path()
       ..moveTo(size.width * 0.12, size.height * 0.82)
       ..cubicTo(
-        size.width * 0.35, size.height * 0.6,
-        size.width * 0.45, size.height * 0.7,
-        size.width * 0.6, size.height * 0.45,
+        size.width * 0.35,
+        size.height * 0.6,
+        size.width * 0.45,
+        size.height * 0.7,
+        size.width * 0.6,
+        size.height * 0.45,
       )
       ..cubicTo(
-        size.width * 0.72, size.height * 0.26,
-        size.width * 0.8, size.height * 0.32,
-        size.width * 0.9, size.height * 0.2,
+        size.width * 0.72,
+        size.height * 0.26,
+        size.width * 0.8,
+        size.height * 0.32,
+        size.width * 0.9,
+        size.height * 0.2,
       );
     canvas.drawPath(path, paint);
 
     // Both dots: primary (spec: user dot = primary, no coral/accent).
     final dot = Paint()..color = BrandColors.primary;
-    canvas.drawCircle(
-        Offset(size.width * 0.12, size.height * 0.82), 6, dot);
+    canvas.drawCircle(Offset(size.width * 0.12, size.height * 0.82), 6, dot);
     canvas.drawCircle(
       Offset(size.width * 0.9, size.height * 0.2),
       6,

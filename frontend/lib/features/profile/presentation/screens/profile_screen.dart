@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/models/user.dart';
+import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
@@ -17,49 +18,14 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Sign out'),
-        content: const Text('Are you sure you want to sign out?'),
-        actionsPadding: const EdgeInsets.fromLTRB(
-            Spacing.x5, Spacing.x2, Spacing.x5, Spacing.x5),
-        actions: [
-          Row(
-            children: [
-              // Cancel — tonal, equal width/height.
-              Expanded(
-                child: SizedBox(
-                  height: Sizes.secondaryHeight,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Cancel'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: Spacing.x3),
-              // Sign out — destructive, equal width/height.
-              Expanded(
-                child: SizedBox(
-                  height: Sizes.secondaryHeight,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: BrandColors.destructive,
-                      foregroundColor: Colors.white,
-                      minimumSize:
-                          const Size.fromHeight(Sizes.secondaryHeight),
-                    ),
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('Sign out'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: 'Sign out',
+      message: 'Are you sure you want to sign out?',
+      confirmLabel: 'Sign out',
+      destructive: true,
     );
-    if (confirm == true) await ref.read(authProvider.notifier).logout();
+    if (confirm) await ref.read(authProvider.notifier).logout();
   }
 
   void _soon(BuildContext context) => AppSnack.soon(context);
@@ -192,7 +158,8 @@ class ProfileScreen extends ConsumerWidget {
       children: [
         _stat(context, '${user.totalTrips}', 'Trips'),
         const SizedBox(width: Spacing.x3),
-        _stat(context,
+        _stat(
+            context,
             user.averageRating > 0
                 ? user.averageRating.toStringAsFixed(1)
                 : '—',
@@ -215,8 +182,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            Text(value,
-                style: Theme.of(context).textTheme.headlineSmall),
+            Text(value, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 2),
             Text(label,
                 textAlign: TextAlign.center,
@@ -252,10 +218,9 @@ class _ProfileHeader extends StatelessWidget {
               : Center(
                   child: Text(
                     user.initials,
-                    style:
-                        Theme.of(context).textTheme.headlineLarge?.copyWith(
-                              color: BrandColors.primaryFg,
-                            ),
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          color: BrandColors.primaryFg,
+                        ),
                   ),
                 ),
         ),
@@ -350,8 +315,7 @@ class _MenuTile extends StatelessWidget {
             SizedBox(
               width: 28,
               child: Icon(icon,
-                  color: iconColor ?? BrandColors.foreground,
-                  size: Sizes.icon),
+                  color: iconColor ?? BrandColors.foreground, size: Sizes.icon),
             ),
             const SizedBox(width: Spacing.x3),
             Expanded(
