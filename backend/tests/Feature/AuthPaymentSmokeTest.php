@@ -18,6 +18,9 @@ function demoToken(array $payload): string
 }
 
 it('signs in with a demo Google token and creates the account', function () {
+    // Exercise the dev/demo decode path (no live cert fetch).
+    config(['services.google.client_id' => null]);
+
     $token = demoToken([
         'sub' => 'google-demo-001',
         'email' => 'demo.google@drivly.io',

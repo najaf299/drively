@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/utils/validators.dart';
@@ -41,26 +42,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   // ── Social sign-in ─────────────────────────────────────────────────────
   //
-  // Real Google/Apple OAuth needs native config this prototype build does not
-  // ship (GoogleService-Info.plist + reverse-client URL schemes for Google; a
-  // "Sign in with Apple" capability/entitlement for Apple). Invoking the native
-  // SDKs without that config raises an *uncatchable* native exception that hard
-  // crashes the app. So instead of touching the native pickers we sign in a
-  // stable demo account through the backend's social endpoints, which keeps the
-  // flow fully working. To enable real OAuth, add the native config and restore
-  // the GoogleSignIn / SignInWithApple calls here.
+  // Google is wired to real native OAuth (iOS client + reversed-client URL
+  // scheme + GIDServerClientID live in Info.plist; the backend verifies the
+  // token against the web client). Apple still has no native entitlement on
+  // this build, so it falls back to a working demo account rather than crashing
+  // the unconfigured native picker — add the "Sign in with Apple" capability to
+  // make it real too.
 
   Future<void> _google() async {
-    const email = 'demo.google@drivly.io';
-    await ref.read(authProvider.notifier).loginWithGoogle(
-          _demoIdToken({
-            'sub': 'google-demo-001',
-            'email': email,
-            'name': 'Demo Driver',
-          }),
-          name: 'Demo Driver',
-          email: email,
-        );
+    try {
+      // clientId / serverClientId are read from Info.plist (GIDClientID /
+      // GIDServerClientID) on iOS.
+      final account = await GoogleSignIn(scopes: const ['email']).signIn();
+      if (account == null) return; // user dismissed the picker
+      final idToken = (await account.authentication).idToken;
+      if (idToken == null) {
+        _snack('Could not get a Google token. Please try again.');
+        return;
+      }
+      await ref.read(authProvider.notifier).loginWithGoogle(
+            idToken,
+            name: account.displayName,
+            email: account.email,
+          );
+    } catch (_) {
+      _snack('Google sign-in failed. Please try again.');
+    }
   }
 
   Future<void> _apple() async {
@@ -74,7 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   /// Builds a well-formed (unsigned) JWT the demo backend decodes to find or
-  /// create the matching account — no native OAuth SDK required.
+  /// create the matching account — used by the Apple demo fallback.
   String _demoIdToken(Map<String, dynamic> payload) {
     String seg(Map<String, dynamic> m) =>
         base64.encode(utf8.encode(jsonEncode(m)));

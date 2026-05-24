@@ -22,6 +22,24 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- Google Sign-In (native). GIDClientID = iOS OAuth client; GIDServerClientID
+	     = the web client the backend verifies tokens against. The URL scheme is
+	     the reversed iOS client ID, required for the OAuth redirect back to the app. -->
+	<key>GIDClientID</key>
+	<string>235533661523-bl0bs1osbrjef6ljb76hjvn7ckjdfdar.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>235533661523-76v77klsqjakusid8v95uab2tl6lerqb.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.235533661523-bl0bs1osbrjef6ljb76hjvn7ckjdfdar</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
