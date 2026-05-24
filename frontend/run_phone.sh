@@ -19,7 +19,9 @@ echo "Using Mac IP: $IP"
 echo "Make sure the backend is running:  php artisan serve --host=0.0.0.0"
 echo ""
 
+# Release mode: debug can't attach on iOS 26 + Xcode 15.2, so always run release.
 flutter run \
+  --release \
   --dart-define=API_URL=http://$IP:8000/api/v1 \
   --dart-define=WS_HOST=$IP \
   "$@"
