@@ -7,6 +7,8 @@
     <meta name="description" content="Drivly is the peer-to-peer car rental marketplace. Discover thousands of cars near you, book in 60 seconds, unlock with your phone.">
     <meta property="og:title" content="Drivly — Drive smarter.">
     <meta property="og:description" content="Peer-to-peer car rental, reimagined. Book in 60 seconds.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="mask-icon" href="/favicon.svg" color="#CBF24A">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
