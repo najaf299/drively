@@ -94,45 +94,57 @@ class EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.x6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: const BoxDecoration(
-                color: BrandColors.surface,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 48, color: BrandColors.primary),
+    final content = Padding(
+      padding: const EdgeInsets.all(Spacing.x6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: const BoxDecoration(
+              color: BrandColors.surface,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: Spacing.x4),
+            child: Icon(icon, size: 48, color: BrandColors.primary),
+          ),
+          const SizedBox(height: Spacing.x4),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: text.headlineSmall,
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: Spacing.x2),
             Text(
-              title,
+              subtitle!,
               textAlign: TextAlign.center,
-              style: text.headlineSmall,
+              style: text.bodyMedium?.copyWith(color: BrandColors.mutedFg),
             ),
-            if (subtitle != null) ...[
-              const SizedBox(height: Spacing.x2),
-              Text(
-                subtitle!,
-                textAlign: TextAlign.center,
-                style: text.bodyMedium?.copyWith(color: BrandColors.mutedFg),
-              ),
-            ],
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: Spacing.x5),
-              OutlinedButton(
-                onPressed: onAction,
-                child: Text(actionLabel!),
-              ),
-            ],
           ],
-        ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: Spacing.x5),
+            OutlinedButton(
+              onPressed: onAction,
+              child: Text(actionLabel!),
+            ),
+          ],
+        ],
       ),
+    );
+
+    // Stay centered when there's room, but scroll instead of overflowing when
+    // the available height is short (e.g. a tab pane on a small screen).
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!constraints.maxHeight.isFinite) return Center(child: content);
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(child: content),
+          ),
+        );
+      },
     );
   }
 }
