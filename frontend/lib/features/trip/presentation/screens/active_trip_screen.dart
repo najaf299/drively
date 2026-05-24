@@ -34,6 +34,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
   Timer? _tick;
   StreamSubscription<RealtimeEvent>? _rt;
   bool _busy = false;
+  bool _autoUnlocked = false; // unlock the car once when the trip is live
 
   @override
   void initState() {
@@ -73,6 +74,11 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
     if (!confirm) return;
     setState(() => _busy = true);
     try {
+      // Lock the car on return — the closing half of the GPS lock lifecycle.
+      final device = ref.read(gpsDeviceProvider(trip.id).notifier);
+      if (!ref.read(gpsDeviceProvider(trip.id)).locked) {
+        await device.lock();
+      }
       await ref.read(tripServiceProvider).end(trip.id);
       final bookingId = trip.booking?.id;
       if (mounted) {
@@ -161,6 +167,17 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
     final car = trip.booking?.car;
     final from = trip.booking?.pickupAddress ?? car?.city;
     final to = car?.city;
+
+    // Once the trip is live (paid + started), unlock the car automatically —
+    // the opening half of the GPS lock lifecycle.
+    if (trip.isInProgress && !_autoUnlocked) {
+      _autoUnlocked = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final device = ref.read(gpsDeviceProvider(trip.id).notifier);
+        device.seed(lat: car?.lat, lng: car?.lng);
+        if (ref.read(gpsDeviceProvider(trip.id)).locked) device.unlock();
+      });
+    }
 
     return Column(
       children: [

@@ -102,6 +102,28 @@ class BookingController extends Controller
         }
 
         $paymentData = $this->paymentService->createPaymentIntent($booking);
+        // The publishable key is public; the app needs it to present the sheet.
+        $paymentData['publishable_key'] = config('services.stripe.key');
+
         return $this->success($paymentData);
+    }
+
+    /// Marks the booking's payment succeeded after the client confirms it with
+    /// Stripe (used in dev where webhooks aren't wired). Idempotent.
+    public function confirmPayment(Booking $booking): JsonResponse
+    {
+        $this->authorize('view', $booking);
+
+        $payment = $booking->payment()->latest()->first();
+        if ($payment && $payment->stripe_payment_intent_id) {
+            $this->paymentService->confirmPayment($payment->stripe_payment_intent_id);
+        } else {
+            $booking->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+        }
+
+        return $this->success(
+            new BookingResource($booking->fresh()->load(['car.photos', 'payment'])),
+            'Payment confirmed',
+        );
     }
 }

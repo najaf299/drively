@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
@@ -9,6 +10,7 @@ import '../../../../core/models/booking.dart';
 import '../../../../core/models/car.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_network_image.dart';
+import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/loading_button.dart';
 import '../../data/booking_service.dart';
 import '../../domain/booking_draft.dart';
@@ -93,27 +95,57 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
 
   Future<void> _confirm() async {
     setState(() => _confirming = true);
+    final service = ref.read(bookingServiceProvider);
     try {
-      final booking = await ref.read(bookingServiceProvider).create(
-            carId: widget.draft.car.id,
-            pickupAt: widget.draft.pickupAt,
-            returnAt: widget.draft.returnAt,
-            pickupAddress: widget.draft.car.address,
-            addons: _addonPayload.isEmpty ? null : _addonPayload,
-            promoCode: _appliedPromo,
-          );
+      var booking = await service.create(
+        carId: widget.draft.car.id,
+        pickupAt: widget.draft.pickupAt,
+        returnAt: widget.draft.returnAt,
+        pickupAddress: widget.draft.car.address,
+        addons: _addonPayload.isEmpty ? null : _addonPayload,
+        promoCode: _appliedPromo,
+      );
+
+      // Create the payment intent on the backend.
+      final pay = await service.pay(booking.id);
+
+      // When Stripe is configured, collect the card via the Payment Sheet and
+      // confirm; otherwise the backend already settled it in demo mode.
+      final clientSecret = pay['client_secret'] as String?;
+      final publishableKey = pay['publishable_key'] as String?;
+      final isDemo = pay['demo'] == true;
+
+      if (!isDemo &&
+          clientSecret != null &&
+          publishableKey != null &&
+          publishableKey.isNotEmpty) {
+        Stripe.publishableKey = publishableKey;
+        await Stripe.instance.applySettings();
+        await Stripe.instance.initPaymentSheet(
+          paymentSheetParameters: SetupPaymentSheetParameters(
+            paymentIntentClientSecret: clientSecret,
+            merchantDisplayName: 'Drivly',
+            style: ThemeMode.dark,
+          ),
+        );
+        await Stripe.instance.presentPaymentSheet();
+        booking = await service.confirmPayment(booking.id);
+      }
+
       if (mounted) context.go('/booking/success', extra: booking);
+    } on StripeException catch (e) {
+      // User cancelled or the card was declined — stay on checkout.
+      if (mounted) {
+        AppSnack.error(
+            context, e.error.localizedMessage ?? 'Payment was not completed.');
+      }
     } on AppException catch (e) {
-      _snack(e.message);
+      if (mounted) AppSnack.error(context, e.message);
+    } catch (_) {
+      if (mounted) AppSnack.error(context, 'Payment failed. Please try again.');
     } finally {
       if (mounted) setState(() => _confirming = false);
     }
-  }
-
-  void _snack(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

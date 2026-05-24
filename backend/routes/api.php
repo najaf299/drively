@@ -82,6 +82,7 @@ Route::prefix('v1')->group(function () {
             Route::get('bookings/{booking}', [BookingController::class, 'show']);
             Route::post('bookings/{booking}/cancel', [BookingController::class, 'cancel']);
             Route::post('bookings/{booking}/pay', [BookingController::class, 'pay']);
+            Route::post('bookings/{booking}/payment/confirm', [BookingController::class, 'confirmPayment']);
 
             // Reviews
             Route::get('reviews', [ReviewController::class, 'myReviews']);

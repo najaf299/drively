@@ -28,6 +28,8 @@ class ApiEndpoints {
   static String bookingDetail(String id) => '/customer/bookings/$id';
   static String cancelBooking(String id) => '/customer/bookings/$id/cancel';
   static String payBooking(String id) => '/customer/bookings/$id/pay';
+  static String confirmPayment(String id) =>
+      '/customer/bookings/$id/payment/confirm';
   static String bookingReview(String id) => '/customer/bookings/$id/review';
 
   // Customer Trips

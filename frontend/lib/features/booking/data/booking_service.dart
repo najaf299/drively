@@ -101,11 +101,23 @@ class BookingService {
   }
 
   /// Creates a payment intent for the booking; returns the raw gateway payload
-  /// (e.g. `client_secret`) for the Stripe Payment Sheet.
+  /// (`client_secret`, `publishable_key`, and `demo` when Stripe is
+  /// unconfigured) for the Stripe Payment Sheet.
   Future<Map<String, dynamic>> pay(String id) async {
     try {
       final res = await _dio.post(ApiEndpoints.payBooking(id));
       return asMap(ApiResponse.data(res.data)) ?? const {};
+    } catch (e) {
+      throw mapError(e);
+    }
+  }
+
+  /// Confirms the booking's payment after the Stripe sheet succeeds (dev flow
+  /// without webhooks). Returns the updated booking.
+  Future<Booking> confirmPayment(String id) async {
+    try {
+      final res = await _dio.post(ApiEndpoints.confirmPayment(id));
+      return Booking.fromJson(ApiResponse.data(res.data));
     } catch (e) {
       throw mapError(e);
     }
