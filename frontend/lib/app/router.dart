@@ -28,7 +28,10 @@ import '../features/host/presentation/screens/host_cars_screen.dart';
 import '../features/host/presentation/screens/host_dashboard_screen.dart';
 import '../features/host/presentation/screens/host_earnings_screen.dart';
 import '../features/host/presentation/screens/host_verification_screen.dart';
+import '../features/profile/presentation/screens/change_password_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../features/profile/presentation/screens/info_page_screen.dart';
+import '../features/profile/presentation/screens/linked_accounts_screen.dart';
 import '../features/profile/presentation/screens/notifications_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/profile/presentation/screens/settings_screen.dart';
@@ -203,6 +206,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/notifications',
           builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(
+          path: '/settings/password',
+          builder: (_, __) => const ChangePasswordScreen()),
+      GoRoute(
+          path: '/settings/linked',
+          builder: (_, __) => const LinkedAccountsScreen()),
+      GoRoute(
+        path: '/info/:page',
+        builder: (_, state) =>
+            InfoPageScreen(pageId: state.pathParameters['page']!),
+      ),
       GoRoute(
           path: '/profile/personal',
           builder: (_, __) => const EditProfileScreen()),

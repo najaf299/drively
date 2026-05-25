@@ -57,4 +57,22 @@ class WalletService {
       throw mapError(e);
     }
   }
+
+  /// Withdraws [amount] to a [destination] and returns the new balance.
+  /// Throws [AppException] when the balance is insufficient.
+  Future<double> withdraw(double amount, {String? destination}) async {
+    try {
+      final res = await _dio.post(
+        ApiEndpoints.walletWithdraw,
+        data: {
+          'amount': amount,
+          if (destination != null) 'destination': destination,
+        },
+      );
+      final data = asMap(ApiResponse.data(res.data)) ?? const {};
+      return asDouble(data['new_balance']);
+    } catch (e) {
+      throw mapError(e);
+    }
+  }
 }

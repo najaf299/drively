@@ -280,8 +280,17 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
       padding: const EdgeInsets.fromLTRB(
           Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x4),
       decoration: BoxDecoration(
-        color: BrandColors.background,
-        border: Border(top: BorderSide(color: BrandColors.border)),
+        color: BrandColors.surface,
+        // Curved top corners to match the app's rounded nav bars.
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+        boxShadow: [
+          BoxShadow(
+            color: BrandColors.overlay.withValues(alpha: 0.30),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

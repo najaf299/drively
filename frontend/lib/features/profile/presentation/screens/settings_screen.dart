@@ -124,12 +124,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _RowTile(
                 icon: Icons.lock_outline,
                 label: 'Change password',
-                onTap: _soon,
+                onTap: () => context.push('/settings/password'),
               ),
               _RowTile(
                 icon: Icons.shield_outlined,
                 label: 'Linked accounts',
-                onTap: _soon,
+                onTap: () => context.push('/settings/linked'),
               ),
             ]),
             const SizedBox(height: Spacing.x5),
@@ -174,12 +174,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _RowTile(
                 icon: Icons.security_outlined,
                 label: 'Privacy & security',
-                onTap: _soon,
+                onTap: () => context.push('/info/security'),
               ),
               _RowTile(
                 icon: Icons.data_usage_outlined,
                 label: 'Data & permissions',
-                onTap: _soon,
+                onTap: () => context.push('/info/data'),
               ),
             ]),
             const SizedBox(height: Spacing.x5),
@@ -188,17 +188,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _RowTile(
                 icon: Icons.help_outline,
                 label: 'Help center',
-                onTap: _soon,
+                onTap: () => context.push('/info/help'),
               ),
               _RowTile(
                 icon: Icons.description_outlined,
                 label: 'Terms & policies',
-                onTap: _soon,
+                onTap: () => context.push('/info/terms'),
               ),
               _RowTile(
                 icon: Icons.info_outline,
                 label: 'About Drivly',
-                onTap: _soon,
+                onTap: () => context.push('/info/about'),
               ),
             ]),
           ],

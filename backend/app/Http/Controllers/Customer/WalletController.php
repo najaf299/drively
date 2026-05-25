@@ -47,4 +47,30 @@ class WalletController extends Controller
             'new_balance' => $wallet->fresh()->balance,
         ], 'Wallet topped up', 201);
     }
+
+    public function withdraw(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:5'],
+            'destination' => ['sometimes', 'nullable', 'string', 'max:60'],
+        ]);
+
+        $wallet = $this->walletService->getOrCreateWallet($request->user());
+
+        if ((float) $wallet->balance < (float) $validated['amount']) {
+            return $this->error('Insufficient wallet balance.', 422);
+        }
+
+        $destination = $validated['destination'] ?? 'bank account';
+        $transaction = $this->walletService->debit(
+            $wallet,
+            $validated['amount'],
+            "Withdrawal to {$destination}",
+        );
+
+        return $this->success([
+            'transaction' => $transaction,
+            'new_balance' => $wallet->fresh()->balance,
+        ], 'Withdrawal initiated', 201);
+    }
 }

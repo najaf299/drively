@@ -23,6 +23,8 @@ class User {
   final String? referralCode;
   final DateTime? phoneVerifiedAt;
   final DateTime? emailVerifiedAt;
+  final String? googleId;
+  final String? appleId;
   final Wallet? wallet;
   final DateTime? createdAt;
 
@@ -46,9 +48,17 @@ class User {
     this.referralCode,
     this.phoneVerifiedAt,
     this.emailVerifiedAt,
+    this.googleId,
+    this.appleId,
     this.wallet,
     this.createdAt,
   });
+
+  /// Whether a Google account is linked to this profile.
+  bool get hasGoogleLinked => googleId != null && googleId!.isNotEmpty;
+
+  /// Whether an Apple account is linked to this profile.
+  bool get hasAppleLinked => appleId != null && appleId!.isNotEmpty;
 
   bool get isCustomer => role == 'customer';
   bool get isHost => role == 'host';
@@ -86,6 +96,8 @@ class User {
         referralCode: asStringOrNull(json['referral_code']),
         phoneVerifiedAt: asDateTime(json['phone_verified_at']),
         emailVerifiedAt: asDateTime(json['email_verified_at']),
+        googleId: asStringOrNull(json['google_id']),
+        appleId: asStringOrNull(json['apple_id']),
         wallet: json['wallet'] is Map
             ? Wallet.fromJson(Map<String, dynamic>.from(json['wallet']))
             : null,

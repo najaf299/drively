@@ -284,8 +284,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Container(
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        // Curved top edge matching the app's rounded aesthetic.
-        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.lg)),
+        // Curved top edge matching the app's rounded nav bars.
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+        boxShadow: [
+          BoxShadow(
+            color: BrandColors.overlay.withValues(alpha: 0.30),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(Spacing.x3, 6, Spacing.x3, 6),
@@ -299,11 +307,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             // Pill input + emoji/keyboard toggle.
             Expanded(
               child: Container(
-                constraints: const BoxConstraints(minHeight: 36),
+                constraints: const BoxConstraints(minHeight: 40),
                 decoration: BoxDecoration(
-                  color: BrandColors.surface2,
+                  // Higher-contrast fill + stronger border so the field is
+                  // clearly visible against the near-black composer bar.
+                  color: BrandColors.surface3,
                   borderRadius: BorderRadius.circular(Radii.pill),
-                  border: Border.all(color: BrandColors.border),
+                  border: Border.all(color: BrandColors.borderStrong, width: 1.5),
                 ),
                 padding: const EdgeInsets.only(left: Spacing.x4, right: 4),
                 child: Row(
@@ -330,7 +340,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             hintStyle: Theme.of(context)
                                 .textTheme
                                 .bodyLarge
-                                ?.copyWith(color: BrandColors.subtleFg),
+                                ?.copyWith(color: BrandColors.mutedFg),
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
@@ -414,7 +424,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       useRootNavigator: true,
       backgroundColor: BrandColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
       ),
       builder: (_) => _AttachmentSheet(
         onPick: (label) {

@@ -172,6 +172,32 @@ class AuthService {
     }
   }
 
+  /// Changes the signed-in user's password. The backend verifies
+  /// [currentPassword] and revokes other sessions; this device stays signed in.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _dio.post(ApiEndpoints.changePassword, data: {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'password_confirmation': newPassword,
+      });
+    } catch (e) {
+      throw mapError(e);
+    }
+  }
+
+  /// Unlinks a social [provider] ('google' | 'apple') from the account.
+  Future<void> unlinkProvider(String provider) async {
+    try {
+      await _dio.delete(ApiEndpoints.unlinkProvider(provider));
+    } catch (e) {
+      throw mapError(e);
+    }
+  }
+
   Future<User> updateProfile(Map<String, dynamic> changes) async {
     try {
       final res = await _dio.put(ApiEndpoints.profile, data: changes);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../core/errors/app_exception.dart';
 import '../../../../core/models/wallet.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_snack.dart';
@@ -60,10 +61,39 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     }
   }
 
-  void _soon(BuildContext context) =>
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coming soon.')),
-      );
+  Future<void> _withdraw(BuildContext context) async {
+    final balance = ref.read(walletProvider).maybeWhen(
+          data: (w) => w.balance,
+          orElse: () => 0.0,
+        );
+    if (balance < 5) {
+      AppSnack.show(context, 'You need at least \$5 to withdraw.',
+          type: SnackType.info);
+      return;
+    }
+    final amount = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (_) => _WithdrawSheet(balance: balance),
+    );
+    if (amount == null) return;
+    try {
+      await ref
+          .read(walletServiceProvider)
+          .withdraw(amount, destination: 'Bank •••• 8492');
+      ref.invalidate(walletProvider);
+      ref.invalidate(walletTransactionsProvider);
+      if (context.mounted) {
+        AppSnack.success(context,
+            '${Formatters.money(amount)} is on its way to your bank.');
+      }
+    } on AppException catch (e) {
+      if (context.mounted) AppSnack.error(context, e.message);
+    } catch (_) {
+      if (context.mounted) AppSnack.error(context, 'Withdrawal failed.');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +149,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
                           const SizedBox(width: Spacing.x3),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () => _soon(context),
+                              onPressed: () => _withdraw(context),
                               icon: const Icon(Icons.arrow_outward, size: 18),
                               label: const Text('Withdraw'),
                             ),
@@ -176,66 +206,130 @@ class _BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     final balance = wallet.maybeWhen(
       data: (w) => Formatters.money(w.balance),
       orElse: () => '—',
     );
     return Container(
-      height: 180,
-      padding: const EdgeInsets.all(Spacing.x5),
+      height: 190,
       decoration: BoxDecoration(
-        gradient: BrandGradients.surfaceCard,
+        // Mostly-black gradient with a subtle green glow for a modern, premium
+        // card feel.
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            BrandColors.surface,
+            BrandColors.background,
+            BrandColors.background,
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ),
         borderRadius: BorderRadius.circular(Radii.xxl),
-        boxShadow: BrandShadows.card,
-        border: Border.all(color: BrandColors.border),
+        border: Border.all(color: BrandColors.primary.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: BrandColors.primary.withValues(alpha: 0.12),
+            blurRadius: 40,
+            spreadRadius: -8,
+            offset: const Offset(0, 14),
+          ),
+          ...BrandShadows.card,
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Text('Available balance',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: BrandColors.mutedFg)),
-              const Spacer(),
-              Icon(Icons.account_balance_wallet_outlined,
-                  color: BrandColors.mutedFg, size: 20),
-            ],
+          // Green glow blob — top-right.
+          Positioned(
+            top: -70,
+            right: -40,
+            child: _glowBlob(BrandColors.primary, 190, 0.20),
           ),
-          const Spacer(),
-          Text(
-            balance,
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  color: BrandColors.primary,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+          // Faint accent glow — bottom-left for depth.
+          Positioned(
+            bottom: -80,
+            left: -50,
+            child: _glowBlob(BrandColors.accent, 200, 0.12),
           ),
-          const SizedBox(height: Spacing.x3),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${name.toUpperCase()}  ••••  8492',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: BrandColors.mutedFg,
+          Padding(
+            padding: const EdgeInsets.all(Spacing.x5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('Available balance',
+                        style:
+                            text.bodySmall?.copyWith(color: BrandColors.mutedFg)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: BrandColors.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
                       ),
+                      child: Icon(Icons.account_balance_wallet_outlined,
+                          color: BrandColors.primary, size: 18),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: Spacing.x3),
-              Text(
-                'drivly.',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(color: BrandColors.mutedFg),
-              ),
-            ],
+                const Spacer(),
+                Text(
+                  balance,
+                  style: text.displayMedium?.copyWith(
+                    color: BrandColors.primary,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    shadows: [
+                      Shadow(
+                        color: BrandColors.primary.withValues(alpha: 0.35),
+                        blurRadius: 24,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: Spacing.x3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${name.toUpperCase()}  ••••  8492',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.labelMedium
+                            ?.copyWith(color: BrandColors.mutedFg),
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.x3),
+                    Text('drivly.',
+                        style: text.titleSmall
+                            ?.copyWith(color: BrandColors.foreground)),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// A soft radial colour blob used to add a glow accent to the card.
+  Widget _glowBlob(Color color, double size, double alpha) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color.withValues(alpha: alpha),
+              color.withValues(alpha: 0.0),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -990,6 +1084,175 @@ class _TopUpSheet extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Withdraw bottom sheet ────────────────────────────────────────────────────
+
+class _WithdrawSheet extends StatefulWidget {
+  final double balance;
+  const _WithdrawSheet({required this.balance});
+
+  @override
+  State<_WithdrawSheet> createState() => _WithdrawSheetState();
+}
+
+class _WithdrawSheetState extends State<_WithdrawSheet> {
+  final _controller = TextEditingController();
+  double _amount = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _setAmount(String raw) {
+    setState(() => _amount = double.tryParse(raw) ?? 0);
+  }
+
+  void _setMax() {
+    _controller.text = widget.balance.toStringAsFixed(2);
+    _setAmount(_controller.text);
+  }
+
+  String? get _error {
+    if (_amount <= 0) return null;
+    if (_amount < 5) return 'Minimum withdrawal is \$5.';
+    if (_amount > widget.balance) return 'Amount exceeds your balance.';
+    return null;
+  }
+
+  bool get _valid => _amount >= 5 && _amount <= widget.balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: viewInsets),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: Spacing.x4),
+                  decoration: BoxDecoration(
+                    color: BrandColors.borderStrong,
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                  ),
+                ),
+              ),
+              Text('Withdraw funds', style: text.titleLarge),
+              const SizedBox(height: Spacing.x1),
+              Text(
+                'Available balance: ${Formatters.money(widget.balance)}',
+                style: text.bodySmall?.copyWith(color: BrandColors.mutedFg),
+              ),
+              const SizedBox(height: Spacing.x5),
+              // Amount field with a Max shortcut.
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                style: text.headlineSmall,
+                onChanged: _setAmount,
+                decoration: InputDecoration(
+                  prefixIcon: Align(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                          left: Spacing.x4, right: Spacing.x2),
+                      child: Text('\$', style: text.headlineSmall),
+                    ),
+                  ),
+                  hintText: '0.00',
+                  errorText: _error,
+                  suffixIcon: TextButton(
+                    onPressed: _setMax,
+                    child: const Text('Max'),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Spacing.x4),
+              // Destination row (demo bank account).
+              Container(
+                padding: const EdgeInsets.all(Spacing.x3),
+                decoration: BoxDecoration(
+                  color: BrandColors.surface2,
+                  borderRadius: BorderRadius.circular(Radii.lg),
+                  border: Border.all(color: BrandColors.border),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: BrandColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(Radii.md),
+                      ),
+                      child: Icon(Icons.account_balance,
+                          color: BrandColors.primary, size: 20),
+                    ),
+                    const SizedBox(width: Spacing.x3),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Bank account',
+                              style: text.titleSmall),
+                          Text('•••• 8492',
+                              style: BrandText.mono(
+                                  size: 13, color: BrandColors.mutedFg)),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.x3, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: BrandColors.success.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                      ),
+                      child: Text('Default',
+                          style: text.labelSmall
+                              ?.copyWith(color: BrandColors.success)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Spacing.x4),
+              Text(
+                'Funds typically arrive in 1–3 business days.',
+                style: text.labelSmall?.copyWith(color: BrandColors.subtleFg),
+              ),
+              const SizedBox(height: Spacing.x5),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed:
+                      _valid ? () => Navigator.pop(context, _amount) : null,
+                  child: Text(_amount > 0 && _valid
+                      ? 'Withdraw ${Formatters.money(_amount)}'
+                      : 'Withdraw'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

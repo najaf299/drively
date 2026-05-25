@@ -13,6 +13,8 @@ class ApiEndpoints {
   // Profile
   static const String profile = '/profile';
   static const String profileAvatar = '/profile/avatar';
+  static const String changePassword = '/profile/password';
+  static String unlinkProvider(String provider) => '/profile/linked/$provider';
 
   // KYC
   static const String kycStatus = '/kyc/status';
@@ -53,6 +55,7 @@ class ApiEndpoints {
   static const String wallet = '/customer/wallet';
   static const String walletTransactions = '/customer/wallet/transactions';
   static const String walletTopUp = '/customer/wallet/top-up';
+  static const String walletWithdraw = '/customer/wallet/withdraw';
 
   // Customer Disputes
   static const String disputes = '/customer/disputes';

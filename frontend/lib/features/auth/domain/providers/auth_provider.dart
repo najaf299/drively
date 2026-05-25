@@ -136,6 +136,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(user: updated);
   }
 
+  /// Changes the current password. Throws [AppException] on failure (e.g. the
+  /// current password is wrong) for the UI to surface.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) =>
+      _service.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+
+  /// Unlinks a social [provider] then signs the user out (per the Linked
+  /// Accounts UX: removing a connection ends the session).
+  Future<void> unlinkProvider(String provider) async {
+    await _service.unlinkProvider(provider);
+    await logout();
+  }
+
   /// Uploads a new profile photo and updates the in-memory user.
   Future<void> uploadAvatar(File file) async {
     final updated = await _service.uploadAvatar(file);

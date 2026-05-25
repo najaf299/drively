@@ -327,100 +327,160 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     );
   }
 
-  // ── Host row: avatar 48 + 'Hosted by … · Superhost' + message chevron ──
+  // ── Host profile card: avatar + name + Superhost, host stats row, and a
+  //    clear "Message host" action (redesigned so it reads as a profile, not a
+  //    chat row). Subtle lime glow accent for the modern aesthetic. ──────────
   Widget _hostCard(Car car) {
+    final text = Theme.of(context).textTheme;
     final host = car.host;
     final joined = car.createdAt?.year;
+    final rating = host?.averageRating ?? car.averageRating;
+    final trips = host?.totalTrips ?? car.totalReviews;
+
     return Container(
       padding: const EdgeInsets.all(Spacing.x4),
       decoration: BoxDecoration(
-        color: BrandColors.surface2,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [BrandColors.surface2, BrandColors.surface],
+        ),
         borderRadius: BorderRadius.circular(Radii.xl),
         border: Border.all(color: BrandColors.border),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Avatar 48.
-          CircleAvatar(
-            radius: Sizes.avatarMd / 2,
-            backgroundColor: BrandColors.accent,
-            child: Text(
-              host?.initials ?? 'H',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ),
-          const SizedBox(width: Spacing.x3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            children: [
+              // Avatar with a soft lime ring.
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: BrandColors.primary.withValues(alpha: 0.5),
+                      width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 26,
+                  backgroundColor: BrandColors.accent,
+                  backgroundImage: (host?.avatarUrl != null &&
+                          host!.avatarUrl!.isNotEmpty)
+                      ? NetworkImage(host.avatarUrl!)
+                      : null,
+                  child: (host?.avatarUrl == null || host!.avatarUrl!.isEmpty)
+                      ? Text(
+                          host?.initials ?? 'H',
+                          style: text.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+              const SizedBox(width: Spacing.x3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        'Hosted by ${host?.name ?? 'Host'}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    Text(
+                      host?.name ?? 'Host',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    // Superhost badge.
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: BrandColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(Radii.pill),
-                        border: Border.all(
-                            color: BrandColors.primary.withValues(alpha: 0.4)),
-                      ),
-                      child: Text(
-                        'Superhost',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: BrandColors.primary,
-                              fontSize: 10,
-                            ),
-                      ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.workspace_premium,
+                            size: 14, color: BrandColors.primary),
+                        const SizedBox(width: 4),
+                        Text('Superhost',
+                            style: text.bodySmall?.copyWith(
+                                color: BrandColors.primary,
+                                fontWeight: FontWeight.w600)),
+                        Text('  ·  Verified host', style: text.bodySmall),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: Spacing.x1),
-                Text(
-                  '${joined != null ? 'Joined $joined · ' : ''}Responds in 5 min',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall,
-                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Spacing.x4),
+          // Host stats strip.
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: Spacing.x3),
+            decoration: BoxDecoration(
+              color: BrandColors.background.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(Radii.lg),
+            ),
+            child: Row(
+              children: [
+                _hostStat(rating.toStringAsFixed(1), 'Rating',
+                    icon: Icons.star_rounded, iconColor: BrandColors.warning),
+                _hostDivider(),
+                _hostStat('$trips', 'Trips'),
+                _hostDivider(),
+                _hostStat(joined != null ? '$joined' : '—', 'Joined'),
+                _hostDivider(),
+                _hostStat('~5 min', 'Responds'),
               ],
             ),
           ),
-          const SizedBox(width: Spacing.x2),
-          // Chevron / message button.
-          Material(
-            color: BrandColors.surface3,
-            shape: CircleBorder(
-                side: BorderSide(color: BrandColors.border)),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => context.push('/messages'),
-              child: SizedBox(
-                width: Sizes.iconRoundButton,
-                height: Sizes.iconRoundButton,
-                child: Icon(Icons.chevron_right,
-                    color: BrandColors.mutedFg),
+          const SizedBox(height: Spacing.x4),
+          // Clear, labelled message action.
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => context.push('/messages'),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: BrandColors.borderStrong),
+                padding: const EdgeInsets.symmetric(vertical: Spacing.x3),
               ),
+              icon: const Icon(Icons.chat_bubble_outline, size: 18),
+              label: Text('Message ${host?.name.split(' ').first ?? 'host'}'),
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _hostStat(String value, String label,
+      {IconData? icon, Color? iconColor}) {
+    final text = Theme.of(context).textTheme;
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 14, color: iconColor),
+                const SizedBox(width: 3),
+              ],
+              Text(value,
+                  style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(label,
+              style: text.labelSmall?.copyWith(color: BrandColors.mutedFg)),
+        ],
+      ),
+    );
+  }
+
+  Widget _hostDivider() => Container(
+        width: 1,
+        height: 26,
+        color: BrandColors.border,
+      );
 
   // ── Reviews preview ──────────────────────────────────────────────────────
   Widget _reviewsPreview(String carId) {
@@ -512,7 +572,16 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     return Container(
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        border: Border(top: BorderSide(color: BrandColors.border)),
+        // Curved top corners to match the app's rounded nav bars.
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+        boxShadow: [
+          BoxShadow(
+            color: BrandColors.overlay.withValues(alpha: 0.30),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,

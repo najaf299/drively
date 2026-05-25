@@ -7,6 +7,7 @@ import '../../../../core/models/user.dart';
 import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/drivly_toast.dart';
+import '../../../../shared/widgets/glow_background.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
@@ -40,7 +41,10 @@ class ProfileScreen extends ConsumerWidget {
     if (user == null) return const SizedBox.shrink();
 
     return Scaffold(
-      body: SafeArea(
+      body: GlowBackground(
+        // Soft top glow matching the auth/splash brand screens.
+        glowAlignment: const Alignment(0.0, -1.15),
+        child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
               Spacing.x5, Spacing.x4, Spacing.x5, Spacing.x6),
@@ -120,12 +124,12 @@ class ProfileScreen extends ConsumerWidget {
                 _MenuTile(
                   icon: Icons.help_outline,
                   label: 'Help',
-                  onTap: () => _soon(context),
+                  onTap: () => context.push('/info/help'),
                 ),
                 _MenuTile(
                   icon: Icons.description_outlined,
                   label: 'Legal',
-                  onTap: () => _soon(context),
+                  onTap: () => context.push('/info/terms'),
                 ),
               ],
             ),
@@ -142,6 +146,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

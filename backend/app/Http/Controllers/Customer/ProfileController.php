@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -53,5 +55,57 @@ class ProfileController extends Controller
         $user->update(['avatar_url' => $url]);
 
         return $this->success($user->fresh(), 'Photo updated');
+    }
+
+    /// Changes the signed-in user's password. Verifies the current password,
+    /// updates to the new one and revokes every *other* session token (the
+    /// current session is kept so the user stays signed in on this device).
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Your current password is incorrect.'],
+            ]);
+        }
+
+        $user->update(['password' => $validated['password']]);
+
+        // Sign out every other device, keep the current session alive.
+        $currentId = $user->currentAccessToken()->id;
+        $user->tokens()->where('id', '!=', $currentId)->delete();
+
+        return $this->success(null, 'Password updated.');
+    }
+
+    /// Unlinks a social provider (Google/Apple) from the account. Used by the
+    /// "Linked accounts" screen — the client signs the user out afterwards.
+    public function unlinkProvider(Request $request, string $provider): JsonResponse
+    {
+        $column = match ($provider) {
+            'google' => 'google_id',
+            'apple' => 'apple_id',
+            default => null,
+        };
+
+        if ($column === null) {
+            return $this->error('Unknown provider.', 422);
+        }
+
+        $user = $request->user();
+
+        if (empty($user->{$column})) {
+            return $this->error('That account is not linked.', 422);
+        }
+
+        $user->update([$column => null]);
+
+        return $this->success(null, ucfirst($provider) . ' account unlinked.');
     }
 }

@@ -67,6 +67,8 @@ Route::prefix('v1')->group(function () {
         Route::get('profile', [ProfileController::class, 'show']);
         Route::put('profile', [ProfileController::class, 'update']);
         Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar']);
+        Route::post('profile/password', [ProfileController::class, 'changePassword']);
+        Route::delete('profile/linked/{provider}', [ProfileController::class, 'unlinkProvider']);
 
         // KYC
         Route::prefix('kyc')->group(function () {
@@ -104,6 +106,7 @@ Route::prefix('v1')->group(function () {
             Route::get('wallet', [WalletController::class, 'show']);
             Route::get('wallet/transactions', [WalletController::class, 'transactions']);
             Route::post('wallet/top-up', [WalletController::class, 'topUp']);
+            Route::post('wallet/withdraw', [WalletController::class, 'withdraw']);
 
             // Disputes
             Route::get('disputes', [DisputeController::class, 'index']);
