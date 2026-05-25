@@ -293,7 +293,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           shape: BoxShape.circle,
           border: Border.all(color: BrandColors.border),
         ),
-        child: const Icon(Icons.chevron_left,
+        child: Icon(Icons.chevron_left,
             color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );
@@ -387,7 +387,7 @@ class _PrimaryCta extends StatelessWidget {
       child: FilledButton(
         onPressed: busy ? null : onPressed,
         child: busy
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(

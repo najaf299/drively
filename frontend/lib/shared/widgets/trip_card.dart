@@ -75,7 +75,7 @@ class TripCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Spacing.x2),
-              const Icon(Icons.chevron_right,
+              Icon(Icons.chevron_right,
                   color: BrandColors.mutedFg, size: 22),
             ],
           ),
@@ -152,7 +152,7 @@ class TripCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.location_on,
+                      Icon(Icons.location_on,
                           size: 14, color: BrandColors.primaryFg),
                       const SizedBox(width: 4),
                       Flexible(

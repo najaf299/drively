@@ -87,7 +87,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.search,
+                                Icon(Icons.search,
                                     color: BrandColors.mutedFg,
                                     size: Sizes.iconSm),
                                 const SizedBox(width: Spacing.x2),
@@ -185,7 +185,7 @@ class _BottomCarSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BrandColors.surface,
         borderRadius: BorderRadius.vertical(
             top: Radius.circular(Radii.xxl)),
@@ -226,7 +226,7 @@ class _BottomCarSheet extends StatelessWidget {
                 if (selectedCar != null)
                   GestureDetector(
                     onTap: onDismiss,
-                    child: const Icon(Icons.close,
+                    child: Icon(Icons.close,
                         size: Sizes.iconSm,
                         color: BrandColors.mutedFg),
                   ),
@@ -360,7 +360,7 @@ class _MapCarCard extends StatelessWidget {
                 const SizedBox(height: Spacing.x1),
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded,
+                    Icon(Icons.star_rounded,
                         size: 14, color: BrandColors.warning),
                     const SizedBox(width: 2),
                     Text(
@@ -432,7 +432,7 @@ class _MapCanvas extends StatelessWidget {
         return Container(
           width: w,
           height: h,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -571,12 +571,12 @@ class _LocateFab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface2,
-      shape: const CircleBorder(
+      shape: CircleBorder(
           side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: const SizedBox(
+        child: SizedBox(
           width: Sizes.iconRoundButton,
           height: Sizes.iconRoundButton,
           child: Icon(Icons.my_location,
@@ -599,7 +599,7 @@ class _CircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface2,
-      shape: const CircleBorder(
+      shape: CircleBorder(
           side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         customBorder: const CircleBorder(),

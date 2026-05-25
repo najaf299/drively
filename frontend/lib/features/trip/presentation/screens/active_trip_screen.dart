@@ -306,11 +306,11 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: BrandColors.surface,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.arrow_back,
+        child: Icon(Icons.arrow_back,
             size: 20, color: BrandColors.foreground),
       ),
     );
@@ -344,7 +344,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.access_time_rounded,
+                    Icon(Icons.access_time_rounded,
                         size: 16, color: BrandColors.primary),
                     const SizedBox(width: Spacing.x2),
                     Column(
@@ -371,11 +371,11 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
               child: Container(
                 width: 48,
                 height: 48,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: BrandColors.primary,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.navigation_outlined,
+                child: Icon(Icons.navigation_outlined,
                     color: BrandColors.primaryFg),
               ),
             ),
@@ -460,7 +460,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
+              Icon(Icons.chevron_right, color: BrandColors.mutedFg),
             ],
           ),
         ),

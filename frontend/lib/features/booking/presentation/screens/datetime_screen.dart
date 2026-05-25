@@ -166,9 +166,9 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
         headerStyle: HeaderStyle(
           formatButtonVisible: false,
           titleCentered: true,
-          leftChevronIcon: const Icon(Icons.chevron_left_rounded,
+          leftChevronIcon: Icon(Icons.chevron_left_rounded,
               color: BrandColors.foreground),
-          rightChevronIcon: const Icon(Icons.chevron_right_rounded,
+          rightChevronIcon: Icon(Icons.chevron_right_rounded,
               color: BrandColors.foreground),
           titleTextStyle: Theme.of(context).textTheme.titleLarge!,
         ),
@@ -187,19 +187,19 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
           rangeHighlightColor:
               BrandColors.primary.withValues(alpha: 0.20),
           // Selected start/end: primary circle.
-          rangeStartDecoration: const BoxDecoration(
+          rangeStartDecoration: BoxDecoration(
             color: BrandColors.primary,
             shape: BoxShape.circle,
           ),
-          rangeEndDecoration: const BoxDecoration(
+          rangeEndDecoration: BoxDecoration(
             color: BrandColors.primary,
             shape: BoxShape.circle,
           ),
-          rangeStartTextStyle: const TextStyle(
+          rangeStartTextStyle: TextStyle(
             color: BrandColors.primaryFg,
             fontWeight: FontWeight.w700,
           ),
-          rangeEndTextStyle: const TextStyle(
+          rangeEndTextStyle: TextStyle(
             color: BrandColors.primaryFg,
             fontWeight: FontWeight.w700,
           ),
@@ -209,18 +209,18 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
             shape: BoxShape.circle,
             border: Border.all(color: BrandColors.primary, width: 1.5),
           ),
-          todayTextStyle: const TextStyle(
+          todayTextStyle: TextStyle(
             color: BrandColors.primary,
             fontWeight: FontWeight.w600,
           ),
           withinRangeTextStyle:
-              const TextStyle(color: BrandColors.foreground),
+              TextStyle(color: BrandColors.foreground),
           defaultTextStyle:
-              const TextStyle(color: BrandColors.foreground),
+              TextStyle(color: BrandColors.foreground),
           weekendTextStyle:
-              const TextStyle(color: BrandColors.foreground),
+              TextStyle(color: BrandColors.foreground),
           outsideTextStyle:
-              const TextStyle(color: BrandColors.mutedFg),
+              TextStyle(color: BrandColors.mutedFg),
           disabledTextStyle: TextStyle(
             color: BrandColors.mutedFg.withValues(alpha: 0.4),
           ),
@@ -253,7 +253,7 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.access_time_rounded,
+            Icon(Icons.access_time_rounded,
                 size: Sizes.iconSm, color: BrandColors.primary),
             const SizedBox(width: Spacing.x3),
             Expanded(
@@ -279,7 +279,7 @@ class _DateTimeScreenState extends State<DateTimeScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(
           Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x4),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BrandColors.background,
         border: Border(top: BorderSide(color: BrandColors.border)),
       ),
@@ -332,13 +332,13 @@ class _CircleBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      shape: const CircleBorder(
+      shape: CircleBorder(
         side: BorderSide(color: BrandColors.border),
       ),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: const SizedBox(
+        child: SizedBox(
           width: 40,
           height: 40,
           child: Icon(Icons.arrow_back_ios_new_rounded,

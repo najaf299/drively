@@ -34,11 +34,11 @@ class ErrorView extends StatelessWidget {
             Container(
               width: 96,
               height: 96,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: BrandColors.surface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.error_outline_rounded,
                 size: 48,
                 color: BrandColors.destructive,
@@ -102,7 +102,7 @@ class EmptyView extends StatelessWidget {
           Container(
             width: 96,
             height: 96,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: BrandColors.surface,
               shape: BoxShape.circle,
             ),

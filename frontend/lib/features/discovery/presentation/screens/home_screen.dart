@@ -109,7 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.search,
+                                Icon(Icons.search,
                                     color: BrandColors.mutedFg,
                                     size: Sizes.iconSm),
                                 const SizedBox(width: Spacing.x3),
@@ -364,7 +364,7 @@ class _HeaderIconButton extends StatelessWidget {
       children: [
         Material(
           color: BrandColors.surface2,
-          shape: const CircleBorder(
+          shape: CircleBorder(
             side: BorderSide(color: BrandColors.border),
           ),
           child: InkWell(
@@ -670,13 +670,13 @@ class _FilterButton extends StatelessWidget {
       children: [
         Material(
           color: BrandColors.surface2,
-          shape: const CircleBorder(
+          shape: CircleBorder(
             side: BorderSide(color: BrandColors.border),
           ),
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: onTap,
-            child: const SizedBox(
+            child: SizedBox(
               width: Sizes.searchBar,
               height: Sizes.searchBar,
               child: Icon(Icons.tune, color: BrandColors.foreground),
@@ -689,7 +689,7 @@ class _FilterButton extends StatelessWidget {
             top: -2,
             child: Container(
               padding: const EdgeInsets.all(5),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: BrandColors.primary,
                 shape: BoxShape.circle,
               ),

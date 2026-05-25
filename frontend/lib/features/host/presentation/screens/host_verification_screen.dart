@@ -109,7 +109,7 @@ class _HostVerificationScreenState
               color: BrandColors.primary.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.workspace_premium_outlined,
+            child: Icon(Icons.workspace_premium_outlined,
                 size: 44, color: BrandColors.primary),
           ),
           const SizedBox(height: Spacing.x5),
@@ -213,7 +213,7 @@ class _HostVerificationScreenState
             ),
             child: Row(
               children: [
-                const Icon(Icons.verified, color: BrandColors.success),
+                Icon(Icons.verified, color: BrandColors.success),
                 const SizedBox(width: Spacing.x3),
                 Expanded(
                   child: Text(
@@ -452,7 +452,7 @@ class _CircleBackButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: BrandColors.border),
         ),
-        child: const Icon(Icons.chevron_left,
+        child: Icon(Icons.chevron_left,
             color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );
@@ -476,7 +476,7 @@ class _PrimaryButton extends StatelessWidget {
     return FilledButton(
       onPressed: loading ? null : onPressed,
       child: loading
-          ? const SizedBox(
+          ? SizedBox(
               width: 22,
               height: 22,
               child: CircularProgressIndicator(

@@ -432,7 +432,7 @@ class _AddPhotoTile extends StatelessWidget {
                 color: BrandColors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.photo_camera_outlined,
+              child: Icon(Icons.photo_camera_outlined,
                   color: BrandColors.primary, size: Sizes.icon),
             ),
             const SizedBox(height: Spacing.x2),
@@ -459,7 +459,7 @@ class _EmptyPhotoTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(Radii.lg),
         border: Border.all(color: BrandColors.border),
       ),
-      child: const Icon(Icons.image_outlined,
+      child: Icon(Icons.image_outlined,
           color: BrandColors.subtleFg, size: Sizes.icon),
     );
   }
@@ -540,7 +540,7 @@ class _SmartPricing extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.auto_awesome, color: BrandColors.primary),
+              Icon(Icons.auto_awesome, color: BrandColors.primary),
               const SizedBox(width: Spacing.x3),
               Expanded(
                 child: Column(
@@ -677,7 +677,7 @@ class _RuleDivider extends StatelessWidget {
   const _RuleDivider();
   @override
   Widget build(BuildContext context) =>
-      const Divider(height: 1, color: BrandColors.border);
+      Divider(height: 1, color: BrandColors.border);
 }
 
 class _CircleBackButton extends StatelessWidget {
@@ -697,7 +697,7 @@ class _CircleBackButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: BrandColors.border),
         ),
-        child: const Icon(Icons.chevron_left,
+        child: Icon(Icons.chevron_left,
             color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );
@@ -721,7 +721,7 @@ class _PrimaryButton extends StatelessWidget {
     return FilledButton(
       onPressed: loading ? null : onPressed,
       child: loading
-          ? const SizedBox(
+          ? SizedBox(
               width: 22,
               height: 22,
               child: CircularProgressIndicator(

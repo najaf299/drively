@@ -60,7 +60,7 @@ class HostBookingsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const Divider(height: 1, color: BrandColors.border),
+              Divider(height: 1, color: BrandColors.border),
               Expanded(
                 child: AsyncValueView<List<Booking>>(
                   value: bookings,
@@ -195,7 +195,7 @@ class _TabState extends ConsumerState<_Tab> {
                           onPressed: _busyId == b.id ? null : () => _decline(b),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: BrandColors.destructive,
-                            side: const BorderSide(
+                            side: BorderSide(
                                 color: BrandColors.destructive),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(Radii.pill),
@@ -238,7 +238,7 @@ class _CircleBackButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: BrandColors.border),
         ),
-        child: const Icon(Icons.chevron_left,
+        child: Icon(Icons.chevron_left,
             color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );

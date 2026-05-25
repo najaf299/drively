@@ -5,8 +5,9 @@ import '../shared/widgets/drivly_toast.dart';
 import 'router.dart';
 import 'theme.dart';
 
-/// Root application widget. Drivly is a dark-first product, so a single dark
-/// theme is applied regardless of system brightness.
+/// Root application widget. Drivly ships both a dark theme (v2) and a light
+/// theme ("Daylight", v3), paired via [ThemeMode.system] so the app follows the
+/// phone's appearance setting.
 class DrivlyApp extends ConsumerWidget {
   const DrivlyApp({super.key});
 
@@ -17,12 +18,22 @@ class DrivlyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Drivly',
       debugShowCheckedModeBanner: false,
-      theme: DrivlyTheme.dark,
-      themeMode: ThemeMode.dark,
+      theme: DrivlyTheme.light,
+      darkTheme: DrivlyTheme.dark,
+      themeMode: ThemeMode.system,
       routerConfig: router,
-      // Mounts the DrivlyToast overlay above every route (incl. sheets/dialogs).
-      builder: (context, child) =>
-          DrivlyToastHost(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) {
+        // Sync the brand tokens to the active brightness so custom widgets that
+        // read BrandColors.* flip too; the KeyedSubtree forces a full rebuild
+        // when the OS appearance toggles. Also mounts the DrivlyToast overlay.
+        BrandColors.brightness = Theme.of(context).brightness;
+        return DrivlyToastHost(
+          child: KeyedSubtree(
+            key: ValueKey(BrandColors.brightness),
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
     );
   }
 }

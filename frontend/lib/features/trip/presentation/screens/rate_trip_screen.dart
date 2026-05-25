@@ -168,7 +168,7 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
                 child: FilledButton(
                   onPressed: _rating == 0 || _busy ? null : _submit,
                   child: _busy
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -253,11 +253,11 @@ class _RateTripScreenState extends ConsumerState<RateTripScreen> {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: BrandColors.surface,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.arrow_back,
+        child: Icon(Icons.arrow_back,
             size: 20, color: BrandColors.foreground),
       ),
     );

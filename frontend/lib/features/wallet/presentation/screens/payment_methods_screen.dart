@@ -35,7 +35,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
           children: [
             if (!card.isDefault)
               ListTile(
-                leading: const Icon(Icons.star_outline,
+                leading: Icon(Icons.star_outline,
                     color: BrandColors.primary),
                 title: const Text('Set as default'),
                 onTap: () {
@@ -44,7 +44,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.delete_outline,
+              leading: Icon(Icons.delete_outline,
                   color: BrandColors.destructive),
               title: const Text('Remove card'),
               onTap: () {
@@ -165,7 +165,7 @@ class _MiniCard extends StatelessWidget {
             if (isDefault)
               const StatusBadge('Default', tone: BadgeTone.success)
             else
-              const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
+              Icon(Icons.chevron_right, color: BrandColors.mutedFg),
           ],
         ),
       ),
@@ -215,7 +215,7 @@ class _AddMethodButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.add, color: BrandColors.primary, size: 20),
+              Icon(Icons.add, color: BrandColors.primary, size: 20),
               const SizedBox(width: Spacing.x2),
               Text(
                 'Add payment method',
@@ -238,11 +238,11 @@ class _BackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      shape: CircleBorder(side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         onTap: () => Navigator.of(context).maybePop(),
         customBorder: const CircleBorder(),
-        child: const SizedBox(
+        child: SizedBox(
           width: 40,
           height: 40,
           child:

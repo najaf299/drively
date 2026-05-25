@@ -76,20 +76,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined,
+              leading: Icon(Icons.photo_camera_outlined,
                   color: BrandColors.primary),
               title: const Text('Take photo'),
               onTap: () => Navigator.pop(context, 'camera'),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined,
+              leading: Icon(Icons.photo_library_outlined,
                   color: BrandColors.primary),
               title: const Text('Choose from library'),
               onTap: () => Navigator.pop(context, 'gallery'),
             ),
             if (hasPhoto)
               ListTile(
-                leading: const Icon(Icons.delete_outline,
+                leading: Icon(Icons.delete_outline,
                     color: BrandColors.destructive),
                 title: const Text('Remove photo'),
                 onTap: () => Navigator.pop(context, 'remove'),
@@ -190,7 +190,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         Container(
                           width: Sizes.avatarXl,
                           height: Sizes.avatarXl,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: BrandColors.primary,
                             shape: BoxShape.circle,
                           ),
@@ -221,7 +221,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 border: Border.all(
                                     color: BrandColors.background, width: 2),
                               ),
-                              child: const Icon(Icons.camera_alt_outlined,
+                              child: Icon(Icons.camera_alt_outlined,
                                   size: 16, color: BrandColors.foreground),
                             ),
                           ),
@@ -291,7 +291,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 child: FilledButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
@@ -334,11 +334,11 @@ class _BackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      shape: CircleBorder(side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         onTap: () => Navigator.of(context).maybePop(),
         customBorder: const CircleBorder(),
-        child: const SizedBox(
+        child: SizedBox(
           width: 40,
           height: 40,
           child:

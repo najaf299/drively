@@ -204,7 +204,7 @@ class _WarningBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded,
+          Icon(Icons.warning_amber_rounded,
               color: BrandColors.warning, size: Sizes.icon),
           const SizedBox(width: Spacing.x3),
           Expanded(
@@ -257,12 +257,12 @@ class _CaptureFrame extends StatelessWidget {
                         Container(
                           width: 72,
                           height: 72,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: BrandColors.primary,
                             shape: BoxShape.circle,
                             boxShadow: BrandShadows.glow,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.photo_camera_outlined,
                             color: BrandColors.primaryFg,
                             size: 32,
@@ -322,7 +322,7 @@ class _ChecklistCard extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: BrandColors.border),
+            if (i > 0) Divider(height: 1, color: BrandColors.border),
             _row(context, items[i]),
           ],
         ],
@@ -362,7 +362,7 @@ class _ChecklistCard extends StatelessWidget {
                   style: textTheme.labelMedium
                       ?.copyWith(color: BrandColors.primary))
             else
-              const Icon(Icons.chevron_right,
+              Icon(Icons.chevron_right,
                   color: BrandColors.mutedFg, size: Sizes.icon),
           ],
         ),
@@ -387,7 +387,7 @@ class _InfoCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.shield_outlined,
+          Icon(Icons.shield_outlined,
               color: BrandColors.primary, size: Sizes.icon),
           const SizedBox(width: Spacing.x3),
           Expanded(
@@ -430,7 +430,7 @@ class _PrimaryButton extends StatelessWidget {
       child: FilledButton(
         onPressed: busy ? null : onPressed,
         child: busy
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
@@ -467,7 +467,7 @@ class _StepHeader extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: BrandColors.border),
             ),
-            child: const Icon(Icons.chevron_left,
+            child: Icon(Icons.chevron_left,
                 color: BrandColors.foreground, size: Sizes.iconLg),
           ),
         ),

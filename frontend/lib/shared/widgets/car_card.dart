@@ -52,7 +52,7 @@ class CarCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Radii.lg),
-          side: const BorderSide(color: BrandColors.border),
+          side: BorderSide(color: BrandColors.border),
         ),
         child: InkWell(
           onTap: onTap,
@@ -169,7 +169,7 @@ class CarCard extends StatelessWidget {
                     // Rating row
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded,
+                        Icon(Icons.star_rounded,
                             size: 14, color: BrandColors.warning),
                         const SizedBox(width: 3),
                         Text(

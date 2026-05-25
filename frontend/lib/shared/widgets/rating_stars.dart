@@ -13,7 +13,7 @@ class RatingStars extends StatelessWidget {
   final int? reviewCount;
 
   /// Filled-star colour — defaults to [BrandColors.warning] per spec.
-  final Color fillColor;
+  final Color? fillColor;
 
   const RatingStars({
     super.key,
@@ -21,7 +21,7 @@ class RatingStars extends StatelessWidget {
     this.size = 16,
     this.showValue = false,
     this.reviewCount,
-    this.fillColor = BrandColors.warning,
+    this.fillColor,
   });
 
   @override
@@ -30,7 +30,8 @@ class RatingStars extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.star_rounded, size: size, color: fillColor),
+        Icon(Icons.star_rounded,
+            size: size, color: fillColor ?? BrandColors.warning),
         const SizedBox(width: 2),
         if (showValue) ...[
           Text(
@@ -61,14 +62,14 @@ class StarRatingInput extends StatelessWidget {
   final double size;
 
   /// Fill colour for selected stars — defaults to [BrandColors.warning].
-  final Color fillColor;
+  final Color? fillColor;
 
   const StarRatingInput({
     super.key,
     required this.value,
     required this.onChanged,
     this.size = 40,
-    this.fillColor = BrandColors.warning,
+    this.fillColor,
   });
 
   @override
@@ -84,7 +85,7 @@ class StarRatingInput extends StatelessWidget {
           constraints: const BoxConstraints(),
           icon: Icon(
             filled ? Icons.star_rounded : Icons.star_outline_rounded,
-            color: filled ? fillColor : BrandColors.mutedFg,
+            color: filled ? (fillColor ?? BrandColors.warning) : BrandColors.mutedFg,
           ),
         );
       }),

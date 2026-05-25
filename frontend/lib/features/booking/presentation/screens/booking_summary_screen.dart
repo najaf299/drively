@@ -519,7 +519,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(
           Spacing.x5, Spacing.x3, Spacing.x5, Spacing.x4),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BrandColors.background,
         border: Border(top: BorderSide(color: BrandColors.border)),
       ),
@@ -543,13 +543,13 @@ class _CircleBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      shape: const CircleBorder(
+      shape: CircleBorder(
         side: BorderSide(color: BrandColors.border),
       ),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: const SizedBox(
+        child: SizedBox(
           width: 40,
           height: 40,
           child: Icon(Icons.arrow_back_ios_new_rounded,
@@ -617,7 +617,7 @@ class _AddonTile extends StatelessWidget {
                 ),
               ),
               child: selected
-                  ? const Icon(Icons.check_rounded,
+                  ? Icon(Icons.check_rounded,
                       size: 16, color: BrandColors.primaryFg)
                   : null,
             ),

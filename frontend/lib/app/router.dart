@@ -288,7 +288,7 @@ class _AnimatedNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BrandColors.surface,
         // Curved top edge (rounded corners), matching the app's rounded look.
         borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
@@ -402,7 +402,7 @@ class _MissingArgs extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.link_off, size: 48, color: BrandColors.mutedFg),
+              Icon(Icons.link_off, size: 48, color: BrandColors.mutedFg),
               const SizedBox(height: Spacing.x4),
               const Text('This page needs to be opened from the app flow.',
                   textAlign: TextAlign.center),

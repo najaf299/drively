@@ -97,7 +97,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.search,
+                          Icon(Icons.search,
                               color: BrandColors.mutedFg,
                               size: Sizes.iconSm),
                           const SizedBox(width: Spacing.x2),
@@ -127,7 +127,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 _query.clear();
                                 _onQueryChanged('');
                               },
-                              child: const Icon(Icons.close,
+                              child: Icon(Icons.close,
                                   color: BrandColors.mutedFg,
                                   size: Sizes.iconSm),
                             ),
@@ -164,7 +164,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             width: 16,
                             height: 16,
                             alignment: Alignment.center,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: BrandColors.primary,
                               shape: BoxShape.circle,
                             ),
@@ -288,7 +288,7 @@ class _CircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface2,
-      shape: const CircleBorder(
+      shape: CircleBorder(
           side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         customBorder: const CircleBorder(),

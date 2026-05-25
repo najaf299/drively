@@ -274,7 +274,7 @@ class _NotifTile extends StatelessWidget {
                     Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: BrandColors.primary,
                         shape: BoxShape.circle,
                       ),
@@ -310,7 +310,7 @@ class _EmptyNotifications extends StatelessWidget {
                 color: BrandColors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.notifications_active_outlined,
+              child: Icon(Icons.notifications_active_outlined,
                   size: 44, color: BrandColors.primary),
             ),
             const SizedBox(height: Spacing.x5),

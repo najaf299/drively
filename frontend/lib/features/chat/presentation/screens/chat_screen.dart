@@ -202,11 +202,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: BrandColors.surface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back,
+              child: Icon(Icons.arrow_back,
                   size: 20, color: BrandColors.foreground),
             ),
           ),
@@ -228,7 +228,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     Container(
                       width: 7,
                       height: 7,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: BrandColors.success,
                         shape: BoxShape.circle,
                       ),
@@ -248,7 +248,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(Icons.call_outlined, color: BrandColors.primary),
+            icon: Icon(Icons.call_outlined, color: BrandColors.primary),
           ),
         ],
       ),
@@ -282,7 +282,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _composerBar(BuildContext context) {
     final canSend = widget.recipientId != null;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BrandColors.surface,
         // Curved top edge matching the app's rounded aesthetic.
         borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
@@ -448,7 +448,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         height: 44,
         decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
         child: _sending
-            ? const Padding(
+            ? Padding(
                 padding: EdgeInsets.all(13),
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: BrandColors.mutedFg),
@@ -564,7 +564,7 @@ class _EmojiPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 280,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BrandColors.surface,
         border: Border(top: BorderSide(color: BrandColors.border)),
       ),
@@ -607,7 +607,7 @@ class _EmojiPicker extends StatelessWidget {
                       color: BrandColors.surface2,
                       borderRadius: BorderRadius.circular(Radii.pill),
                     ),
-                    child: const Icon(Icons.backspace_outlined,
+                    child: Icon(Icons.backspace_outlined,
                         size: Sizes.iconSm, color: BrandColors.foreground),
                   ),
                 ),
@@ -627,7 +627,7 @@ class _AttachmentSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const items = <(IconData, String, Color)>[
+    final items = <(IconData, String, Color)>[
       (Icons.photo_library_outlined, 'Photos', BrandColors.primary),
       (Icons.photo_camera_outlined, 'Camera', BrandColors.info),
       (Icons.description_outlined, 'Document', BrandColors.warning),

@@ -96,11 +96,11 @@ class ReviewsScreen extends ConsumerWidget {
             child: Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: BrandColors.surface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back,
+              child: Icon(Icons.arrow_back,
                   size: 20, color: BrandColors.foreground),
             ),
           ),
@@ -209,7 +209,7 @@ class ReviewsScreen extends ConsumerWidget {
               minHeight: 8,
               backgroundColor: BrandColors.surface2,
               valueColor:
-                  const AlwaysStoppedAnimation(BrandColors.primary),
+                  AlwaysStoppedAnimation(BrandColors.primary),
             ),
           ),
         ),

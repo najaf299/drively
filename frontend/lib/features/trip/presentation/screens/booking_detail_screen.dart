@@ -194,7 +194,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline,
+          Icon(Icons.info_outline,
               size: Sizes.iconSm, color: BrandColors.warning),
           const SizedBox(width: Spacing.x3),
           Expanded(
@@ -372,7 +372,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           Container(
             width: Sizes.avatarMd,
             height: Sizes.avatarMd,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: BrandColors.surface2,
               shape: BoxShape.circle,
             ),
@@ -544,11 +544,11 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: BrandColors.surface,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.arrow_back,
+        child: Icon(Icons.arrow_back,
             size: 20, color: BrandColors.foreground),
       ),
     );
@@ -596,7 +596,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         onPressed: _busy ? null : () => _cancel(b),
         style: OutlinedButton.styleFrom(
           foregroundColor: BrandColors.destructive,
-          side: const BorderSide(color: BrandColors.destructive),
+          side: BorderSide(color: BrandColors.destructive),
         ),
         child: const Text('Cancel trip'),
       ));
@@ -622,7 +622,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     return FilledButton(
       onPressed: onPressed,
       child: loading
-          ? const SizedBox(
+          ? SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(

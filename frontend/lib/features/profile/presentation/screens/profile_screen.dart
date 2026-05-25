@@ -131,7 +131,7 @@ class ProfileScreen extends ConsumerWidget {
               onPressed: () => _signOut(context, ref),
               style: OutlinedButton.styleFrom(
                 foregroundColor: BrandColors.destructive,
-                side: const BorderSide(color: BrandColors.destructive),
+                side: BorderSide(color: BrandColors.destructive),
               ),
               icon: const Icon(Icons.logout),
               label: const Text('Logout'),
@@ -208,7 +208,7 @@ class _ProfileHeader extends StatelessWidget {
         Container(
           width: Sizes.avatarXl,
           height: Sizes.avatarXl,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: BrandColors.primary,
             shape: BoxShape.circle,
           ),
@@ -246,7 +246,7 @@ class _ProfileHeader extends StatelessWidget {
                   tone: BadgeTone.success, icon: Icons.verified),
               const SizedBox(width: Spacing.x3),
             ],
-            const Icon(Icons.star_rounded,
+            Icon(Icons.star_rounded,
                 color: BrandColors.warning, size: 16),
             const SizedBox(width: 4),
             Text(
@@ -280,7 +280,7 @@ class _MenuCard extends StatelessWidget {
           for (var i = 0; i < tiles.length; i++) ...[
             tiles[i],
             if (i != tiles.length - 1)
-              const Divider(height: 1, indent: 60, color: BrandColors.border),
+              Divider(height: 1, indent: 60, color: BrandColors.border),
           ],
         ],
       ),
@@ -348,7 +348,7 @@ class _CircleAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      shape: CircleBorder(side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),

@@ -102,7 +102,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
               // Rating chip + host status.
               Row(
                 children: [
-                  const Icon(Icons.star_rounded,
+                  Icon(Icons.star_rounded,
                       size: 18, color: BrandColors.warning),
                   const SizedBox(width: 4),
                   Text(
@@ -404,12 +404,12 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
           // Chevron / message button.
           Material(
             color: BrandColors.surface3,
-            shape: const CircleBorder(
+            shape: CircleBorder(
                 side: BorderSide(color: BrandColors.border)),
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: () => context.push('/messages'),
-              child: const SizedBox(
+              child: SizedBox(
                 width: Sizes.iconRoundButton,
                 height: Sizes.iconRoundButton,
                 child: Icon(Icons.chevron_right,
@@ -510,7 +510,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
   Widget _bottomBar(Car car) {
     final text = Theme.of(context).textTheme;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BrandColors.surface,
         border: Border(top: BorderSide(color: BrandColors.border)),
       ),
@@ -649,7 +649,7 @@ class _FeaturePill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check, size: 14, color: BrandColors.primary),
+          Icon(Icons.check, size: 14, color: BrandColors.primary),
           const SizedBox(width: 6),
           Text(label,
               style: Theme.of(context)

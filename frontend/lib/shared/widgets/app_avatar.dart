@@ -25,7 +25,7 @@ class AppAvatar extends StatelessWidget {
     return Container(
       width: radius * 2 + 4,
       height: radius * 2 + 4,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BrandColors.surface,
         shape: BoxShape.circle,
       ),

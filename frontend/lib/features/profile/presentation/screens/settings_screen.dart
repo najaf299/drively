@@ -72,7 +72,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ..._languages.entries.map((e) => ListTile(
                   title: Text(e.value),
                   trailing: e.key == _language
-                      ? const Icon(Icons.check, color: BrandColors.primary)
+                      ? Icon(Icons.check, color: BrandColors.primary)
                       : null,
                   onTap: () => Navigator.pop(ctx, e.key),
                 )),
@@ -236,7 +236,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               for (var i = 0; i < rows.length; i++) ...[
                 rows[i],
                 if (i != rows.length - 1)
-                  const Divider(
+                  Divider(
                       height: 1, indent: 60, color: BrandColors.border),
               ],
             ],
@@ -287,7 +287,7 @@ class _RowTile extends StatelessWidget {
                       )),
               const SizedBox(width: Spacing.x2),
             ],
-            const Icon(Icons.chevron_right, color: BrandColors.mutedFg),
+            Icon(Icons.chevron_right, color: BrandColors.mutedFg),
           ],
         ),
       ),
@@ -339,11 +339,11 @@ class _BackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      shape: CircleBorder(side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         onTap: () => Navigator.of(context).maybePop(),
         customBorder: const CircleBorder(),
-        child: const SizedBox(
+        child: SizedBox(
           width: 40,
           height: 40,
           child:

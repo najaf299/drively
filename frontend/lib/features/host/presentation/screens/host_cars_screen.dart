@@ -189,7 +189,7 @@ class _CircleBackButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: BrandColors.border),
         ),
-        child: const Icon(Icons.chevron_left,
+        child: Icon(Icons.chevron_left,
             color: BrandColors.foreground, size: Sizes.iconLg),
       ),
     );

@@ -228,7 +228,7 @@ class HostDashboardScreen extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: BrandColors.warning),
+          Icon(Icons.info_outline, color: BrandColors.warning),
           const SizedBox(width: Spacing.x3),
           const Expanded(
             child: Text('Complete verification to start hosting.'),
@@ -284,7 +284,7 @@ class HostDashboardScreen extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Radii.xl),
-          side: const BorderSide(color: BrandColors.border),
+          side: BorderSide(color: BrandColors.border),
         ),
         child: InkWell(
           onTap: () => context.push(route),
@@ -317,7 +317,7 @@ class HostDashboardScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right,
+                Icon(Icons.chevron_right,
                     color: BrandColors.mutedFg),
               ],
             ),

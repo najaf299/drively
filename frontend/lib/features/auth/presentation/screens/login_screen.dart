@@ -182,7 +182,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: FilledButton(
                       onPressed: auth.isBusy ? null : _submit,
                       child: auth.isBusy
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(

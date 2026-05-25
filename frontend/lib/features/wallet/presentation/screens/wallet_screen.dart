@@ -200,7 +200,7 @@ class _BalanceCard extends StatelessWidget {
                       .bodySmall
                       ?.copyWith(color: BrandColors.mutedFg)),
               const Spacer(),
-              const Icon(Icons.account_balance_wallet_outlined,
+              Icon(Icons.account_balance_wallet_outlined,
                   color: BrandColors.mutedFg, size: 20),
             ],
           ),
@@ -412,7 +412,7 @@ class _CardsTab extends ConsumerWidget {
           children: [
             if (!card.isDefault)
               ListTile(
-                leading: const Icon(Icons.star_outline,
+                leading: Icon(Icons.star_outline,
                     color: BrandColors.primary),
                 title: const Text('Set as default'),
                 onTap: () {
@@ -421,7 +421,7 @@ class _CardsTab extends ConsumerWidget {
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.delete_outline,
+              leading: Icon(Icons.delete_outline,
                   color: BrandColors.destructive),
               title: const Text('Remove card'),
               onTap: () {
@@ -459,7 +459,7 @@ class _CardsTab extends ConsumerWidget {
         const SizedBox(height: Spacing.x4),
         Row(
           children: [
-            const Icon(Icons.lock_outline,
+            Icon(Icons.lock_outline,
                 size: Sizes.iconSm, color: BrandColors.mutedFg),
             const SizedBox(width: Spacing.x2),
             Expanded(
@@ -526,7 +526,7 @@ class _WalletCardRow extends StatelessWidget {
           ],
           IconButton(
             onPressed: onMenu,
-            icon: const Icon(Icons.more_vert, color: BrandColors.mutedFg),
+            icon: Icon(Icons.more_vert, color: BrandColors.mutedFg),
           ),
         ],
       ),
@@ -713,7 +713,7 @@ class _AppliedBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle, color: BrandColors.success, size: 20),
+          Icon(Icons.check_circle, color: BrandColors.success, size: 20),
           const SizedBox(width: Spacing.x3),
           Expanded(
             child: Text(
@@ -784,7 +784,7 @@ class _OfferTile extends StatelessWidget {
           ),
           const SizedBox(width: Spacing.x2),
           offer.applied
-              ? const Icon(Icons.check_circle, color: BrandColors.primary)
+              ? Icon(Icons.check_circle, color: BrandColors.primary)
               : OutlinedButton(
                   onPressed: onApply,
                   style: OutlinedButton.styleFrom(
@@ -816,7 +816,7 @@ class _DashedAddTile extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.add, color: BrandColors.primary, size: 20),
+              Icon(Icons.add, color: BrandColors.primary, size: 20),
               const SizedBox(width: Spacing.x2),
               Text(label,
                   style: Theme.of(context)
@@ -926,7 +926,7 @@ class _CircleAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BrandColors.surface,
-      shape: const CircleBorder(side: BorderSide(color: BrandColors.border)),
+      shape: CircleBorder(side: BorderSide(color: BrandColors.border)),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),

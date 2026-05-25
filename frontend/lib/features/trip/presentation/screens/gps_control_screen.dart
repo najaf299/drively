@@ -172,7 +172,7 @@ class _GpsControlScreenState extends ConsumerState<GpsControlScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.place_outlined,
+              Icon(Icons.place_outlined,
                   color: BrandColors.primary, size: Sizes.icon),
               const SizedBox(width: Spacing.x2),
               Text('Live location', style: text.titleMedium),
@@ -190,7 +190,7 @@ class _GpsControlScreenState extends ConsumerState<GpsControlScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.my_location_rounded,
+                Icon(Icons.my_location_rounded,
                     size: 18, color: BrandColors.mutedFg),
                 const SizedBox(width: Spacing.x2),
                 Expanded(
@@ -323,7 +323,7 @@ class _GpsControlScreenState extends ConsumerState<GpsControlScreen> {
           Expanded(child: Text(c.label, style: text.bodyMedium)),
           Text(_ago(c.at), style: text.bodySmall),
           const SizedBox(width: Spacing.x2),
-          const Icon(Icons.check_circle,
+          Icon(Icons.check_circle,
               size: 16, color: BrandColors.success),
         ],
       ),
@@ -334,7 +334,7 @@ class _GpsControlScreenState extends ConsumerState<GpsControlScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.shield_outlined,
+        Icon(Icons.shield_outlined,
             size: Sizes.iconSm, color: BrandColors.mutedFg),
         const SizedBox(width: Spacing.x2),
         Expanded(
@@ -355,11 +355,11 @@ class _GpsControlScreenState extends ConsumerState<GpsControlScreen> {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: BrandColors.surface,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.arrow_back,
+        child: Icon(Icons.arrow_back,
             size: 20, color: BrandColors.foreground),
       ),
     );
@@ -467,7 +467,7 @@ class _LockHeroState extends State<_LockHero>
                         boxShadow: unlocked ? BrandShadows.glow : null,
                       ),
                       child: s.sending
-                          ? const Center(
+                          ? Center(
                               child: SizedBox(
                                 width: 34,
                                 height: 34,

@@ -233,7 +233,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
 
           // ── Sticky bottom: Reset (text) + Show N cars (filled) ────────────
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: BrandColors.surface,
               border: Border(
                   top: BorderSide(color: BrandColors.border)),

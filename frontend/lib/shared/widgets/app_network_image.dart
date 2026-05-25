@@ -51,7 +51,7 @@ class AppNetworkImage extends StatelessWidget {
       width: width,
       height: height,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -59,7 +59,7 @@ class AppNetworkImage extends StatelessWidget {
         ),
       ),
       child: loading
-          ? const SizedBox(
+          ? SizedBox(
               width: 22,
               height: 22,
               child: CircularProgressIndicator(

@@ -167,11 +167,11 @@ class _GlowCheck extends StatelessWidget {
         width: 96,
         height: 96,
         alignment: Alignment.center,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: BrandColors.primary,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           Icons.check_rounded,
           size: 52,
           color: BrandColors.primaryFg,

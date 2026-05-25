@@ -11,7 +11,7 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: GlowBackground(
         glowAlignment: Alignment(0, -1.1),
         child: SafeArea(

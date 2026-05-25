@@ -12,8 +12,8 @@ class GlowBackground extends StatelessWidget {
   /// welcome screen; pass `Alignment(0, -1.2)` for a centred top glow.
   final Alignment glowAlignment;
 
-  /// Glow tint. Defaults to the cool blue brand glow.
-  final Color glowColor;
+  /// Glow tint. Defaults to the brand glow ([BrandColors.heroGlow]).
+  final Color? glowColor;
 
   /// Glow strength (0–1).
   final double intensity;
@@ -22,12 +22,13 @@ class GlowBackground extends StatelessWidget {
     super.key,
     required this.child,
     this.glowAlignment = const Alignment(0.65, -1.15),
-    this.glowColor = BrandColors.heroGlow,
+    this.glowColor,
     this.intensity = 0.55,
   });
 
   @override
   Widget build(BuildContext context) {
+    final glow = glowColor ?? BrandColors.heroGlow;
     return ColoredBox(
       color: BrandColors.background,
       child: Stack(
@@ -40,8 +41,8 @@ class GlowBackground extends StatelessWidget {
                   center: glowAlignment,
                   radius: 1.15,
                   colors: [
-                    glowColor.withValues(alpha: intensity),
-                    glowColor.withValues(alpha: 0.0),
+                    glow.withValues(alpha: intensity),
+                    glow.withValues(alpha: 0.0),
                   ],
                   stops: const [0.0, 0.7],
                 ),
@@ -56,8 +57,8 @@ class GlowBackground extends StatelessWidget {
                   center: const Alignment(-0.9, -1.2),
                   radius: 0.9,
                   colors: [
-                    glowColor.withValues(alpha: intensity * 0.3),
-                    glowColor.withValues(alpha: 0.0),
+                    glow.withValues(alpha: intensity * 0.3),
+                    glow.withValues(alpha: 0.0),
                   ],
                   stops: const [0.0, 0.8],
                 ),

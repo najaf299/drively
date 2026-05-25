@@ -186,7 +186,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             text: 'I agree to the ',
                             style: textTheme.bodyMedium
                                 ?.copyWith(color: BrandColors.mutedFg),
-                            children: const [
+                            children: [
                               TextSpan(
                                 text: 'Terms',
                                 style: TextStyle(
@@ -220,7 +220,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: FilledButton(
                     onPressed: auth.isBusy ? null : _submit,
                     child: auth.isBusy
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
@@ -240,7 +240,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         text: 'Have an account?  ',
                         style: textTheme.bodyMedium
                             ?.copyWith(color: BrandColors.mutedFg),
-                        children: const [
+                        children: [
                           TextSpan(
                             text: 'Sign in',
                             style: TextStyle(
@@ -400,7 +400,7 @@ class _StepHeader extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: BrandColors.border),
             ),
-            child: const Icon(Icons.chevron_left,
+            child: Icon(Icons.chevron_left,
                 color: BrandColors.foreground, size: Sizes.iconLg),
           ),
         ),

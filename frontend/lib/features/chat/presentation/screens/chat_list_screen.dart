@@ -131,7 +131,7 @@ class _SwipeableThread extends StatelessWidget {
         label: archived ? 'Unarchive' : 'Archive',
       ),
       // Left swipe (endToStart) → delete.
-      secondaryBackground: const _SwipeBg(
+      secondaryBackground: _SwipeBg(
         alignment: Alignment.centerRight,
         color: BrandColors.destructive,
         icon: Icons.delete_outline,
@@ -343,7 +343,7 @@ class _ThreadTile extends StatelessWidget {
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: BrandColors.primary,
                         shape: BoxShape.circle,
                       ),
