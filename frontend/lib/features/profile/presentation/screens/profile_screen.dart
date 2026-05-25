@@ -6,7 +6,6 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/user.dart';
 import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/app_snack.dart';
-import '../../../../shared/widgets/rounded_divider.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
@@ -281,7 +280,7 @@ class _MenuCard extends StatelessWidget {
           for (var i = 0; i < tiles.length; i++) ...[
             tiles[i],
             if (i != tiles.length - 1)
-              const RoundedDivider(indent: 16),
+              const Divider(height: 1, indent: 60, color: BrandColors.border),
           ],
         ],
       ),

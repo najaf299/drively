@@ -10,7 +10,6 @@ import '../../../../core/models/chat.dart';
 import '../../../../core/network/realtime_client.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_snack.dart';
-import '../../../../shared/widgets/rounded_divider.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/chat_service.dart';
@@ -192,74 +191,67 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _header(BuildContext context) {
     final name = widget.recipientName ?? 'Chat';
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(
-              Spacing.x4, Spacing.x2, Spacing.x4, Spacing.x2),
-          child: Row(
-            children: [
-              InkWell(
-                onTap: () => context.canPop() ? context.pop() : context.go('/'),
-                customBorder: const CircleBorder(),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: BrandColors.surface,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.arrow_back,
-                      size: 20, color: BrandColors.foreground),
-                ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.x4, Spacing.x2, Spacing.x4, Spacing.x2),
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () => context.canPop() ? context.pop() : context.go('/'),
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: BrandColors.surface,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: Spacing.x3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+              child: const Icon(Icons.arrow_back,
+                  size: 20, color: BrandColors.foreground),
+            ),
+          ),
+          const SizedBox(width: Spacing.x3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  name,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 1),
+                Row(
                   children: [
-                    Text(
-                      name,
-                      style: Theme.of(context).textTheme.titleLarge,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: BrandColors.success,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                    const SizedBox(height: 1),
-                    Row(
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: const BoxDecoration(
-                            color: BrandColors.success,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          'Online',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
-                              ?.copyWith(color: BrandColors.success),
-                        ),
-                      ],
+                    const SizedBox(width: 5),
+                    Text(
+                      'Online',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: BrandColors.success),
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon:
-                    const Icon(Icons.call_outlined, color: BrandColors.primary),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const RoundedDivider(),
-      ],
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.call_outlined, color: BrandColors.primary),
+          ),
+        ],
+      ),
     );
   }
 
@@ -290,94 +282,91 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _composerBar(BuildContext context) {
     final canSend = widget.recipientId != null;
     return Container(
-      decoration: const BoxDecoration(color: BrandColors.surface),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const RoundedDivider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(Spacing.x3, 6, Spacing.x3, 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Attachment — opens the share sheet.
-                _circleIcon(
-                    Icons.add, BrandColors.surface2, BrandColors.foreground,
-                    onTap: canSend ? () => _openAttachments(context) : null),
-                const SizedBox(width: Spacing.x2),
-                // Pill input + emoji/keyboard toggle.
-                Expanded(
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 38),
-                    decoration: BoxDecoration(
-                      color: BrandColors.surface2,
-                      borderRadius: BorderRadius.circular(Radii.pill),
-                      border: Border.all(color: BrandColors.border),
-                    ),
-                    padding: const EdgeInsets.only(left: Spacing.x4, right: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: TextField(
-                              controller: _input,
-                              focusNode: _inputFocus,
-                              enabled: canSend,
-                              minLines: 1,
-                              maxLines: 5,
-                              textCapitalization: TextCapitalization.sentences,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(color: BrandColors.foreground),
-                              decoration: InputDecoration(
-                                isCollapsed: true,
-                                hintText: canSend
-                                    ? 'Message…'
-                                    : 'Read-only conversation',
-                                hintStyle: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(color: BrandColors.subtleFg),
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                filled: false,
-                              ),
-                              onSubmitted: (_) =>
-                                  canSend && !_sending ? _send() : null,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: canSend ? _toggleEmoji : null,
-                          child: SizedBox(
-                            width: 38,
-                            height: 38,
-                            child: Icon(
-                              _emojiOpen
-                                  ? Icons.keyboard_rounded
-                                  : Icons.emoji_emotions_outlined,
-                              color: _emojiOpen
-                                  ? BrandColors.primary
-                                  : BrandColors.mutedFg,
-                              size: Sizes.icon,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+      decoration: const BoxDecoration(
+        color: BrandColors.surface,
+        // Curved top edge matching the app's rounded aesthetic.
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+      ),
+      child: Padding(
+        padding:
+            const EdgeInsets.fromLTRB(Spacing.x3, Spacing.x3, Spacing.x3, 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // Attachment — opens the share sheet.
+            _circleIcon(Icons.add, BrandColors.surface2, BrandColors.foreground,
+                onTap: canSend ? () => _openAttachments(context) : null),
+            const SizedBox(width: Spacing.x2),
+            // Pill input + emoji/keyboard toggle.
+            Expanded(
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 38),
+                decoration: BoxDecoration(
+                  color: BrandColors.surface2,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                  border: Border.all(color: BrandColors.border),
                 ),
-                const SizedBox(width: Spacing.x2),
-                _sendButton(canSend),
-              ],
+                padding: const EdgeInsets.only(left: Spacing.x4, right: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: TextField(
+                          controller: _input,
+                          focusNode: _inputFocus,
+                          enabled: canSend,
+                          minLines: 1,
+                          maxLines: 5,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(color: BrandColors.foreground),
+                          decoration: InputDecoration(
+                            isCollapsed: true,
+                            hintText:
+                                canSend ? 'Message…' : 'Read-only conversation',
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(color: BrandColors.subtleFg),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
+                          ),
+                          onSubmitted: (_) =>
+                              canSend && !_sending ? _send() : null,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: canSend ? _toggleEmoji : null,
+                      child: SizedBox(
+                        width: 38,
+                        height: 38,
+                        child: Icon(
+                          _emojiOpen
+                              ? Icons.keyboard_rounded
+                              : Icons.emoji_emotions_outlined,
+                          color: _emojiOpen
+                              ? BrandColors.primary
+                              : BrandColors.mutedFg,
+                          size: Sizes.icon,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: Spacing.x2),
+            _sendButton(canSend),
+          ],
+        ),
       ),
     );
   }

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../shared/widgets/app_snack.dart';
-import '../../../../shared/widgets/rounded_divider.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
 /// Settings screen — spec §7.40.
@@ -236,7 +235,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               for (var i = 0; i < rows.length; i++) ...[
                 rows[i],
-                if (i != rows.length - 1) const RoundedDivider(indent: 16),
+                if (i != rows.length - 1)
+                  const Divider(
+                      height: 1, indent: 60, color: BrandColors.border),
               ],
             ],
           ),
@@ -276,8 +277,8 @@ class _RowTile extends StatelessWidget {
             ),
             const SizedBox(width: Spacing.x3),
             Expanded(
-              child: Text(label,
-                  style: Theme.of(context).textTheme.titleMedium),
+              child:
+                  Text(label, style: Theme.of(context).textTheme.titleMedium),
             ),
             if (value != null) ...[
               Text(value!,
@@ -322,8 +323,7 @@ class _ToggleRow extends StatelessWidget {
           ),
           const SizedBox(width: Spacing.x3),
           Expanded(
-            child: Text(label,
-                style: Theme.of(context).textTheme.titleMedium),
+            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
           ),
           Switch(value: value, onChanged: onChanged),
         ],
