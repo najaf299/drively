@@ -6,6 +6,7 @@ import '../../../../app/theme.dart';
 import '../../../../core/models/user.dart';
 import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/app_snack.dart';
+import '../../../../shared/widgets/drivly_toast.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
@@ -25,7 +26,10 @@ class ProfileScreen extends ConsumerWidget {
       confirmLabel: 'Sign out',
       destructive: true,
     );
-    if (confirm) await ref.read(authProvider.notifier).logout();
+    if (confirm) {
+      await ref.read(authProvider.notifier).logout();
+      DrivlyToast.info('Signed out', message: 'See you soon.');
+    }
   }
 
   void _soon(BuildContext context) => AppSnack.soon(context);
@@ -101,8 +105,8 @@ class ProfileScreen extends ConsumerWidget {
                 _MenuTile(
                   icon: Icons.directions_car_outlined,
                   label: 'Become a host',
-                  iconColor: BrandColors.primary,
-                  labelColor: BrandColors.primary,
+                  iconColor: BrandColors.primaryText,
+                  labelColor: BrandColors.primaryText,
                   onTap: () => context.push('/host'),
                 ),
               ],

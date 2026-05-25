@@ -190,7 +190,7 @@ class CarCard extends StatelessWidget {
                               TextSpan(
                                 text: Formatters.money(car.dailyPrice),
                                 style: text.titleMedium
-                                    ?.copyWith(color: BrandColors.primary),
+                                    ?.copyWith(color: BrandColors.primaryText),
                               ),
                               TextSpan(
                                 text: '/day',

@@ -85,7 +85,7 @@ class OnboardingScreen extends StatelessWidget {
                           TextSpan(
                             text: 'Sign in',
                             style: text.bodyMedium?.copyWith(
-                              color: BrandColors.primary,
+                              color: BrandColors.primaryText,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

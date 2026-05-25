@@ -288,8 +288,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
       ),
       child: Padding(
-        padding:
-            const EdgeInsets.fromLTRB(Spacing.x3, Spacing.x3, Spacing.x3, 6),
+        padding: const EdgeInsets.fromLTRB(
+            Spacing.x3, Spacing.x2, Spacing.x3, Spacing.x2),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -312,7 +312,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   children: [
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 7),
                         child: TextField(
                           controller: _input,
                           focusNode: _inputFocus,
@@ -444,12 +444,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       onTap: onTap,
       customBorder: const CircleBorder(),
       child: Container(
-        width: 44,
-        height: 44,
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
         child: _sending
             ? Padding(
-                padding: EdgeInsets.all(13),
+                padding: EdgeInsets.all(11),
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: BrandColors.mutedFg),
               )
@@ -467,8 +467,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       onTap: onTap,
       customBorder: const CircleBorder(),
       child: Container(
-        width: 40,
-        height: 40,
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(
           color: bg,
           shape: BoxShape.circle,

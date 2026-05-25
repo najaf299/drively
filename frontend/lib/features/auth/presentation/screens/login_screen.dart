@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_snack.dart';
+import '../../../../shared/widgets/drivly_toast.dart';
 import '../../../../shared/widgets/glow_background.dart';
 import '../../domain/providers/auth_provider.dart';
 
@@ -34,10 +35,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    await ref.read(authProvider.notifier).login(
+    final ok = await ref.read(authProvider.notifier).login(
           _email.text.trim(),
           _password.text,
         );
+    if (ok) DrivlyToast.success('Welcome back', message: "You're signed in.");
   }
 
   // ── Social sign-in ─────────────────────────────────────────────────────
@@ -60,12 +62,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _snack('Could not get a Google token. Please try again.');
         return;
       }
-      await ref.read(authProvider.notifier).loginWithGoogle(
+      final ok = await ref.read(authProvider.notifier).loginWithGoogle(
             idToken,
             name: account.displayName,
             email: account.email,
             avatarUrl: account.photoUrl,
           );
+      if (ok) DrivlyToast.success('Signed in with Google');
     } catch (_) {
       _snack('Google sign-in failed. Please try again.');
     }
@@ -73,12 +76,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _apple() async {
     const email = 'demo.apple@drivly.io';
-    await ref.read(authProvider.notifier).loginWithApple(
+    final ok = await ref.read(authProvider.notifier).loginWithApple(
           _demoIdToken({'sub': 'apple-demo-001', 'email': email}),
           authorizationCode: 'demo-apple-auth-code',
           name: 'Demo Apple User',
           email: email,
         );
+    if (ok) DrivlyToast.success('Signed in with Apple');
   }
 
   /// Builds a well-formed (unsigned) JWT the demo backend decodes to find or
@@ -245,7 +249,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             TextSpan(
                               text: 'Sign up',
                               style: textTheme.bodyMedium?.copyWith(
-                                color: BrandColors.primary,
+                                color: BrandColors.primaryText,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

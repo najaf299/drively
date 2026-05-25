@@ -244,7 +244,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           TextSpan(
                             text: 'Sign in',
                             style: TextStyle(
-                              color: BrandColors.primary,
+                              color: BrandColors.primaryText,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

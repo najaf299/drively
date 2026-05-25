@@ -320,7 +320,7 @@ class _HomeHeader extends ConsumerWidget {
                       TextSpan(
                         text: firstName,
                         style: text.titleLarge?.copyWith(
-                          color: BrandColors.primary,
+                          color: BrandColors.primaryText,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -588,7 +588,7 @@ class _CategoryGrid extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: Sizes.iconLg, color: BrandColors.primary),
+                Icon(icon, size: Sizes.iconLg, color: BrandColors.primaryText),
                 const SizedBox(height: Spacing.x1),
                 Text(label,
                     style: text.labelMedium

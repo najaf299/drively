@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../app/theme_mode_provider.dart';
 import '../../../../shared/widgets/app_snack.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 
@@ -21,7 +22,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late Map<String, bool> _channels;
   late String _language;
   bool _saving = false;
-  bool _darkMode = true; // Drivly is always dark; toggle is decorative
 
   static const _languages = {
     'en': 'English',
@@ -163,12 +163,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _ToggleRow(
                 icon: Icons.dark_mode_outlined,
                 label: 'Dark mode',
-                value: _darkMode,
-                onChanged: (v) {
-                  setState(() => _darkMode = v);
-                  AppSnack.show(context, 'Drivly is dark by design.',
-                      type: SnackType.info);
-                },
+                value: Theme.of(context).brightness == Brightness.dark,
+                onChanged: (v) =>
+                    ref.read(themeModeProvider.notifier).setDark(v),
               ),
             ]),
             const SizedBox(height: Spacing.x5),
