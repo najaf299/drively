@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -79,8 +81,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
             role: role,
           ));
 
-  Future<bool> loginWithGoogle(String idToken, {String? name, String? email}) =>
-      _run(() => _service.loginWithGoogle(idToken, name: name, email: email));
+  Future<bool> loginWithGoogle(String idToken,
+          {String? name, String? email, String? avatarUrl}) =>
+      _run(() => _service.loginWithGoogle(idToken,
+          name: name, email: email, avatarUrl: avatarUrl));
 
   Future<bool> loginWithApple(
     String token, {
@@ -129,6 +133,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> updateProfile(Map<String, dynamic> changes) async {
     final updated = await _service.updateProfile(changes);
+    state = state.copyWith(user: updated);
+  }
+
+  /// Uploads a new profile photo and updates the in-memory user.
+  Future<void> uploadAvatar(File file) async {
+    final updated = await _service.uploadAvatar(file);
     state = state.copyWith(user: updated);
   }
 

@@ -66,6 +66,7 @@ Route::prefix('v1')->group(function () {
         // Profile
         Route::get('profile', [ProfileController::class, 'show']);
         Route::put('profile', [ProfileController::class, 'update']);
+        Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar']);
 
         // KYC
         Route::prefix('kyc')->group(function () {

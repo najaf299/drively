@@ -26,7 +26,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _phone;
   late final TextEditingController _bio;
   bool _saving = false;
-  File? _avatarFile;
+  File? _avatarFile; // a newly picked photo, pending upload on save
+  bool _removePhoto = false; // user chose to clear an existing server photo
 
   @override
   void initState() {
@@ -46,9 +47,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   /// Pick a new profile photo from the camera or library (or remove it).
-  /// The image is previewed locally; a production build would upload it on save.
+  /// The chosen file is previewed locally and uploaded when the user taps Save.
   Future<void> _changePhoto() async {
     FocusScope.of(context).unfocus();
+    final hasPhoto = _avatarFile != null ||
+        ((ref.read(authProvider).user?.avatarUrl?.isNotEmpty ?? false) &&
+            !_removePhoto);
     final action = await showModalBottomSheet<String>(
       context: context,
       useRootNavigator: true,
@@ -83,7 +87,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               title: const Text('Choose from library'),
               onTap: () => Navigator.pop(context, 'gallery'),
             ),
-            if (_avatarFile != null)
+            if (hasPhoto)
               ListTile(
                 leading: const Icon(Icons.delete_outline,
                     color: BrandColors.destructive),
@@ -97,7 +101,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
     if (action == null) return;
     if (action == 'remove') {
-      setState(() => _avatarFile = null);
+      setState(() {
+        _avatarFile = null;
+        _removePhoto = true;
+      });
       return;
     }
     final source =
@@ -109,7 +116,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         imageQuality: 85,
       );
       if (picked != null && mounted) {
-        setState(() => _avatarFile = File(picked.path));
+        setState(() {
+          _avatarFile = File(picked.path);
+          _removePhoto = false;
+        });
       }
     } catch (_) {
       if (mounted) AppSnack.error(context, 'Could not open the camera or library.');
@@ -121,12 +131,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _saving = true);
     try {
-      await ref.read(authProvider.notifier).updateProfile({
+      final notifier = ref.read(authProvider.notifier);
+
+      // Upload a newly picked photo first so its URL is persisted on the user.
+      if (_avatarFile != null) {
+        await notifier.uploadAvatar(_avatarFile!);
+      }
+
+      await notifier.updateProfile({
         'name': _name.text.trim(),
         'phone': _phone.text.trim(),
         'bio': _bio.text.trim(),
+        if (_removePhoto && _avatarFile == null) 'avatar_url': null,
       });
       if (!mounted) return;
+      setState(() {
+        _avatarFile = null;
+        _removePhoto = false;
+      });
       AppSnack.success(context, 'Profile updated.');
       Navigator.of(context).pop();
     } catch (e) {
@@ -175,7 +197,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           clipBehavior: Clip.antiAlias,
                           child: _avatarFile != null
                               ? Image.file(_avatarFile!, fit: BoxFit.cover)
-                              : (user.avatarUrl?.isNotEmpty ?? false)
+                              : (!_removePhoto &&
+                                      (user.avatarUrl?.isNotEmpty ?? false))
                                   ? Image.network(user.avatarUrl!,
                                       fit: BoxFit.cover)
                                   : Center(

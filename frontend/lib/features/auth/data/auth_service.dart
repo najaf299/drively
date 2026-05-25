@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -60,12 +62,14 @@ class AuthService {
     String idToken, {
     String? name,
     String? email,
+    String? avatarUrl,
   }) async {
     try {
       final res = await _dio.post(ApiEndpoints.googleAuth, data: {
         'id_token': idToken,
         if (name != null) 'name': name,
         if (email != null) 'email': email,
+        if (avatarUrl != null && avatarUrl.isNotEmpty) 'avatar_url': avatarUrl,
       });
       return AuthResult.fromJson(ApiResponse.data(res.data));
     } catch (e) {
@@ -171,6 +175,23 @@ class AuthService {
   Future<User> updateProfile(Map<String, dynamic> changes) async {
     try {
       final res = await _dio.put(ApiEndpoints.profile, data: changes);
+      return User.fromJson(ApiResponse.data(res.data));
+    } catch (e) {
+      throw mapError(e);
+    }
+  }
+
+  /// Uploads a new profile photo (multipart) and returns the updated user with
+  /// its server `avatar_url`.
+  Future<User> uploadAvatar(File file) async {
+    try {
+      final form = FormData.fromMap({
+        'avatar': await MultipartFile.fromFile(
+          file.path,
+          filename: file.uri.pathSegments.last,
+        ),
+      });
+      final res = await _dio.post(ApiEndpoints.profileAvatar, data: form);
       return User.fromJson(ApiResponse.data(res.data));
     } catch (e) {
       throw mapError(e);

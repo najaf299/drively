@@ -12,6 +12,7 @@ class ApiEndpoints {
 
   // Profile
   static const String profile = '/profile';
+  static const String profileAvatar = '/profile/avatar';
 
   // KYC
   static const String kycStatus = '/kyc/status';

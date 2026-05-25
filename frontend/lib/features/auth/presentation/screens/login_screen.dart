@@ -64,6 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             idToken,
             name: account.displayName,
             email: account.email,
+            avatarUrl: account.photoUrl,
           );
     } catch (_) {
       _snack('Google sign-in failed. Please try again.');

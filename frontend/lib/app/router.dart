@@ -40,6 +40,7 @@ import '../features/trip/presentation/screens/reviews_screen.dart';
 import '../features/trip/presentation/screens/trips_screen.dart';
 import '../features/wallet/presentation/screens/payment_methods_screen.dart';
 import '../features/wallet/presentation/screens/wallet_screen.dart';
+import '../shared/widgets/rounded_divider.dart';
 import 'theme.dart';
 
 /// Whether the user has completed the onboarding carousel. Overridden in
@@ -246,8 +247,8 @@ class _ScaffoldWithNavBar extends StatelessWidget {
   static const _items = [
     _NavItem(Icons.explore_outlined, Icons.explore, 'Discover', '/home'),
     _NavItem(Icons.luggage_outlined, Icons.luggage, 'Trips', '/trips'),
-    _NavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'Messages',
-        '/messages'),
+    _NavItem(
+        Icons.chat_bubble_outline, Icons.chat_bubble, 'Messages', '/messages'),
     _NavItem(Icons.account_balance_wallet_outlined,
         Icons.account_balance_wallet, 'Wallet', '/wallet'),
     _NavItem(Icons.person_outline, Icons.person, 'Profile', '/profile'),
@@ -288,26 +289,30 @@ class _AnimatedNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: BrandColors.surface,
-        border: Border(top: BorderSide(color: BrandColors.border)),
-      ),
+      decoration: const BoxDecoration(color: BrandColors.surface),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.x3, vertical: Spacing.x3),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (var i = 0; i < items.length; i++)
-                _NavPill(
-                  item: items[i],
-                  selected: i == currentIndex,
-                  onTap: () => onTap(i),
-                ),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Rounded hairline instead of an edge-to-edge straight border.
+            const RoundedDivider(indent: 28, height: 10),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  Spacing.x3, 2, Spacing.x3, Spacing.x3),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var i = 0; i < items.length; i++)
+                    _NavPill(
+                      item: items[i],
+                      selected: i == currentIndex,
+                      onTap: () => onTap(i),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -358,8 +363,8 @@ class _NavPill extends StatelessWidget {
               builder: (context, t, _) => Icon(
                 selected ? item.activeIcon : item.icon,
                 size: Sizes.icon,
-                color: Color.lerp(
-                    BrandColors.mutedFg, BrandColors.primaryFg, t),
+                color:
+                    Color.lerp(BrandColors.mutedFg, BrandColors.primaryFg, t),
               ),
             ),
             // Label slides/fades in only when selected.

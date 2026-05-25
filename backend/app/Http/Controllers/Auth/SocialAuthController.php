@@ -43,6 +43,13 @@ class SocialAuthController extends Controller
                 }
             }
 
+            // Keep the Google profile photo fresh for existing accounts too
+            // (e.g. users who first signed up with email/password).
+            $picture = $googleUser['picture'] ?? $validated['avatar_url'] ?? null;
+            if ($picture && $user->avatar_url !== $picture) {
+                $user->update(['avatar_url' => $picture]);
+            }
+
             if ($user->is_suspended) {
                 return $this->error('Account suspended: ' . $user->suspension_reason, 403);
             }

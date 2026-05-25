@@ -10,6 +10,7 @@ import '../../../../core/models/chat.dart';
 import '../../../../core/network/realtime_client.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_snack.dart';
+import '../../../../shared/widgets/rounded_divider.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/chat_service.dart';
@@ -191,80 +192,81 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _header(BuildContext context) {
     final name = widget.recipientName ?? 'Chat';
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-          Spacing.x4, Spacing.x2, Spacing.x4, Spacing.x2),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: BrandColors.border)),
-      ),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: () => context.canPop() ? context.pop() : context.go('/'),
-            customBorder: const CircleBorder(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: BrandColors.surface,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.arrow_back,
-                  size: 20, color: BrandColors.foreground),
-            ),
-          ),
-          const SizedBox(width: Spacing.x3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  name,
-                  style: Theme.of(context).textTheme.titleLarge,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.x4, Spacing.x2, Spacing.x4, Spacing.x2),
+          child: Row(
+            children: [
+              InkWell(
+                onTap: () => context.canPop() ? context.pop() : context.go('/'),
+                customBorder: const CircleBorder(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: BrandColors.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_back,
+                      size: 20, color: BrandColors.foreground),
                 ),
-                const SizedBox(height: 1),
-                Row(
+              ),
+              const SizedBox(width: Spacing.x3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: BrandColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
                     Text(
-                      'Online',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium
-                          ?.copyWith(color: BrandColors.success),
+                      name,
+                      style: Theme.of(context).textTheme.titleLarge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: const BoxDecoration(
+                            color: BrandColors.success,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Online',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(color: BrandColors.success),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon:
+                    const Icon(Icons.call_outlined, color: BrandColors.primary),
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.call_outlined,
-                color: BrandColors.primary),
-          ),
-        ],
-      ),
+        ),
+        const RoundedDivider(),
+      ],
     );
   }
 
   /// System date separator — surface2 @60 center pill.
   Widget _dateSeparator(BuildContext context, List<ChatMessage> list) {
     final ts = list.isNotEmpty ? list.first.createdAt : null;
-    final label = ts != null
-        ? 'TODAY  ·  ${Formatters.time(ts)}'
-        : 'TODAY';
+    final label = ts != null ? 'TODAY  ·  ${Formatters.time(ts)}' : 'TODAY';
     return Center(
       child: Container(
         margin: const EdgeInsets.only(bottom: Spacing.x3),
@@ -288,88 +290,93 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _composerBar(BuildContext context) {
     final canSend = widget.recipientId != null;
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-          Spacing.x3, Spacing.x2, Spacing.x3, Spacing.x2),
-      decoration: const BoxDecoration(
-        color: BrandColors.surface,
-        border: Border(top: BorderSide(color: BrandColors.border)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      decoration: const BoxDecoration(color: BrandColors.surface),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Attachment — opens the share sheet.
-          _circleIcon(Icons.add, BrandColors.surface2, BrandColors.foreground,
-              onTap: canSend ? () => _openAttachments(context) : null),
-          const SizedBox(width: Spacing.x2),
-          // Pill input + emoji/keyboard toggle.
-          Expanded(
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 44),
-              decoration: BoxDecoration(
-                color: BrandColors.surface2,
-                borderRadius: BorderRadius.circular(Radii.xl),
-                border: Border.all(color: BrandColors.border),
-              ),
-              padding: const EdgeInsets.only(left: Spacing.x4, right: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      child: TextField(
-                        controller: _input,
-                        focusNode: _inputFocus,
-                        enabled: canSend,
-                        minLines: 1,
-                        maxLines: 5,
-                        textCapitalization: TextCapitalization.sentences,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(color: BrandColors.foreground),
-                        decoration: InputDecoration(
-                          isCollapsed: true,
-                          hintText: canSend
-                              ? 'Message…'
-                              : 'Read-only conversation',
-                          hintStyle: Theme.of(context)
-                              .textTheme
-                              .bodyLarge
-                              ?.copyWith(color: BrandColors.subtleFg),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
+          const RoundedDivider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Spacing.x3, 6, Spacing.x3, 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Attachment — opens the share sheet.
+                _circleIcon(
+                    Icons.add, BrandColors.surface2, BrandColors.foreground,
+                    onTap: canSend ? () => _openAttachments(context) : null),
+                const SizedBox(width: Spacing.x2),
+                // Pill input + emoji/keyboard toggle.
+                Expanded(
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 38),
+                    decoration: BoxDecoration(
+                      color: BrandColors.surface2,
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                      border: Border.all(color: BrandColors.border),
+                    ),
+                    padding: const EdgeInsets.only(left: Spacing.x4, right: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: TextField(
+                              controller: _input,
+                              focusNode: _inputFocus,
+                              enabled: canSend,
+                              minLines: 1,
+                              maxLines: 5,
+                              textCapitalization: TextCapitalization.sentences,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(color: BrandColors.foreground),
+                              decoration: InputDecoration(
+                                isCollapsed: true,
+                                hintText: canSend
+                                    ? 'Message…'
+                                    : 'Read-only conversation',
+                                hintStyle: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(color: BrandColors.subtleFg),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                filled: false,
+                              ),
+                              onSubmitted: (_) =>
+                                  canSend && !_sending ? _send() : null,
+                            ),
+                          ),
                         ),
-                        onSubmitted: (_) =>
-                            canSend && !_sending ? _send() : null,
-                      ),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: canSend ? _toggleEmoji : null,
+                          child: SizedBox(
+                            width: 38,
+                            height: 38,
+                            child: Icon(
+                              _emojiOpen
+                                  ? Icons.keyboard_rounded
+                                  : Icons.emoji_emotions_outlined,
+                              color: _emojiOpen
+                                  ? BrandColors.primary
+                                  : BrandColors.mutedFg,
+                              size: Sizes.icon,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: canSend ? _toggleEmoji : null,
-                    child: SizedBox(
-                      width: 40,
-                      height: 44,
-                      child: Icon(
-                        _emojiOpen
-                            ? Icons.keyboard_rounded
-                            : Icons.emoji_emotions_outlined,
-                        color: _emojiOpen
-                            ? BrandColors.primary
-                            : BrandColors.mutedFg,
-                        size: Sizes.icon,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: Spacing.x2),
+                _sendButton(canSend),
+              ],
             ),
           ),
-          const SizedBox(width: Spacing.x2),
-          _sendButton(canSend),
         ],
       ),
     );
@@ -441,8 +448,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (canSend && !_sending) {
       onTap = hasText
           ? _send
-          : () => AppSnack.show(context,
-              'Voice messages are coming soon.', type: SnackType.info);
+          : () => AppSnack.show(context, 'Voice messages are coming soon.',
+              type: SnackType.info);
     }
     return InkWell(
       onTap: onTap,
@@ -466,8 +473,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _circleIcon(IconData icon, Color bg, Color fg,
-      {VoidCallback? onTap}) {
+  Widget _circleIcon(IconData icon, Color bg, Color fg, {VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap,
       customBorder: const CircleBorder(),
@@ -483,7 +489,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
     );
   }
-
 }
 
 /// Inline emoji panel that takes the keyboard's place. Tapping an emoji inserts
@@ -494,13 +499,76 @@ class _EmojiPicker extends StatelessWidget {
   const _EmojiPicker({required this.onSelect, required this.onBackspace});
 
   static const _emojis = <String>[
-    '😀', '😁', '😂', '🤣', '😊', '😍', '😘', '😎', '🤩', '🥳',
-    '😇', '🙂', '😉', '😌', '😋', '😜', '🤔', '🤗', '🫡', '😴',
-    '😢', '😭', '😅', '🙄', '😏', '😮', '🤯', '🥹', '😤', '🤷',
-    '👍', '👎', '👏', '🙌', '🙏', '👌', '✌️', '🤝', '💪', '👋',
-    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💯', '🔥',
-    '✨', '⭐', '🎉', '✅', '❌', '💰', '💳', '📍', '🗺️', '🧭',
-    '🚗', '🚕', '🚙', '🏎️', '⛽', '🅿️', '🚦', '🔑', '👀', '🤙',
+    '😀',
+    '😁',
+    '😂',
+    '🤣',
+    '😊',
+    '😍',
+    '😘',
+    '😎',
+    '🤩',
+    '🥳',
+    '😇',
+    '🙂',
+    '😉',
+    '😌',
+    '😋',
+    '😜',
+    '🤔',
+    '🤗',
+    '🫡',
+    '😴',
+    '😢',
+    '😭',
+    '😅',
+    '🙄',
+    '😏',
+    '😮',
+    '🤯',
+    '🥹',
+    '😤',
+    '🤷',
+    '👍',
+    '👎',
+    '👏',
+    '🙌',
+    '🙏',
+    '👌',
+    '✌️',
+    '🤝',
+    '💪',
+    '👋',
+    '❤️',
+    '🧡',
+    '💛',
+    '💚',
+    '💙',
+    '💜',
+    '🖤',
+    '🤍',
+    '💯',
+    '🔥',
+    '✨',
+    '⭐',
+    '🎉',
+    '✅',
+    '❌',
+    '💰',
+    '💳',
+    '📍',
+    '🗺️',
+    '🧭',
+    '🚗',
+    '🚕',
+    '🚙',
+    '🏎️',
+    '⛽',
+    '🅿️',
+    '🚦',
+    '🔑',
+    '👀',
+    '🤙',
   ];
 
   @override
@@ -519,8 +587,7 @@ class _EmojiPicker extends StatelessWidget {
               child: GridView.builder(
                 padding: const EdgeInsets.fromLTRB(
                     Spacing.x3, Spacing.x3, Spacing.x3, 0),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 8,
                   mainAxisSpacing: 2,
                   crossAxisSpacing: 2,
@@ -530,8 +597,8 @@ class _EmojiPicker extends StatelessWidget {
                   borderRadius: BorderRadius.circular(Radii.md),
                   onTap: () => onSelect(_emojis[i]),
                   child: Center(
-                    child: Text(_emojis[i],
-                        style: const TextStyle(fontSize: 24)),
+                    child:
+                        Text(_emojis[i], style: const TextStyle(fontSize: 24)),
                   ),
                 ),
               ),
@@ -688,9 +755,8 @@ class _Bubble extends StatelessWidget {
             Text(
               message.content,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: isMine
-                        ? BrandColors.primaryFg
-                        : BrandColors.foreground,
+                    color:
+                        isMine ? BrandColors.primaryFg : BrandColors.foreground,
                   ),
             ),
             const SizedBox(height: 3),

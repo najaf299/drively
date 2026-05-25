@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/car_card.dart';
+import '../../../../shared/widgets/glow_background.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
@@ -73,192 +74,192 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final filters = ref.watch(carFiltersProvider);
     final text = Theme.of(context).textTheme;
 
-    return SafeArea(
-      bottom: false,
-      child: RefreshIndicator(
-        color: BrandColors.primary,
-        onRefresh: () => ref.read(carListProvider.notifier).refresh(),
-        child: CustomScrollView(
-          controller: _scroll,
-          slivers: [
-            // ── Fresh header: avatar · greeting · notifications + location ──
-            const SliverToBoxAdapter(child: _HomeHeader()),
+    return GlowBackground(
+      glowAlignment: const Alignment(0, -1.05),
+      intensity: 0.4,
+      child: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          color: BrandColors.primary,
+          onRefresh: () => ref.read(carListProvider.notifier).refresh(),
+          child: CustomScrollView(
+            controller: _scroll,
+            slivers: [
+              // ── Fresh header: avatar · greeting · notifications + location ──
+              const SliverToBoxAdapter(child: _HomeHeader()),
 
-            // ── SearchBar: pill 52h, surface2 fill, leading search icon muted ──
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    Spacing.x5, 0, Spacing.x5, Spacing.x4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => context.push('/search'),
-                        child: Container(
-                          height: Sizes.searchBar,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.x4),
-                          decoration: BoxDecoration(
-                            color: BrandColors.surface2,
-                            borderRadius:
-                                BorderRadius.circular(Radii.pill),
-                            border: Border.all(color: BrandColors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.search,
-                                  color: BrandColors.mutedFg,
-                                  size: Sizes.iconSm),
-                              const SizedBox(width: Spacing.x3),
-                              Expanded(
-                                child: Text(
-                                  'Search cars, models, cities…',
-                                  style: text.bodyLarge
-                                      ?.copyWith(color: BrandColors.subtleFg),
-                                  overflow: TextOverflow.ellipsis,
+              // ── SearchBar: pill 52h, surface2 fill, leading search icon muted ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      Spacing.x5, 0, Spacing.x5, Spacing.x4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => context.push('/search'),
+                          child: Container(
+                            height: Sizes.searchBar,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.x4),
+                            decoration: BoxDecoration(
+                              color: BrandColors.surface2,
+                              borderRadius: BorderRadius.circular(Radii.pill),
+                              border: Border.all(color: BrandColors.border),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.search,
+                                    color: BrandColors.mutedFg,
+                                    size: Sizes.iconSm),
+                                const SizedBox(width: Spacing.x3),
+                                Expanded(
+                                  child: Text(
+                                    'Search cars, models, cities…',
+                                    style: text.bodyLarge
+                                        ?.copyWith(color: BrandColors.subtleFg),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: Spacing.x3),
-                    _FilterButton(
-                      badge: filters.activeCount,
-                      onTap: _openFilters,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Date filter chips: Today / This week / Weekend / Custom ──
-            SliverToBoxAdapter(
-              child: _DateChips(
-                selected: filters.sort,
-                onSelect: _selectDateFilter,
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: Spacing.x5)),
-
-            // ── Popular near you: horizontal CarCard list ──────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    Spacing.x5, 0, Spacing.x5, Spacing.x3),
-                child: SectionHeader(
-                  title: 'Popular near you',
-                  actionLabel: 'See all',
-                  onAction: () => context.push('/search'),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: cars.when(
-                loading: () => _HorizontalCardShimmer(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (list) => list.isEmpty
-                    ? const SizedBox.shrink()
-                    : _HorizontalCarList(
-                        cars: list.take(8).toList(),
-                        onTap: (id) => context.push('/car/$id'),
+                      const SizedBox(width: Spacing.x3),
+                      _FilterButton(
+                        badge: filters.activeCount,
+                        onTap: _openFilters,
                       ),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: Spacing.x6)),
-
-            // ── Categories: 4-col icon tiles ──────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    Spacing.x5, 0, Spacing.x5, Spacing.x3),
-                child: Text('Categories', style: text.headlineSmall),
-              ),
-            ),
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: Spacing.x5),
-                child: _CategoryGrid(),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: Spacing.x6)),
-
-            // ── New on Drivly: list ────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    Spacing.x5, 0, Spacing.x5, Spacing.x3),
-                child: SectionHeader(
-                  title: 'New on Drivly',
-                  actionLabel: 'See all',
-                  onAction: () => context.push('/search'),
-                ),
-              ),
-            ),
-            ...cars.when(
-              loading: () => [
-                const SliverToBoxAdapter(
-                    child: _VerticalCardShimmer()),
-              ],
-              error: (e, _) => [
-                SliverFillRemaining(
-                  child: ErrorView(
-                    message: e.toString(),
-                    onRetry: () =>
-                        ref.read(carListProvider.notifier).load(filters),
+                    ],
                   ),
                 ),
-              ],
-              data: (list) {
-                if (list.isEmpty) {
+              ),
+
+              // ── Date filter chips: Today / This week / Weekend / Custom ──
+              SliverToBoxAdapter(
+                child: _DateChips(
+                  selected: filters.sort,
+                  onSelect: _selectDateFilter,
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: Spacing.x5)),
+
+              // ── Popular near you: horizontal CarCard list ──────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      Spacing.x5, 0, Spacing.x5, Spacing.x3),
+                  child: SectionHeader(
+                    title: 'Popular near you',
+                    actionLabel: 'See all',
+                    onAction: () => context.push('/search'),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: cars.when(
+                  loading: () => _HorizontalCardShimmer(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (list) => list.isEmpty
+                      ? const SizedBox.shrink()
+                      : _HorizontalCarList(
+                          cars: list.take(8).toList(),
+                          onTap: (id) => context.push('/car/$id'),
+                        ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: Spacing.x6)),
+
+              // ── Categories: 4-col icon tiles ──────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      Spacing.x5, 0, Spacing.x5, Spacing.x3),
+                  child: Text('Categories', style: text.headlineSmall),
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: Spacing.x5),
+                  child: _CategoryGrid(),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: Spacing.x6)),
+
+              // ── New on Drivly: list ────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      Spacing.x5, 0, Spacing.x5, Spacing.x3),
+                  child: SectionHeader(
+                    title: 'New on Drivly',
+                    actionLabel: 'See all',
+                    onAction: () => context.push('/search'),
+                  ),
+                ),
+              ),
+              ...cars.when(
+                loading: () => [
+                  const SliverToBoxAdapter(child: _VerticalCardShimmer()),
+                ],
+                error: (e, _) => [
+                  SliverFillRemaining(
+                    child: ErrorView(
+                      message: e.toString(),
+                      onRetry: () =>
+                          ref.read(carListProvider.notifier).load(filters),
+                    ),
+                  ),
+                ],
+                data: (list) {
+                  if (list.isEmpty) {
+                    return [
+                      SliverFillRemaining(
+                        child: EmptyView(
+                          icon: Icons.directions_car_outlined,
+                          title: 'No cars in your area',
+                          subtitle:
+                              'There are no cars available nearby right now.',
+                          actionLabel: 'Expand radius',
+                          onAction: () {
+                            // Clear location-based filters to widen the radius.
+                            const next = CarFilters();
+                            ref.read(carFiltersProvider.notifier).state = next;
+                            ref.read(carListProvider.notifier).load(next);
+                          },
+                        ),
+                      ),
+                    ];
+                  }
                   return [
-                    SliverFillRemaining(
-                      child: EmptyView(
-                        icon: Icons.directions_car_outlined,
-                        title: 'No cars in your area',
-                        subtitle:
-                            'There are no cars available nearby right now.',
-                        actionLabel: 'Expand radius',
-                        onAction: () {
-                          // Clear location-based filters to widen the radius.
-                          const next = CarFilters();
-                          ref.read(carFiltersProvider.notifier).state = next;
-                          ref
-                              .read(carListProvider.notifier)
-                              .load(next);
-                        },
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                          Spacing.x5, 0, Spacing.x5, Spacing.x5),
+                      sliver: SliverList.separated(
+                        itemCount: list.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: Spacing.x4),
+                        itemBuilder: (_, i) => CarCard(
+                          car: list[i],
+                          onTap: () => context.push('/car/${list[i].id}'),
+                        ),
                       ),
                     ),
                   ];
-                }
-                return [
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                        Spacing.x5, 0, Spacing.x5, Spacing.x5),
-                    sliver: SliverList.separated(
-                      itemCount: list.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: Spacing.x4),
-                      itemBuilder: (_, i) => CarCard(
-                        car: list[i],
-                        onTap: () => context.push('/car/${list[i].id}'),
-                      ),
-                    ),
-                  ),
-                ];
-              },
-            ),
-
-            // ── Promo banner: 160h gradient with CTA ──────────────────────
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                    Spacing.x5, 0, Spacing.x5, Spacing.x8),
-                child: _PromoBanner(),
+                },
               ),
-            ),
-          ],
+
+              // ── Promo banner: 160h gradient with CTA ──────────────────────
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                      Spacing.x5, 0, Spacing.x5, Spacing.x8),
+                  child: _PromoBanner(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -308,7 +309,8 @@ class _HomeHeader extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_greeting(),
-                    style: text.bodySmall, maxLines: 1,
+                    style: text.bodySmall,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
                 Text.rich(
@@ -371,8 +373,8 @@ class _HeaderIconButton extends StatelessWidget {
             child: SizedBox(
               width: Sizes.iconRoundButton,
               height: Sizes.iconRoundButton,
-              child: Icon(icon,
-                  color: BrandColors.foreground, size: Sizes.icon),
+              child:
+                  Icon(icon, color: BrandColors.foreground, size: Sizes.icon),
             ),
           ),
         ),
@@ -517,8 +519,7 @@ class _VerticalCardShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: Spacing.x5),
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
       child: Column(
         children: [
           for (var i = 0; i < 3; i++) ...[
@@ -533,8 +534,26 @@ class _VerticalCardShimmer extends StatelessWidget {
 
 // ── Categories grid ──────────────────────────────────────────────────────────
 
-class _CategoryGrid extends StatelessWidget {
+class _CategoryGrid extends ConsumerWidget {
   const _CategoryGrid();
+
+  /// Browse a category: EV maps to the electric fuel-type filter, the rest
+  /// drive the (client-side) search query. Resets other filters, keeps location.
+  void _open(BuildContext context, WidgetRef ref, String label) {
+    final base = ref.read(carFiltersProvider);
+    final isEv = label == 'EV';
+    final next = CarFilters(
+      query: isEv ? null : label,
+      fuelType: isEv ? 'electric' : null,
+      city: base.city,
+      lat: base.lat,
+      lng: base.lng,
+      radius: base.radius,
+    );
+    ref.read(carFiltersProvider.notifier).state = next;
+    ref.read(carListProvider.notifier).load(next);
+    context.push('/search');
+  }
 
   static const _categories = [
     (Icons.directions_car_outlined, 'SUV'),
@@ -546,7 +565,7 @@ class _CategoryGrid extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
@@ -565,12 +584,11 @@ class _CategoryGrid extends StatelessWidget {
           borderRadius: BorderRadius.circular(Radii.lg),
           child: InkWell(
             borderRadius: BorderRadius.circular(Radii.lg),
-            onTap: () {},
+            onTap: () => _open(context, ref, label),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon,
-                    size: Sizes.iconLg, color: BrandColors.primary),
+                Icon(icon, size: Sizes.iconLg, color: BrandColors.primary),
                 const SizedBox(height: Spacing.x1),
                 Text(label,
                     style: text.labelMedium
@@ -609,14 +627,12 @@ class _PromoBanner extends StatelessWidget {
             children: [
               Text(
                 'Drivly Premium',
-                style: text.headlineSmall
-                    ?.copyWith(color: Colors.white),
+                style: text.headlineSmall?.copyWith(color: Colors.white),
               ),
               const SizedBox(height: Spacing.x1),
               Text(
                 'Unlock exclusive cars & top host perks.',
-                style: text.bodyMedium
-                    ?.copyWith(color: Colors.white70),
+                style: text.bodyMedium?.copyWith(color: Colors.white70),
               ),
             ],
           ),
@@ -628,8 +644,7 @@ class _PromoBanner extends StatelessWidget {
                 backgroundColor: Colors.white,
                 foregroundColor: BrandColors.accent,
                 minimumSize: const Size(0, Sizes.secondaryHeight),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.x5),
+                padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
               ),
               child: const Text('Explore Premium'),
             ),

@@ -30,7 +30,7 @@ class OnboardingScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const DrivlyWordmark(size: 28, showDot: false),
+                const DrivlyWordmark(size: 28),
                 const Spacer(flex: 3),
                 // Oversized typographic hero — last word in lime.
                 Text.rich(
