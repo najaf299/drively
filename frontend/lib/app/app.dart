@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../shared/widgets/drivly_toast.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -19,6 +20,9 @@ class DrivlyApp extends ConsumerWidget {
       theme: DrivlyTheme.dark,
       themeMode: ThemeMode.dark,
       routerConfig: router,
+      // Mounts the DrivlyToast overlay above every route (incl. sheets/dialogs).
+      builder: (context, child) =>
+          DrivlyToastHost(child: child ?? const SizedBox.shrink()),
     );
   }
 }
