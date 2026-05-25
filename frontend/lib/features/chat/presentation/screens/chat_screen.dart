@@ -285,11 +285,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       decoration: BoxDecoration(
         color: BrandColors.surface,
         // Curved top edge matching the app's rounded aesthetic.
-        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.lg)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            Spacing.x3, Spacing.x2, Spacing.x3, Spacing.x2),
+        padding: const EdgeInsets.fromLTRB(Spacing.x3, 6, Spacing.x3, 6),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -300,7 +299,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             // Pill input + emoji/keyboard toggle.
             Expanded(
               child: Container(
-                constraints: const BoxConstraints(minHeight: 38),
+                constraints: const BoxConstraints(minHeight: 36),
                 decoration: BoxDecoration(
                   color: BrandColors.surface2,
                   borderRadius: BorderRadius.circular(Radii.pill),
@@ -312,7 +311,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   children: [
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 7),
+                        padding: const EdgeInsets.symmetric(vertical: 5),
                         child: TextField(
                           controller: _input,
                           focusNode: _inputFocus,
@@ -346,8 +345,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       behavior: HitTestBehavior.opaque,
                       onTap: canSend ? _toggleEmoji : null,
                       child: SizedBox(
-                        width: 38,
-                        height: 38,
+                        width: 34,
+                        height: 34,
                         child: Icon(
                           _emojiOpen
                               ? Icons.keyboard_rounded

@@ -42,10 +42,9 @@ class BrandColors {
       _l ? const Color(0xFF8A91A1) : const Color(0xFF5F6472);
   static Color get primary => const Color(0xFFCBF24A); // lime brand (both)
   static Color get primaryFg => const Color(0xFF0B0D14); // near-black on lime
-  /// Lime used as TEXT/links/icons on a surface — bright lime reads on dark but
-  /// not on white, so light mode uses a deep readable lime-green.
-  static Color get primaryText =>
-      _l ? const Color(0xFF4D7C0F) : const Color(0xFFCBF24A);
+  /// Lime used as TEXT/links/icons. Kept as the bright parrot lime in both
+  /// themes (reverted from the light-mode deep-green experiment — design call).
+  static Color get primaryText => const Color(0xFFCBF24A);
   static Color get primaryGlow =>
       _l ? const Color(0xFFD7F576) : const Color(0xFFE4FF7A);
   static Color get accent =>
