@@ -16,13 +16,13 @@ class AppConfig {
   /// (An Android emulator would use 10.0.2.2.)
   static const String apiBaseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://192.168.1.10:8000/api/v1',
+    defaultValue: 'http://192.168.1.8:8000/api/v1',
   );
 
   /// Reverb host (without scheme/port).
   static const String wsHost = String.fromEnvironment(
     'WS_HOST',
-    defaultValue: '192.168.1.10',
+    defaultValue: '192.168.1.8',
   );
 
   /// Reverb port.
