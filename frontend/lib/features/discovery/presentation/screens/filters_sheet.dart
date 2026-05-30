@@ -33,6 +33,7 @@ class _FiltersSheet extends ConsumerStatefulWidget {
 
 class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   late RangeValues _price;
+  late RangeValues _year;
   String? _transmission;
   String? _fuel;
   int? _minSeats;
@@ -41,6 +42,8 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   bool _delivery = false;
 
   static const _maxPrice = 500.0;
+  static const _minYearAllowed = 2010.0;
+  static const _maxYearAllowed = 2026.0;
 
   @override
   void initState() {
@@ -48,6 +51,10 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
     _price = RangeValues(
       widget.initial.minPrice ?? 0,
       widget.initial.maxPrice ?? _maxPrice,
+    );
+    _year = RangeValues(
+      (widget.initial.minYear ?? _minYearAllowed.toInt()).toDouble(),
+      (widget.initial.maxYear ?? _maxYearAllowed.toInt()).toDouble(),
     );
     _transmission = widget.initial.transmission;
     _fuel = widget.initial.fuelType;
@@ -58,6 +65,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   void _reset() {
     setState(() {
       _price = const RangeValues(0, _maxPrice);
+      _year = const RangeValues(_minYearAllowed, _maxYearAllowed);
       _transmission = null;
       _fuel = null;
       _minSeats = null;
@@ -68,11 +76,17 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   }
 
   void _apply() {
+    // Year range only sets bounds when the user moved off the extremes — keeps
+    // the activeCount accurate so the "filters applied" badge stays honest.
+    final minY = _year.start == _minYearAllowed ? null : _year.start.round();
+    final maxY = _year.end == _maxYearAllowed ? null : _year.end.round();
     Navigator.pop(
       context,
       widget.initial.copyWith(
         minPrice: _price.start == 0 ? null : _price.start,
         maxPrice: _price.end == _maxPrice ? null : _price.end,
+        minYear: minY,
+        maxYear: maxY,
         transmission: _transmission,
         fuelType: _fuel,
         minSeats: _minSeats,
@@ -213,6 +227,28 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                   selected: _minSeats?.toString(),
                   onSelect: (v) => setState(
                       () => _minSeats = v == null ? null : int.parse(v)),
+                ),
+                const SizedBox(height: Spacing.x5),
+
+                // Year range.
+                const _SectionLabel(label: 'Year'),
+                RangeSlider(
+                  values: _year,
+                  min: _minYearAllowed,
+                  max: _maxYearAllowed,
+                  divisions: (_maxYearAllowed - _minYearAllowed).round(),
+                  labels: RangeLabels(
+                    _year.start.round().toString(),
+                    _year.end.round().toString(),
+                  ),
+                  onChanged: (v) => setState(() => _year = v),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(_year.start.round().toString(), style: text.bodySmall),
+                    Text(_year.end.round().toString(), style: text.bodySmall),
+                  ],
                 ),
                 const SizedBox(height: Spacing.x5),
 

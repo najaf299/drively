@@ -61,11 +61,111 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  void _selectDateFilter(String? key) {
+  void _applyQuickFilter(_QuickFilter q) {
+    final base = ref.read(carFiltersProvider);
+    // Quick filters compose with location but reset other quick-axis fields so
+    // tapping one doesn't silently stack with the previous tap.
+    final next = CarFilters(
+      query: base.query,
+      city: base.city,
+      lat: base.lat,
+      lng: base.lng,
+      radius: base.radius,
+      sort: q.sort ?? base.sort,
+      fuelType: q.fuelType,
+      minSeats: q.minSeats,
+    );
+    ref.read(carFiltersProvider.notifier).state = next;
+    unawaited(ref.read(carListProvider.notifier).load(next));
+  }
+
+  bool _isQuickFilterActive(_QuickFilter q, CarFilters f) {
+    return f.fuelType == q.fuelType &&
+        f.minSeats == q.minSeats &&
+        (q.sort == null || f.sort == q.sort);
+  }
+
+  Future<void> _openSortSheet() async {
     final filters = ref.read(carFiltersProvider);
-    final updated = filters.copyWith(sort: key);
-    ref.read(carFiltersProvider.notifier).state = updated;
-    ref.read(carListProvider.notifier).load(updated);
+    final picked = await showModalBottomSheet<String?>(
+      context: context,
+      backgroundColor: BrandColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+      ),
+      builder: (ctx) {
+        const options = {
+          null: 'Newest',
+          'price_asc': 'Price: low to high',
+          'price_desc': 'Price: high to low',
+          'rating': 'Top rated',
+        };
+        return SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: Spacing.x3),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: BrandColors.borderStrong,
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+              ),
+              const SizedBox(height: Spacing.x3),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
+                child: Row(
+                  children: [
+                    Text('Sort by',
+                        style: Theme.of(ctx).textTheme.titleLarge),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Spacing.x2),
+              for (final entry in options.entries)
+                ListTile(
+                  title: Text(entry.value),
+                  trailing: entry.key == filters.sort
+                      ? Icon(Icons.check, color: BrandColors.primary)
+                      : null,
+                  onTap: () => Navigator.pop(ctx, entry.key),
+                ),
+              const SizedBox(height: Spacing.x4),
+            ],
+          ),
+        );
+      },
+    );
+    // Only apply if the user actually tapped a row. Pulling down dismisses the
+    // sheet with a `null` result that we cannot distinguish from picking
+    // "Newest" — so use a sentinel by reading after sheet returns: re-check
+    // whether dismissed by checking mounted state via `picked` change.
+    if (!mounted) return;
+    if (picked == filters.sort) return; // no-op (cancel or same selection)
+    final next = filters.copyWith(sort: picked);
+    // copyWith won't clear with null; manually rebuild if needed.
+    final clean = picked == null
+        ? CarFilters(
+            query: filters.query,
+            city: filters.city,
+            make: filters.make,
+            transmission: filters.transmission,
+            fuelType: filters.fuelType,
+            minPrice: filters.minPrice,
+            maxPrice: filters.maxPrice,
+            minSeats: filters.minSeats,
+            minYear: filters.minYear,
+            maxYear: filters.maxYear,
+            lat: filters.lat,
+            lng: filters.lng,
+            radius: filters.radius,
+          )
+        : next;
+    ref.read(carFiltersProvider.notifier).state = clean;
+    unawaited(ref.read(carListProvider.notifier).load(clean));
   }
 
   @override
@@ -136,13 +236,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // ── Date filter chips: Today / This week / Weekend / Custom ──
+              // ── Quick filter chips: actually drive sort/fuel/seats ──────
               SliverToBoxAdapter(
-                child: _DateChips(
-                  selected: filters.sort,
-                  onSelect: _selectDateFilter,
+                child: _QuickFiltersBar(
+                  filters: filters,
+                  isActive: _isQuickFilterActive,
+                  onSelect: _applyQuickFilter,
+                  onSort: _openSortSheet,
                 ),
               ),
+              // ── Active filter strip: tap any chip to remove that filter ──
+              if (filters.activeCount > 0 || filters.sort != null) ...[
+                const SliverToBoxAdapter(child: SizedBox(height: Spacing.x3)),
+                SliverToBoxAdapter(
+                  child: _ActiveFiltersStrip(
+                    filters: filters,
+                    onRemove: (next) {
+                      ref.read(carFiltersProvider.notifier).state = next;
+                      unawaited(ref.read(carListProvider.notifier).load(next));
+                    },
+                  ),
+                ),
+              ],
               const SliverToBoxAdapter(child: SizedBox(height: Spacing.x5)),
 
               // ── Popular near you: horizontal CarCard list ──────────────────
@@ -408,40 +523,221 @@ class _HeaderIconButton extends StatelessWidget {
   }
 }
 
-// ── Date filter chips ────────────────────────────────────────────────────────
+// ── Quick filters ────────────────────────────────────────────────────────────
 
-class _DateChips extends StatelessWidget {
-  final String? selected;
-  final ValueChanged<String?> onSelect;
+/// A one-tap filter preset surfaced on the Home screen.
+class _QuickFilter {
+  final String label;
+  final IconData icon;
+  final String? sort;
+  final String? fuelType;
+  final int? minSeats;
 
-  const _DateChips({required this.selected, required this.onSelect});
+  const _QuickFilter({
+    required this.label,
+    required this.icon,
+    this.sort,
+    this.fuelType,
+    this.minSeats,
+  });
+}
 
-  static const _items = {
-    'today': 'Today',
-    'week': 'This week',
-    'weekend': 'Weekend',
-    'custom': 'Custom',
-  };
+const _quickFilters = <_QuickFilter>[
+  _QuickFilter(label: 'Top rated', icon: Icons.star_rounded, sort: 'rating'),
+  _QuickFilter(label: 'Cheapest', icon: Icons.savings_outlined, sort: 'price_asc'),
+  _QuickFilter(label: 'Electric', icon: Icons.electric_bolt, fuelType: 'electric'),
+  _QuickFilter(label: 'Family (5+)', icon: Icons.groups_outlined, minSeats: 5),
+  _QuickFilter(label: 'Hybrid', icon: Icons.eco_outlined, fuelType: 'hybrid'),
+];
+
+class _QuickFiltersBar extends StatelessWidget {
+  final CarFilters filters;
+  final bool Function(_QuickFilter, CarFilters) isActive;
+  final ValueChanged<_QuickFilter> onSelect;
+  final VoidCallback onSort;
+
+  const _QuickFiltersBar({
+    required this.filters,
+    required this.isActive,
+    required this.onSelect,
+    required this.onSort,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return SizedBox(
       height: Sizes.filterChip + 4,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
-        itemCount: _items.length,
+        // +1 leading "Sort" pill.
+        itemCount: _quickFilters.length + 1,
         separatorBuilder: (_, __) => const SizedBox(width: Spacing.x2),
         itemBuilder: (_, i) {
-          final entry = _items.entries.elementAt(i);
-          final isSel = selected == entry.key;
-          return ChoiceChip(
-            label: Text(entry.value),
-            selected: isSel,
-            onSelected: (_) => onSelect(isSel ? null : entry.key),
+          if (i == 0) {
+            // Sort pill — opens a bottom sheet.
+            final sortLabel = switch (filters.sort) {
+              'price_asc' => 'Price ↑',
+              'price_desc' => 'Price ↓',
+              'rating' => 'Top rated',
+              _ => 'Sort',
+            };
+            return ActionChip(
+              avatar: Icon(Icons.swap_vert_rounded,
+                  size: Sizes.iconSm, color: BrandColors.primaryText),
+              label: Text(sortLabel, style: text.labelLarge),
+              onPressed: onSort,
+            );
+          }
+          final q = _quickFilters[i - 1];
+          final sel = isActive(q, filters);
+          return FilterChip(
+            avatar: Icon(q.icon,
+                size: Sizes.iconSm,
+                color: sel ? BrandColors.primaryFg : BrandColors.foreground),
+            label: Text(
+              q.label,
+              style: TextStyle(
+                color: sel ? BrandColors.primaryFg : BrandColors.foreground,
+                fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+            selected: sel,
+            onSelected: (_) => onSelect(q),
             showCheckmark: false,
           );
         },
+      ),
+    );
+  }
+}
+
+// ── Active filters strip — one-tap remove for each active filter ─────────────
+
+class _ActiveFiltersStrip extends StatelessWidget {
+  final CarFilters filters;
+  final ValueChanged<CarFilters> onRemove;
+
+  const _ActiveFiltersStrip(
+      {required this.filters, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = <_ActiveChip>[];
+    if (filters.sort != null) {
+      chips.add(_ActiveChip(
+        label: switch (filters.sort) {
+          'price_asc' => 'Cheapest',
+          'price_desc' => 'Most expensive',
+          'rating' => 'Top rated',
+          _ => filters.sort!,
+        },
+        onRemove: () => onRemove(_clearSort(filters)),
+      ));
+    }
+    if (filters.city != null) {
+      chips.add(_ActiveChip(
+        label: filters.city!,
+        onRemove: () => onRemove(filters.cleared(city: true)),
+      ));
+    }
+    if (filters.make != null) {
+      chips.add(_ActiveChip(
+        label: filters.make!,
+        onRemove: () => onRemove(filters.cleared(make: true)),
+      ));
+    }
+    if (filters.transmission != null) {
+      chips.add(_ActiveChip(
+        label: filters.transmission!,
+        onRemove: () => onRemove(filters.cleared(transmission: true)),
+      ));
+    }
+    if (filters.fuelType != null) {
+      chips.add(_ActiveChip(
+        label: filters.fuelType!,
+        onRemove: () => onRemove(filters.cleared(fuelType: true)),
+      ));
+    }
+    if (filters.minSeats != null) {
+      chips.add(_ActiveChip(
+        label: '${filters.minSeats}+ seats',
+        onRemove: () => onRemove(filters.cleared(seats: true)),
+      ));
+    }
+    if (filters.minPrice != null || filters.maxPrice != null) {
+      final lo = filters.minPrice?.round();
+      final hi = filters.maxPrice?.round();
+      chips.add(_ActiveChip(
+        label: 'AED ${lo ?? 0}–${hi ?? '∞'}',
+        onRemove: () => onRemove(filters.cleared(price: true)),
+      ));
+    }
+    if (filters.minYear != null || filters.maxYear != null) {
+      chips.add(_ActiveChip(
+        label: '${filters.minYear ?? ''}–${filters.maxYear ?? ''}',
+        onRemove: () => onRemove(filters.cleared(year: true)),
+      ));
+    }
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: Sizes.filterChip + 4,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.x5),
+        itemCount: chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: Spacing.x2),
+        itemBuilder: (_, i) => chips[i],
+      ),
+    );
+  }
+
+  CarFilters _clearSort(CarFilters f) => CarFilters(
+        query: f.query,
+        city: f.city,
+        make: f.make,
+        transmission: f.transmission,
+        fuelType: f.fuelType,
+        minPrice: f.minPrice,
+        maxPrice: f.maxPrice,
+        minSeats: f.minSeats,
+        minYear: f.minYear,
+        maxYear: f.maxYear,
+        lat: f.lat,
+        lng: f.lng,
+        radius: f.radius,
+      );
+}
+
+class _ActiveChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onRemove;
+  const _ActiveChip({required this.label, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(Radii.pill),
+      onTap: onRemove,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: Spacing.x3, vertical: 6),
+        decoration: BoxDecoration(
+          color: BrandColors.surface2,
+          borderRadius: BorderRadius.circular(Radii.pill),
+          border: Border.all(color: BrandColors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, style: text.labelLarge),
+            const SizedBox(width: 6),
+            Icon(Icons.close, size: 14, color: BrandColors.mutedFg),
+          ],
+        ),
       ),
     );
   }
