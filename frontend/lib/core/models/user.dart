@@ -18,6 +18,8 @@ class User {
   final String preferredCurrency;
   final String preferredUnits;
   final Map<String, dynamic>? notificationSettings;
+  final Map<String, dynamic>? privacySettings;
+  final String themeMode; // light | dark | system
   final bool isSuspended;
   final String? suspensionReason;
   final String? referralCode;
@@ -43,6 +45,8 @@ class User {
     this.preferredCurrency = 'USD',
     this.preferredUnits = 'km',
     this.notificationSettings,
+    this.privacySettings,
+    this.themeMode = 'system',
     this.isSuspended = false,
     this.suspensionReason,
     this.referralCode,
@@ -91,6 +95,8 @@ class User {
             asString(json['preferred_currency'], fallback: 'USD'),
         preferredUnits: asString(json['preferred_units'], fallback: 'km'),
         notificationSettings: asMap(json['notification_settings']),
+        privacySettings: asMap(json['privacy_settings']),
+        themeMode: asString(json['theme_mode'], fallback: 'system'),
         isSuspended: asBool(json['is_suspended']),
         suspensionReason: asStringOrNull(json['suspension_reason']),
         referralCode: asStringOrNull(json['referral_code']),

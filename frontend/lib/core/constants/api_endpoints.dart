@@ -16,6 +16,11 @@ class ApiEndpoints {
   static const String changePassword = '/profile/password';
   static String unlinkProvider(String provider) => '/profile/linked/$provider';
 
+  // Settings (full app preferences bundle)
+  static const String settings = '/settings';
+  static const String signOutAll = '/settings/sign-out-all';
+  static const String deleteAccount = '/account';
+
   // KYC
   static const String kycStatus = '/kyc/status';
   static const String kycSubmit = '/kyc/submit';

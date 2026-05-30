@@ -20,6 +20,22 @@ class LocalCache {
   static Future<void> setBool(String key, bool value) =>
       _settings.put(key, value);
 
+  static String? getString(String key) => _settings.get(key) as String?;
+
+  static Future<void> setString(String key, String value) =>
+      _settings.put(key, value);
+
+  static Future<void> remove(String key) => _settings.delete(key);
+
+  static List<String> getStringList(String key) {
+    final raw = _settings.get(key);
+    if (raw is List) return raw.map((e) => e.toString()).toList();
+    return const [];
+  }
+
+  static Future<void> setStringList(String key, List<String> value) =>
+      _settings.put(key, value);
+
   /// Opens (or returns) a typed box for feature-specific caching.
   static Future<Box<T>> openBox<T>(String name) => Hive.openBox<T>(name);
 }

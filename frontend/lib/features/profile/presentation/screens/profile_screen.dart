@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/models/user.dart';
 import '../../../../shared/widgets/app_dialog.dart';
-import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/drivly_toast.dart';
 import '../../../../shared/widgets/glow_background.dart';
 import '../../../../shared/widgets/status_badge.dart';
@@ -32,8 +31,6 @@ class ProfileScreen extends ConsumerWidget {
       DrivlyToast.info('Signed out', message: 'See you soon.');
     }
   }
-
-  void _soon(BuildContext context) => AppSnack.soon(context);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -84,11 +81,6 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/payment-methods'),
                 ),
                 _MenuTile(
-                  icon: Icons.location_on_outlined,
-                  label: 'Addresses',
-                  onTap: () => _soon(context),
-                ),
-                _MenuTile(
                   icon: Icons.notifications_none,
                   label: 'Notifications',
                   onTap: () => context.push('/notifications'),
@@ -96,7 +88,7 @@ class ProfileScreen extends ConsumerWidget {
                 _MenuTile(
                   icon: Icons.language,
                   label: 'Language',
-                  onTap: () => _soon(context),
+                  onTap: () => context.push('/settings'),
                 ),
               ],
             ),

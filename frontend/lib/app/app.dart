@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/profile/data/settings_service.dart';
+import '../features/profile/domain/providers/settings_provider.dart';
 import '../shared/widgets/drivly_toast.dart';
 import 'router.dart';
 import 'theme.dart';
@@ -16,6 +18,23 @@ class DrivlyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+
+    // Once server settings arrive, mirror the persisted `themeMode` into the
+    // local controller so the next cold start paints in the chosen mode
+    // before any network call resolves.
+    ref.listen<AsyncValue<AppSettings>>(settingsProvider, (prev, next) {
+      next.whenData((s) {
+        final ctl = ref.read(themeModeProvider.notifier);
+        switch (s.themeMode) {
+          case 'light':
+            if (themeMode != ThemeMode.light) ctl.setDark(false);
+          case 'dark':
+            if (themeMode != ThemeMode.dark) ctl.setDark(true);
+          case 'system':
+            if (themeMode != ThemeMode.system) ctl.useSystem();
+        }
+      });
+    });
 
     return MaterialApp.router(
       title: 'Drivly',

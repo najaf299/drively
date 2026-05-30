@@ -12,7 +12,6 @@ import '../../../../core/models/trip.dart';
 import '../../../../core/network/realtime_client.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_dialog.dart';
-import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../data/trip_service.dart';
@@ -226,7 +225,10 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                     child: _actionTile(
                       Icons.photo_camera_outlined,
                       'Photos',
-                      onTap: () => AppSnack.soon(context),
+                      // Trip photos live on the booking — jump to the detail
+                      // screen which shows pickup/return inspection shots.
+                      onTap: () =>
+                          context.push('/bookings/${trip.bookingId}'),
                     ),
                   ),
                   const SizedBox(width: Spacing.x3),
@@ -234,7 +236,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                     child: _actionTile(
                       Icons.support_agent_outlined,
                       'Support',
-                      onTap: () => AppSnack.soon(context),
+                      onTap: () => context.push('/info/help'),
                     ),
                   ),
                 ],
