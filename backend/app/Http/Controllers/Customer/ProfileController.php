@@ -26,7 +26,9 @@ class ProfileController extends Controller
             'preferred_language' => ['sometimes', 'string', 'in:en,ar,fr,es,de'],
             'preferred_currency' => ['sometimes', 'string', 'size:3'],
             'preferred_units' => ['sometimes', 'in:km,mi'],
+            'theme_mode' => ['sometimes', 'string', 'in:light,dark,system'],
             'notification_settings' => ['sometimes', 'array'],
+            'privacy_settings' => ['sometimes', 'array'],
         ]);
 
         $request->user()->update($validated);

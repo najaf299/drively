@@ -14,6 +14,7 @@ use App\Http\Controllers\Customer\TripController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\WalletController;
 use App\Http\Controllers\Customer\NotificationController;
+use App\Http\Controllers\Customer\SettingsController;
 use App\Http\Controllers\Customer\DisputeController;
 use App\Http\Controllers\Host\CarManagementController;
 use App\Http\Controllers\Host\EarningController;
@@ -69,6 +70,12 @@ Route::prefix('v1')->group(function () {
         Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar']);
         Route::post('profile/password', [ProfileController::class, 'changePassword']);
         Route::delete('profile/linked/{provider}', [ProfileController::class, 'unlinkProvider']);
+
+        // Settings (drives the full in-app Settings screen)
+        Route::get('settings', [SettingsController::class, 'show']);
+        Route::put('settings', [SettingsController::class, 'update']);
+        Route::post('settings/sign-out-all', [SettingsController::class, 'logoutAllSessions']);
+        Route::delete('account', [SettingsController::class, 'deleteAccount']);
 
         // KYC
         Route::prefix('kyc')->group(function () {

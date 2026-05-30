@@ -22,7 +22,8 @@ class User extends Authenticatable
         'name', 'email', 'phone', 'password', 'role', 'kyc_status',
         'avatar_url', 'google_id', 'apple_id', 'average_rating', 'total_trips',
         'preferred_language', 'preferred_currency', 'preferred_units',
-        'notification_settings', 'is_suspended', 'suspension_reason',
+        'theme_mode', 'notification_settings', 'privacy_settings',
+        'is_suspended', 'suspension_reason',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -36,6 +37,7 @@ class User extends Authenticatable
             'role' => Role::class,
             'kyc_status' => KycStatus::class,
             'notification_settings' => 'array',
+            'privacy_settings' => 'array',
             'is_suspended' => 'boolean',
             'average_rating' => 'decimal:2',
         ];
