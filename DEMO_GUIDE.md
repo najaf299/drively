@@ -78,7 +78,33 @@ The debugger can't attach across that gap, so:
 
 - Auth: onboarding, sign in, sign up (3 steps: account → OTP → license KYC).
 - Discovery: home, search, filters, map, car detail.
+  - Branded app icon (lime-on-dark car mark, generated from the backend
+    favicon — replaces the default Flutter logo on iOS + Android).
+  - Quick-filter pills + Sort pill on the home page, active-filter strip
+    with one-tap remove, year-range slider in the filter sheet.
+  - Search screen has a visible sort segment, persistent recent-searches
+    list, and per-row remove.
 - Booking: confirm trip, success, date/time.
 - Trips: my trips, active trip, reviews, chat with host.
 - Wallet & profile: wallet, payment methods, profile, settings, notifications.
+- **Full Settings, backend-driven** — language, currency, units, theme
+  (light/dark/system), push + email + SMS channels, privacy toggles
+  (share-profile, analytics, crash reports, marketing, location precision).
+  Backed by `GET/PUT /settings`, plus *Sign out of all devices* and
+  *Delete account* security actions.
 - Host: become a host, list a car + smart pricing, dashboards.
+
+## Backend settings endpoints (new)
+
+| Method | Path                       | Purpose |
+|--------|----------------------------|---------|
+| GET    | `/settings`                | Full bundle (prefs, notifications, privacy) |
+| PUT    | `/settings`                | Partial update — JSON bags merge server-side |
+| POST   | `/settings/sign-out-all`   | Revokes every Sanctum token for this user |
+| DELETE | `/account`                 | Soft-deletes the account (password-confirmed) |
+
+The `users` table gained two columns via the
+`2026_05_30_000001_add_app_preferences_to_users` migration:
+
+- `theme_mode` (`light` | `dark` | `system`)
+- `privacy_settings` (JSON bag)
