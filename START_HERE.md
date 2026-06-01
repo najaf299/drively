@@ -69,6 +69,10 @@ php artisan serve                        # API + admin now live at http://localh
 
 Leave that terminal running.
 
+> **Testing on a real iPhone?** Use `composer serve:lan` (or
+> `php artisan serve --host=0.0.0.0`) so the phone can reach your Mac over Wi‑Fi.
+> Plain `php artisan serve` only listens on `127.0.0.1` and will cause login timeouts.
+
 > **Want realtime chat/live-trip too?** In a *second* terminal run `php artisan reverb:start`
 > and in the `.env` set `BROADCAST_CONNECTION=reverb`. This is **optional** — the app works without it.
 
@@ -107,19 +111,33 @@ open -a Simulator
 flutter run --dart-define=API_URL=http://localhost:8000/api/v1 --dart-define=WS_HOST=localhost
 ```
 
-### B) iPhone — your real phone (USB)
-1. Plug in the iPhone, open `frontend/ios/Runner.xcworkspace` in **Xcode** once, set your
-   Apple ID under **Signing & Team**, and **Trust** the computer on the phone.
-2. Find your Mac's Wi‑Fi IP: `ipconfig getifaddr en0` (e.g. `192.168.1.20`).
-3. Run the API so the phone can reach it: in the backend terminal use
-   `php artisan serve --host=0.0.0.0` instead of plain `serve`.
-4. Run the app pointing at your Mac's IP:
+### B) iPhone — your real phone (USB or wireless)
+1. Plug in the iPhone (or pair wirelessly), open `frontend/ios/Runner.xcworkspace` in **Xcode**
+   once, set your Apple ID under **Signing & Team**, and **Trust** the computer on the phone.
+2. Mac and iPhone must be on the **same Wi‑Fi**.
+3. Start the API so the phone can reach it:
 ```bash
-flutter run -d <your-iphone> \
-  --dart-define=API_URL=http://192.168.1.20:8000/api/v1 \
-  --dart-define=WS_HOST=192.168.1.20
+cd backend
+composer serve:lan    # same as: php artisan serve --host=0.0.0.0
 ```
-(Use your real IP. List devices with `flutter devices`.)
+4. Install the app with the correct API URL (auto-detects your Mac IP every run):
+```bash
+cd frontend
+./run_phone.sh
+```
+Optional: open `http://<your-mac-ip>:8000` in **Safari on the iPhone** before logging in to
+confirm the API is reachable.
+
+### Hot reload & debug (where it works)
+
+| Device | Command | Hot reload (`r`) | Why |
+| --- | --- | --- | --- |
+| **iOS Simulator** | `cd frontend && ./run_sim.sh` | Yes | Same Wi‑Fi not needed; API = `localhost` |
+| **Physical iPhone** | `./run_phone.sh` | No (release build) | Xcode 15.2 cannot attach to **iOS 26** phones |
+| **Physical iPhone (try debug)** | `./run_phone_debug.sh` | Maybe | Only works after upgrading to **Xcode 16+** on this Mac |
+
+After code changes on a **physical iPhone**, run `./run_phone.sh` again (full rebuild, ~5–10 min).
+For day‑to‑day UI work, use the **simulator** with `./run_sim.sh` and press **`r`** in the terminal.
 
 ### C) Android — Emulator (easiest)
 Start an emulator from Android Studio, then just:

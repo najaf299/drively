@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../constants/app_config.dart';
+
 /// Application-level exception with a user-presentable [message].
 ///
 /// This is the single error type surfaced to the UI. Network/Dio failures are
@@ -31,10 +33,11 @@ class AppException implements Exception {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return const NetworkException(
-            'Connection timed out. Please try again.');
+        return NetworkException(_devNetworkMessage(
+          'Connection timed out. Please try again.',
+        ));
       case DioExceptionType.connectionError:
-        return const NetworkException('No internet connection.');
+        return NetworkException(_devNetworkMessage('No internet connection.'));
       case DioExceptionType.cancel:
         return const AppException('Request cancelled.');
       case DioExceptionType.badResponse:
@@ -94,6 +97,16 @@ class AppException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Extra hint for local HTTP builds (release phone runs use http:// LAN URLs).
+String _devNetworkMessage(String base) {
+  if (!AppConfig.apiBaseUrl.startsWith('http://')) return base;
+  return '$base\n\n'
+      'API: ${AppConfig.apiBaseUrl}\n'
+      'On a real iPhone: start the backend with '
+      '`composer serve:lan` (or `php artisan serve --host=0.0.0.0`), '
+      'then reinstall with `frontend/run_phone.sh`.';
 }
 
 /// No connectivity / transport failure.
