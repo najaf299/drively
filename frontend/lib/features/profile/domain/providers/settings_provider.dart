@@ -1,16 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/domain/providers/auth_provider.dart';
 import '../../data/settings_service.dart';
 
 /// Async-loaded snapshot of the server-side app settings. Listens to the
 /// settings service and exposes update helpers that optimistically patch the
 /// local state before sending the PUT.
+///
+/// The fetch is *gated on authentication* — calling `/settings` before the
+/// Sanctum token is restored would 401 and trip the global unauthorized
+/// handler, which on cold start fights with the splash/router. So this
+/// notifier waits for `authProvider` to flip to `authenticated` before
+/// loading; on sign-out it resets to the empty loading state.
 class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
   final SettingsService _service;
 
-  SettingsNotifier(this._service) : super(const AsyncValue.loading()) {
-    refresh();
-  }
+  SettingsNotifier(this._service) : super(const AsyncValue.loading());
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
@@ -19,6 +24,12 @@ class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
+  }
+
+  /// Drops back to the empty loading state — used on sign-out so the next
+  /// session starts clean.
+  void reset() {
+    state = const AsyncValue.loading();
   }
 
   /// Patches one or more top-level fields. Optimistically updates local state,
@@ -94,5 +105,17 @@ class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
 
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, AsyncValue<AppSettings>>((ref) {
-  return SettingsNotifier(ref.read(settingsServiceProvider));
+  final notifier = SettingsNotifier(ref.read(settingsServiceProvider));
+  // Fetch only when authenticated. On sign-out, drop back to loading so the
+  // next sign-in re-fetches with the new user's bag.
+  void sync(AuthState s) {
+    if (s.isAuthenticated) {
+      notifier.refresh();
+    } else {
+      notifier.reset();
+    }
+  }
+  sync(ref.read(authProvider));
+  ref.listen<AuthState>(authProvider, (_, next) => sync(next));
+  return notifier;
 });
