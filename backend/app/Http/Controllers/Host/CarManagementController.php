@@ -50,6 +50,7 @@ class CarManagementController extends Controller
             'fuel_policy' => ['required', 'in:full_to_full,full_to_empty,same_level'],
             'smoking_allowed' => ['nullable', 'boolean'],
             'pets_allowed' => ['nullable', 'boolean'],
+            'instant_booking' => ['nullable', 'boolean'],
             'photos' => ['nullable', 'array'],
             'photos.*.url' => ['required_with:photos', 'url'],
             'photos.*.is_cover' => ['nullable', 'boolean'],
@@ -96,6 +97,7 @@ class CarManagementController extends Controller
             'smoking_allowed' => ['sometimes', 'boolean'],
             'pets_allowed' => ['sometimes', 'boolean'],
             'dynamic_pricing_enabled' => ['sometimes', 'boolean'],
+            'instant_booking' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'in:draft,active,paused'],
         ]);
 

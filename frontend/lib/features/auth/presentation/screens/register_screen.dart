@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,11 +29,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _agreed = false;
   int _strength = 0;
 
+  // Tap recognisers for the inline Terms / Privacy links (disposed below).
+  final _termsTap = TapGestureRecognizer();
+  final _privacyTap = TapGestureRecognizer();
+
   @override
   void initState() {
     super.initState();
     // Rebuild on focus change so the strength meter shows only while editing.
     _passwordFocus.addListener(_onFocusChange);
+    _termsTap.onTap = () => context.push('/info/terms');
+    _privacyTap.onTap = () => context.push('/info/privacy');
   }
 
   void _onFocusChange() => setState(() {});
@@ -45,6 +52,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _password.dispose();
     _passwordFocus.removeListener(_onFocusChange);
     _passwordFocus.dispose();
+    _termsTap.dispose();
+    _privacyTap.dispose();
     super.dispose();
   }
 
@@ -193,14 +202,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   color: BrandColors.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
+                                recognizer: _termsTap,
                               ),
-                              TextSpan(text: ' & '),
+                              const TextSpan(text: ' & '),
                               TextSpan(
                                 text: 'Privacy Policy',
                                 style: TextStyle(
                                   color: BrandColors.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
+                                recognizer: _privacyTap,
                               ),
                             ],
                           ),

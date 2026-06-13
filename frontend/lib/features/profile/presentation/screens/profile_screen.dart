@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -214,16 +215,25 @@ class _ProfileHeader extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           clipBehavior: Clip.antiAlias,
-          child: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-              ? Image.network(user.avatarUrl!, fit: BoxFit.cover)
-              : Center(
-                  child: Text(
-                    user.initials,
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          color: BrandColors.primaryFg,
-                        ),
-                  ),
-                ),
+          child: Builder(builder: (context) {
+            final initials = Center(
+              child: Text(
+                user.initials,
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      color: BrandColors.primaryFg,
+                    ),
+              ),
+            );
+            if (user.avatarUrl == null || user.avatarUrl!.isEmpty) {
+              return initials;
+            }
+            return CachedNetworkImage(
+              imageUrl: user.avatarUrl!,
+              fit: BoxFit.cover,
+              placeholder: (_, __) => initials,
+              errorWidget: (_, __, ___) => initials,
+            );
+          }),
         ),
         const SizedBox(height: Spacing.x4),
         // Name — headlineSmall

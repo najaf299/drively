@@ -40,6 +40,7 @@ class Car {
   final double weeklyDiscountPct;
   final double monthlyDiscountPct;
   final bool dynamicPricingEnabled;
+  final bool instantBooking;
   final String? description;
   final List<String> features;
   final double lat;
@@ -76,6 +77,7 @@ class Car {
     this.weeklyDiscountPct = 0,
     this.monthlyDiscountPct = 0,
     this.dynamicPricingEnabled = false,
+    this.instantBooking = true,
     this.description,
     this.features = const [],
     required this.lat,
@@ -129,6 +131,7 @@ class Car {
       weeklyDiscountPct: asDouble(json['weekly_discount_pct']),
       monthlyDiscountPct: asDouble(json['monthly_discount_pct']),
       dynamicPricingEnabled: asBool(json['dynamic_pricing_enabled']),
+      instantBooking: asBool(json['instant_booking'], fallback: true),
       description: asStringOrNull(json['description']),
       features: asStringList(json['features']),
       lat: asDouble(location['lat'] ?? json['lat']),

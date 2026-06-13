@@ -57,6 +57,7 @@ class Trip extends Model
     public function isOverdue(): bool
     {
         return $this->status === TripStatus::InProgress
+            && $this->booking
             && $this->booking->return_at->isPast();
     }
 }

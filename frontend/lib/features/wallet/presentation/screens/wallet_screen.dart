@@ -81,7 +81,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     try {
       await ref
           .read(walletServiceProvider)
-          .withdraw(amount, destination: 'Bank •••• 8492');
+          .withdraw(amount, destination: 'Bank account');
       ref.invalidate(walletProvider);
       ref.invalidate(walletTransactionsProvider);
       if (context.mounted) {

@@ -311,11 +311,21 @@ class _Body extends StatelessWidget {
     'dark': 'Dark',
   };
 
-  bool _push(String key) =>
-      settings.notifications['push']?[key] ?? true;
+  // Per-key fallbacks that mirror the backend defaults
+  // (SettingsController::defaultNotificationSettings) so a toggle never renders
+  // OFF while the server actually holds it ON (e.g. email.receipts, sms.security).
+  static const _emailDefaults = {
+    'bookings': true,
+    'receipts': true,
+    'promotions': false,
+  };
+  static const _smsDefaults = {'bookings': false, 'security': true};
+
+  bool _push(String key) => settings.notifications['push']?[key] ?? true;
   bool _email(String key) =>
-      settings.notifications['email']?[key] ?? false;
-  bool _sms(String key) => settings.notifications['sms']?[key] ?? false;
+      settings.notifications['email']?[key] ?? (_emailDefaults[key] ?? false);
+  bool _sms(String key) =>
+      settings.notifications['sms']?[key] ?? (_smsDefaults[key] ?? false);
 
   @override
   Widget build(BuildContext context) {

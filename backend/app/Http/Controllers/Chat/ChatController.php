@@ -23,17 +23,17 @@ class ChatController extends Controller
             ->with([
                 'participantOne:id,name,avatar_url',
                 'participantTwo:id,name,avatar_url',
-                'latestMessage',
+                'latestMessage.sender:id,name,avatar_url',
                 'booking:id,reference,car_id',
                 'booking.car:id,make,model,year',
             ])
+            // Single correlated COUNT in the SELECT instead of one extra query
+            // per thread (was an N+1 in the transform loop below).
+            ->withCount(['messages as unread_count' => function ($q) use ($userId) {
+                $q->where('sender_id', '!=', $userId)->whereNull('read_at');
+            }])
             ->orderByDesc('updated_at')
             ->paginate(20);
-
-        $threads->getCollection()->transform(function ($thread) use ($userId) {
-            $thread->unread_count = $thread->unreadCountFor($userId);
-            return $thread;
-        });
 
         return $this->success($threads);
     }
@@ -57,7 +57,8 @@ class ChatController extends Controller
         $validated = $request->validate([
             'recipient_id' => ['required', 'uuid', 'exists:users,id'],
             'booking_id' => ['nullable', 'uuid', 'exists:bookings,id'],
-            'content' => ['required', 'string', 'max:1000'],
+            // Image messages carry the photo in image_url and may have no text.
+            'content' => ['required_without:image_url', 'nullable', 'string', 'max:1000'],
             'type' => ['sometimes', 'in:text,image'],
             'image_url' => ['nullable', 'url'],
         ]);
@@ -71,7 +72,7 @@ class ChatController extends Controller
         $message = $this->chatService->sendMessage(
             $thread,
             $request->user(),
-            $validated['content'],
+            $validated['content'] ?? '', // content column is NOT NULL
             $validated['type'] ?? 'text',
             $validated['image_url'] ?? null,
         );

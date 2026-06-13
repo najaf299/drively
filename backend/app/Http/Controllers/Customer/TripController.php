@@ -16,12 +16,15 @@ class TripController extends Controller
 
     public function show(Trip $trip): JsonResponse
     {
+        $this->authorize('view', $trip);
         $trip->load(['booking.car.photos', 'booking.car.host:id,name,avatar_url,phone', 'inspections']);
         return $this->success(new TripResource($trip));
     }
 
     public function start(Request $request, Booking $booking): JsonResponse
     {
+        $this->authorize('view', $booking);
+
         $validated = $request->validate([
             'mileage' => ['nullable', 'integer', 'min:0'],
             'fuel_level' => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -37,6 +40,7 @@ class TripController extends Controller
 
     public function end(Request $request, Trip $trip): JsonResponse
     {
+        $this->authorize('update', $trip);
         $validated = $request->validate([
             'mileage' => ['nullable', 'integer', 'min:0'],
             'fuel_level' => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -54,6 +58,7 @@ class TripController extends Controller
 
     public function updateLocation(Request $request, Trip $trip): JsonResponse
     {
+        $this->authorize('update', $trip);
         $validated = $request->validate([
             'lat' => ['required', 'numeric'],
             'lng' => ['required', 'numeric'],
@@ -65,6 +70,7 @@ class TripController extends Controller
 
     public function extend(Request $request, Trip $trip): JsonResponse
     {
+        $this->authorize('update', $trip);
         $validated = $request->validate([
             'extra_days' => ['required', 'integer', 'min:1', 'max:30'],
         ]);

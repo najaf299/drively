@@ -21,14 +21,17 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
+            'bio' => ['sometimes', 'nullable', 'string', 'max:500'],
             // nullable so the app can clear the photo by sending null.
             'avatar_url' => ['sometimes', 'nullable', 'url'],
             'preferred_language' => ['sometimes', 'string', 'in:en,ar,fr,es,de'],
             'preferred_currency' => ['sometimes', 'string', 'size:3'],
             'preferred_units' => ['sometimes', 'in:km,mi'],
             'theme_mode' => ['sometimes', 'string', 'in:light,dark,system'],
-            'notification_settings' => ['sometimes', 'array'],
-            'privacy_settings' => ['sometimes', 'array'],
+            // notification_settings / privacy_settings are intentionally NOT
+            // accepted here: a plain update() would shallow-overwrite the whole
+            // JSON bag. The Settings endpoint (PUT /settings) is the single,
+            // deep-merging owner of those preferences.
         ]);
 
         $request->user()->update($validated);

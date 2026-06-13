@@ -27,7 +27,7 @@ class TripResource extends JsonResource
             ],
             'extended' => $this->extended,
             'extension_days' => $this->extension_days,
-            'is_overdue' => $this->when($this->booking, fn () => $this->isOverdue()),
+            'is_overdue' => $this->whenLoaded('booking', fn () => $this->isOverdue()),
             'booking' => new BookingResource($this->whenLoaded('booking')),
             'inspections' => $this->whenLoaded('inspections'),
             'created_at' => $this->created_at,

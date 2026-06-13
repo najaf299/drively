@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../core/errors/app_exception.dart';
+import '../../../../core/network/upload_service.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../data/kyc_service.dart';
 
@@ -79,9 +81,29 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     }
     setState(() => _busy = true);
     try {
-      // In production the captured files are uploaded to R2 first; their public
-      // URLs are then submitted here. That media pipeline is environment-specific.
-      _snack('Document upload service is not configured in this build.');
+      // Upload each captured document to the public disk, then submit the URLs.
+      final uploader = ref.read(uploadServiceProvider);
+      final frontUrl = await uploader.uploadImage(_front!, folder: 'kyc');
+      final backUrl = _back != null
+          ? await uploader.uploadImage(_back!, folder: 'kyc')
+          : null;
+      final selfieUrl = _selfie != null
+          ? await uploader.uploadImage(_selfie!, folder: 'kyc')
+          : null;
+
+      await ref.read(kycServiceProvider).submit(
+            documentType: 'drivers_license',
+            frontUrl: frontUrl,
+            backUrl: backUrl,
+            selfieUrl: selfieUrl,
+          );
+
+      ref.invalidate(kycStatusProvider);
+      if (mounted) _snack('Documents submitted for review.');
+    } on AppException catch (e) {
+      _snack(e.message);
+    } catch (_) {
+      _snack('Could not submit documents. Please try again.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

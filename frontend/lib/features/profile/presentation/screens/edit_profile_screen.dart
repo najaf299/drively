@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -199,8 +200,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ? Image.file(_avatarFile!, fit: BoxFit.cover)
                               : (!_removePhoto &&
                                       (user.avatarUrl?.isNotEmpty ?? false))
-                                  ? Image.network(user.avatarUrl!,
-                                      fit: BoxFit.cover)
+                                  ? CachedNetworkImage(
+                                      imageUrl: user.avatarUrl!,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, __, ___) => Center(
+                                        child: Text(user.initials,
+                                            style: text.headlineLarge?.copyWith(
+                                                color: BrandColors.primaryFg)),
+                                      ),
+                                    )
                                   : Center(
                                       child: Text(user.initials,
                                           style: text.headlineLarge?.copyWith(

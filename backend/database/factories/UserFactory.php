@@ -28,7 +28,10 @@ class UserFactory extends Factory
             'preferred_language' => 'en',
             'preferred_currency' => 'USD',
             'preferred_units' => 'km',
-            'notification_settings' => ['push' => true, 'email' => true, 'sms' => false],
+            // Canonical nested shape (push/email/sms → per-key bools) so test
+            // data matches what the Settings endpoint and app actually use.
+            'notification_settings' =>
+                \App\Http\Controllers\Customer\SettingsController::defaultNotificationSettings(),
             'is_suspended' => false,
             'remember_token' => Str::random(10),
         ];

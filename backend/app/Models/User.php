@@ -20,7 +20,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'phone', 'password', 'role', 'kyc_status',
-        'avatar_url', 'google_id', 'apple_id', 'average_rating', 'total_trips',
+        'avatar_url', 'bio', 'google_id', 'apple_id', 'average_rating', 'total_trips',
         'preferred_language', 'preferred_currency', 'preferred_units',
         'theme_mode', 'notification_settings', 'privacy_settings',
         'is_suspended', 'suspension_reason',

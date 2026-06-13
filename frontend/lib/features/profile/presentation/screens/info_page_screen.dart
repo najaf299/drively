@@ -18,7 +18,7 @@ class InfoPageData {
   const InfoPageData({required this.title, this.intro, required this.sections});
 }
 
-/// Renders a static, scrollable information page (dummy legal/help copy).
+/// Renders a static, scrollable information page (legal / help / about copy).
 ///
 /// Driven by a string [pageId] so a single route can serve every legal/support
 /// document. Unknown ids fall back to a short placeholder.
@@ -72,7 +72,7 @@ class InfoPageScreen extends StatelessWidget {
             const SizedBox(height: Spacing.x2),
             Center(
               child: Text(
-                'Drivly · Demo build · Last updated May 2026',
+                'Drivly · Last updated June 2026',
                 style: text.labelSmall?.copyWith(color: BrandColors.subtleFg),
               ),
             ),
@@ -90,13 +90,13 @@ const InfoPageData _fallback = InfoPageData(
   ],
 );
 
-/// Dummy-but-complete content for each static page.
+/// Complete static content for each legal / support page.
 const Map<String, InfoPageData> _pages = {
   'privacy': InfoPageData(
     title: 'Privacy policy',
     intro:
         'Your privacy matters to us. This policy explains what we collect, why '
-        'we collect it, and the choices you have. (Demo content.)',
+        'we collect it, and the choices you have.',
     sections: [
       InfoSection(
         heading: 'Information we collect',
@@ -130,7 +130,7 @@ const Map<String, InfoPageData> _pages = {
   'security': InfoPageData(
     title: 'Privacy & security',
     intro:
-        'Controls that keep your account and your trips safe. (Demo content.)',
+        'Controls that keep your account and your trips safe.',
     sections: [
       InfoSection(
         heading: 'Account protection',
@@ -228,7 +228,7 @@ const Map<String, InfoPageData> _pages = {
   ),
   'help': InfoPageData(
     title: 'Help center',
-    intro: 'Quick answers to common questions. (Demo content.)',
+    intro: 'Quick answers to common questions.',
     sections: [
       InfoSection(
         heading: 'How do I book a car?',
@@ -276,7 +276,7 @@ const Map<String, InfoPageData> _pages = {
       ),
       InfoSection(
         heading: 'Version',
-        body: 'Drivly 1.0.0 (demo build). Made with Flutter & Laravel.',
+        body: 'Drivly 1.0.0. Made with Flutter & Laravel.',
       ),
     ],
   ),

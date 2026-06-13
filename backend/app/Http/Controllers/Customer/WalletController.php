@@ -44,7 +44,7 @@ class WalletController extends Controller
 
         return $this->success([
             'transaction' => $transaction,
-            'new_balance' => $wallet->fresh()->balance,
+            'new_balance' => $transaction->balance_after,
         ], 'Wallet topped up', 201);
     }
 
@@ -70,7 +70,7 @@ class WalletController extends Controller
 
         return $this->success([
             'transaction' => $transaction,
-            'new_balance' => $wallet->fresh()->balance,
+            'new_balance' => $transaction->balance_after,
         ], 'Withdrawal initiated', 201);
     }
 }

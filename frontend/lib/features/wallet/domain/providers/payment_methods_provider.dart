@@ -28,23 +28,11 @@ class SavedCard {
       );
 }
 
-/// Manages the user's saved cards (add / remove / set default). Seeded with two
-/// demo cards so the wallet looks populated on first run.
+/// Manages the user's saved cards (add / remove / set default). Starts empty —
+/// the screens show an "Add a card" prompt — so no fake cards are shown before
+/// the user adds one (real capture is tokenised by Stripe in production).
 class SavedCardsNotifier extends StateNotifier<List<SavedCard>> {
-  SavedCardsNotifier()
-      : super(const [
-          SavedCard(
-              id: 'c1',
-              brand: 'Visa',
-              lastFour: '4829',
-              expiry: '08/27',
-              isDefault: true),
-          SavedCard(
-              id: 'c2',
-              brand: 'Mastercard',
-              lastFour: '1245',
-              expiry: '09/27'),
-        ]);
+  SavedCardsNotifier() : super(const []);
 
   void add({
     required String brand,

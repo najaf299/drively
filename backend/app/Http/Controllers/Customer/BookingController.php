@@ -54,7 +54,7 @@ class BookingController extends Controller
     public function show(Booking $booking): JsonResponse
     {
         $this->authorize('view', $booking);
-        $booking->load(['car.photos', 'car.host:id,name,avatar_url,phone', 'payment', 'trip', 'reviews']);
+        $booking->load(['car.photos', 'car.host:id,name,avatar_url,phone', 'payment', 'trip', 'reviews.reviewer:id,name,avatar_url']);
         return $this->success(new BookingResource($booking));
     }
 

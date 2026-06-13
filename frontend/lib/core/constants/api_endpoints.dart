@@ -10,6 +10,9 @@ class ApiEndpoints {
   static const String forgotPassword = '/auth/forgot-password';
   static const String resetPassword = '/auth/reset-password';
 
+  // Uploads (generic image upload → returns { url })
+  static const String uploads = '/uploads';
+
   // Profile
   static const String profile = '/profile';
   static const String profileAvatar = '/profile/avatar';

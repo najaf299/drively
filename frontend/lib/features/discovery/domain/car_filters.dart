@@ -17,6 +17,7 @@ class CarFilters {
   final int? minSeats;
   final int? minYear;
   final int? maxYear;
+  final bool instantBooking; // only instant-bookable cars when true
   final String? sort; // price_asc | price_desc | rating
   final double? lat;
   final double? lng;
@@ -33,6 +34,7 @@ class CarFilters {
     this.minSeats,
     this.minYear,
     this.maxYear,
+    this.instantBooking = false,
     this.sort,
     this.lat,
     this.lng,
@@ -50,6 +52,7 @@ class CarFilters {
         minSeats,
         minYear,
         maxYear,
+        instantBooking ? true : null,
       ].where((e) => e != null).length;
 
   Map<String, dynamic> toQuery() => {
@@ -62,6 +65,7 @@ class CarFilters {
         if (minSeats != null) 'min_seats': minSeats,
         if (minYear != null) 'min_year': minYear,
         if (maxYear != null) 'max_year': maxYear,
+        if (instantBooking) 'instant_booking': true,
         if (sort != null) 'sort': sort,
         if (lat != null) 'lat': lat,
         if (lng != null) 'lng': lng,
@@ -79,6 +83,7 @@ class CarFilters {
     int? minSeats,
     int? minYear,
     int? maxYear,
+    bool? instantBooking,
     String? sort,
     double? lat,
     double? lng,
@@ -95,6 +100,7 @@ class CarFilters {
       minSeats: minSeats ?? this.minSeats,
       minYear: minYear ?? this.minYear,
       maxYear: maxYear ?? this.maxYear,
+      instantBooking: instantBooking ?? this.instantBooking,
       sort: sort ?? this.sort,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
@@ -111,6 +117,7 @@ class CarFilters {
     bool price = false,
     bool seats = false,
     bool year = false,
+    bool instant = false,
   }) {
     return CarFilters(
       query: query,
@@ -123,6 +130,7 @@ class CarFilters {
       minSeats: seats ? null : minSeats,
       minYear: year ? null : minYear,
       maxYear: year ? null : maxYear,
+      instantBooking: instant ? false : instantBooking,
       sort: sort,
       lat: lat,
       lng: lng,

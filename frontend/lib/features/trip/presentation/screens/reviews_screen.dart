@@ -29,24 +29,33 @@ class ReviewsScreen extends ConsumerWidget {
           child: AsyncValueView<Paginated<Review>>(
             value: reviews,
             onRetry: () => ref.invalidate(carReviewsProvider(carId)),
-            data: (page) => _content(context, page),
+            data: (page) => _content(context, ref, page),
           ),
         ),
       ),
     );
   }
 
-  Widget _content(BuildContext context, Paginated<Review> page) {
+  Widget _content(BuildContext context, WidgetRef ref, Paginated<Review> page) {
     final header = _header(context, page.total);
     if (page.items.isEmpty) {
       return Column(
         children: [
           header,
-          const Expanded(
-            child: EmptyView(
-              icon: Icons.rate_review_outlined,
-              title: 'No reviews yet',
-              subtitle: 'Reviews appear here after completed trips.',
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async => ref.invalidate(carReviewsProvider(carId)),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 120),
+                  EmptyView(
+                    icon: Icons.rate_review_outlined,
+                    title: 'No reviews yet',
+                    subtitle: 'Reviews appear here after completed trips.',
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -65,18 +74,29 @@ class ReviewsScreen extends ConsumerWidget {
       children: [
         header,
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-                Spacing.x5, 0, Spacing.x5, Spacing.x5),
-            children: [
-              _summaryCard(context, avg, page.total, cleanliness,
-                  communication, accuracy, value),
-              const SizedBox(height: Spacing.x5),
-              for (final r in page.items) ...[
-                _ReviewTile(review: r),
-                const SizedBox(height: Spacing.x3),
-              ],
-            ],
+          // Lazily build review rows (this list is unbounded); summary card is
+          // index 0. Pull-to-refresh re-fetches the car's reviews.
+          child: RefreshIndicator(
+            onRefresh: () async => ref.invalidate(carReviewsProvider(carId)),
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                  Spacing.x5, 0, Spacing.x5, Spacing.x5),
+              itemCount: page.items.length + 1,
+              itemBuilder: (_, i) {
+                if (i == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: Spacing.x5),
+                    child: _summaryCard(context, avg, page.total, cleanliness,
+                        communication, accuracy, value),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: Spacing.x3),
+                  child: _ReviewTile(review: page.items[i - 1]),
+                );
+              },
+            ),
           ),
         ),
       ],

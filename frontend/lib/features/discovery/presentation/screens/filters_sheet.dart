@@ -39,7 +39,6 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
   int? _minSeats;
   String? _sort;
   bool _instantBooking = false;
-  bool _delivery = false;
 
   static const _maxPrice = 500.0;
   static const _minYearAllowed = 2010.0;
@@ -60,6 +59,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
     _fuel = widget.initial.fuelType;
     _minSeats = widget.initial.minSeats;
     _sort = widget.initial.sort;
+    _instantBooking = widget.initial.instantBooking;
   }
 
   void _reset() {
@@ -71,7 +71,6 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
       _minSeats = null;
       _sort = null;
       _instantBooking = false;
-      _delivery = false;
     });
   }
 
@@ -90,6 +89,7 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
         transmission: _transmission,
         fuelType: _fuel,
         minSeats: _minSeats,
+        instantBooking: _instantBooking,
         sort: _sort,
       ),
     );
@@ -179,13 +179,6 @@ class _FiltersSheetState extends ConsumerState<_FiltersSheet> {
                   label: 'Instant book',
                   value: _instantBooking,
                   onChanged: (v) => setState(() => _instantBooking = v),
-                ),
-                const SizedBox(height: Spacing.x2),
-                _ToggleRow(
-                  icon: Icons.local_shipping_outlined,
-                  label: 'Delivery available',
-                  value: _delivery,
-                  onChanged: (v) => setState(() => _delivery = v),
                 ),
                 const SizedBox(height: Spacing.x5),
 

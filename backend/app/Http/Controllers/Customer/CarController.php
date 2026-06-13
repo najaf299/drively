@@ -36,6 +36,7 @@ class CarController extends Controller
             ->when($request->min_year, fn ($q, $y) => $q->where('year', '>=', $y))
             ->when($request->max_year, fn ($q, $y) => $q->where('year', '<=', $y))
             ->when($request->min_seats, fn ($q, $s) => $q->where('seats', '>=', $s))
+            ->when($request->boolean('instant_booking'), fn ($q) => $q->where('instant_booking', true))
             ->when($request->make, fn ($q, $m) => $q->where('make', $m))
             ->when($request->sort === 'price_asc', fn ($q) => $q->orderBy('daily_price'))
             ->when($request->sort === 'price_desc', fn ($q) => $q->orderByDesc('daily_price'))
@@ -59,7 +60,9 @@ class CarController extends Controller
         return $this->success([
             'car' => new CarResource($car),
             'suggested_price' => $suggestedPrice,
-            'total_reviews' => $car->reviews()->count(),
+            // Use the maintained counter column (kept in sync by
+            // Car::updateRating) instead of a second COUNT query.
+            'total_reviews' => $car->total_reviews,
         ]);
     }
 }

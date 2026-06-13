@@ -136,7 +136,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('booking_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('reporter_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('type', ['damage', 'late_return', 'cleanliness', 'other']);
+            $table->enum('type', ['damage', 'late_return', 'no_show', 'cleanliness', 'fraud', 'other']);
             $table->text('description');
             $table->json('evidence_urls')->nullable();
             $table->enum('status', ['open', 'investigating', 'resolved', 'dismissed'])->default('open');

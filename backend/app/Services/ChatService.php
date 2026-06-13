@@ -14,13 +14,14 @@ class ChatService
         $participantOne = min($userOneId, $userTwoId);
         $participantTwo = max($userOneId, $userTwoId);
 
-        return ChatThread::firstOrCreate(
-            [
-                'participant_one' => $participantOne,
-                'participant_two' => $participantTwo,
-            ],
-            ['booking_id' => $bookingId]
-        );
+        // booking_id is part of the (participant_one, participant_two, booking_id)
+        // unique key, so it must be in the match attributes — otherwise a second
+        // booking between the same two users would collapse onto the first thread.
+        return ChatThread::firstOrCreate([
+            'participant_one' => $participantOne,
+            'participant_two' => $participantTwo,
+            'booking_id' => $bookingId,
+        ]);
     }
 
     public function sendMessage(ChatThread $thread, User $sender, string $content, string $type = 'text', ?string $imageUrl = null): ChatMessage

@@ -16,6 +16,7 @@ import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../booking/data/booking_service.dart';
 import '../../../booking/domain/providers/booking_provider.dart';
+import '../../data/dispute_service.dart';
 import '../../data/trip_service.dart';
 
 /// Booking detail — spec §7.17 (trip detail).
@@ -61,6 +62,142 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _extendTrip(Booking booking) async {
+    final tripId = booking.trip?.id;
+    if (tripId == null) {
+      _snack('You can only extend a trip that is in progress.');
+      return;
+    }
+    final days = await _extendDaysDialog();
+    if (days == null) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(tripServiceProvider).extend(tripId, days);
+      ref.invalidate(bookingDetailProvider(widget.bookingId));
+      _snack('Trip extended by $days ${days == 1 ? 'day' : 'days'}.');
+    } on AppException catch (e) {
+      _snack(e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<int?> _extendDaysDialog() {
+    const options = [1, 2, 3, 5, 7];
+    int selected = 1;
+    return showDialog<int>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Extend trip'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('How many extra days?',
+                  style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: Spacing.x3),
+              Wrap(
+                spacing: Spacing.x2,
+                children: [
+                  for (final d in options)
+                    ChoiceChip(
+                      label: Text('$d ${d == 1 ? 'day' : 'days'}'),
+                      selected: selected == d,
+                      onSelected: (_) => setLocal(() => selected = d),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          actionsPadding: kDialogActionsPadding,
+          actions: [
+            DialogActions(
+              confirmLabel: 'Extend',
+              onCancel: () => Navigator.pop(ctx),
+              onConfirm: () => Navigator.pop(ctx, selected),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reportIssue(Booking booking) async {
+    final result = await _reportIssueDialog();
+    if (result == null) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(disputeServiceProvider).create(
+            booking.id,
+            type: result.$1,
+            description: result.$2,
+          );
+      _snack('Thanks — our support team will review your report.');
+    } on AppException catch (e) {
+      _snack(e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<(String, String)?> _reportIssueDialog() {
+    const types = <String, String>{
+      'damage': 'Vehicle damage',
+      'cleanliness': 'Cleanliness',
+      'late_return': 'Handover / timing',
+      'fraud': 'Billing / fraud',
+      'other': 'Something else',
+    };
+    String type = 'damage';
+    final controller = TextEditingController();
+    return showDialog<(String, String)>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Report an issue'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: Spacing.x2,
+                runSpacing: Spacing.x1,
+                children: [
+                  for (final e in types.entries)
+                    ChoiceChip(
+                      label: Text(e.value),
+                      selected: type == e.key,
+                      onSelected: (_) => setLocal(() => type = e.key),
+                    ),
+                ],
+              ),
+              const SizedBox(height: Spacing.x3),
+              TextField(
+                controller: controller,
+                maxLines: 3,
+                decoration:
+                    const InputDecoration(hintText: 'Describe what happened'),
+              ),
+            ],
+          ),
+          actionsPadding: kDialogActionsPadding,
+          actions: [
+            DialogActions(
+              confirmLabel: 'Submit',
+              onCancel: () => Navigator.pop(ctx),
+              onConfirm: () {
+                final desc = controller.text.trim();
+                if (desc.isEmpty) return;
+                Navigator.pop(ctx, (type, desc));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _callHost(Booking booking) async {
@@ -583,7 +720,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     if (b.isActive) {
       if (widgets.isNotEmpty) widgets.add(const SizedBox(height: Spacing.x3));
       widgets.add(OutlinedButton.icon(
-        onPressed: _busy ? null : () {},
+        onPressed: _busy ? null : () => _extendTrip(b),
         icon: const Icon(Icons.more_time),
         label: const Text('Extend trip'),
       ));
@@ -605,7 +742,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     // Report — link style
     widgets.add(const SizedBox(height: Spacing.x2));
     widgets.add(TextButton(
-      onPressed: () {},
+      onPressed: _busy ? null : () => _reportIssue(b),
       style: TextButton.styleFrom(foregroundColor: BrandColors.mutedFg),
       child: const Text('Report an issue'),
     ));

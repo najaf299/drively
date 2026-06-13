@@ -43,10 +43,12 @@ class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
     try {
       final fresh = await _service.update(diff);
       state = AsyncValue.data(fresh);
-    } catch (e, st) {
-      // Roll back to the previous server value on failure.
+    } catch (e) {
+      // Roll back to the last known-good value and rethrow so the caller (the
+      // Settings screen) can show a snackbar. Never flip the whole screen into
+      // an error state over a single failed toggle.
       if (current != null) state = AsyncValue.data(current);
-      state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 

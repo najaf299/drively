@@ -318,6 +318,28 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
     );
   }
 
+  /// Headline for the live chip: time left until the booking's return time,
+  /// or "Overdue"/"On trip" when that can't be computed.
+  String _tripHeadline(Trip trip) {
+    final returnAt = trip.booking?.returnAt;
+    if (returnAt == null) return 'On trip';
+    final remaining = returnAt.difference(DateTime.now());
+    if (remaining.isNegative) return 'Overdue';
+    final h = remaining.inHours;
+    final m = remaining.inMinutes % 60;
+    if (h >= 24) return '${remaining.inDays}d ${h % 24}h left';
+    if (h >= 1) return '${h}h ${m}m left';
+    return '${remaining.inMinutes}m left';
+  }
+
+  /// Subline: trip status + distance driven so far when known.
+  String _tripSubline(Trip trip) {
+    final base = trip.isOverdue ? 'Return overdue' : 'Trip in progress';
+    final km = trip.totalMileage;
+    if (km != null && km > 0) return '$base · ${Formatters.distance(km.toDouble())}';
+    return base;
+  }
+
   Widget _mapCard(Trip trip) {
     final hasLoc = trip.hasLocation;
     return ClipRRect(
@@ -353,11 +375,11 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'ETA 18 min',
+                          _tripHeadline(trip),
                           style: Theme.of(context).textTheme.headlineLarge,
                         ),
                         Text(
-                          'Trip in progress · 12.4 km',
+                          _tripSubline(trip),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

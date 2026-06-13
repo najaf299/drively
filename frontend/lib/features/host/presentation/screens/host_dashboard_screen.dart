@@ -3,9 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../core/models/booking.dart';
+import '../../../../core/models/car.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../domain/providers/host_provider.dart';
+
+/// Fleet occupancy = distinct cars with an in-progress (active) booking, over
+/// the host's fleet size. Returns '—' until both lists have loaded.
+String _occupancy(List<Car>? cars, List<Booking>? bookings) {
+  if (cars == null || cars.isEmpty || bookings == null) return '—';
+  final rented = bookings.where((b) => b.isActive).map((b) => b.carId).toSet();
+  return '${(rented.length / cars.length * 100).round().clamp(0, 100)}%';
+}
 
 /// Host dashboard — spec §7.28.
 ///
@@ -111,14 +121,7 @@ class HostDashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: _QuickStatTile(
                       label: 'Occupancy',
-                      value: cars.maybeWhen(
-                        data: (c) {
-                          if (c.isEmpty) return '—';
-                          // Placeholder occupancy calc
-                          return '${((c.length / (c.length + 1)) * 100).round()}%';
-                        },
-                        orElse: () => '—',
-                      ),
+                      value: _occupancy(cars.valueOrNull, bookings.valueOrNull),
                       icon: Icons.bar_chart_outlined,
                     ),
                   ),

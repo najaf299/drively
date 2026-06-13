@@ -78,11 +78,6 @@ class BookingSuccessScreen extends ConsumerWidget {
                     child: const Text('View trip'),
                   ),
                   const SizedBox(height: Spacing.x3),
-                  OutlinedButton(
-                    onPressed: () {},
-                    child: const Text('Add to wallet pass'),
-                  ),
-                  const SizedBox(height: Spacing.x3),
                   TextButton(
                     onPressed: () => context.go('/home'),
                     child: const Text('Back to home'),

@@ -17,7 +17,6 @@ class CarCard extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback? onToggleFavorite;
   final bool showStatus; // host fleet view
-  final bool instantBook;
 
   const CarCard({
     super.key,
@@ -26,7 +25,6 @@ class CarCard extends StatelessWidget {
     this.isFavorite = false,
     this.onToggleFavorite,
     this.showStatus = false,
-    this.instantBook = false,
   });
 
   static String _label(String s) {
@@ -200,7 +198,7 @@ class CarCard extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
-                        if (instantBook)
+                        if (car.instantBooking)
                           const StatusBadge(
                             'Instant book',
                             tone: BadgeTone.success,

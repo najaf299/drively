@@ -79,6 +79,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     unawaited(ref.read(carListProvider.notifier).load(next));
   }
 
+  /// "Explore Premium" surfaces the top-rated cars (a real action against the
+  /// existing catalogue) rather than a yet-to-exist subscription product.
+  void _explorePremium() {
+    final next = ref.read(carFiltersProvider).copyWith(sort: 'rating');
+    ref.read(carFiltersProvider.notifier).state = next;
+    unawaited(ref.read(carListProvider.notifier).load(next));
+  }
+
   bool _isQuickFilterActive(_QuickFilter q, CarFilters f) {
     return f.fuelType == q.fuelType &&
         f.minSeats == q.minSeats &&
@@ -366,11 +374,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
               // ── Promo banner: 160h gradient with CTA ──────────────────────
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(
+                  padding: const EdgeInsets.fromLTRB(
                       Spacing.x5, 0, Spacing.x5, Spacing.x8),
-                  child: _PromoBanner(),
+                  child: _PromoBanner(onExplore: _explorePremium),
                 ),
               ),
             ],
@@ -680,6 +688,12 @@ class _ActiveFiltersStrip extends StatelessWidget {
         onRemove: () => onRemove(filters.cleared(year: true)),
       ));
     }
+    if (filters.instantBooking) {
+      chips.add(_ActiveChip(
+        label: 'Instant book',
+        onRemove: () => onRemove(filters.cleared(instant: true)),
+      ));
+    }
     if (chips.isEmpty) return const SizedBox.shrink();
 
     return SizedBox(
@@ -902,7 +916,8 @@ class _CategoryGrid extends ConsumerWidget {
 // ── Promo banner ─────────────────────────────────────────────────────────────
 
 class _PromoBanner extends StatelessWidget {
-  const _PromoBanner();
+  final VoidCallback onExplore;
+  const _PromoBanner({required this.onExplore});
 
   @override
   Widget build(BuildContext context) {
@@ -935,7 +950,7 @@ class _PromoBanner extends StatelessWidget {
           SizedBox(
             height: Sizes.secondaryHeight,
             child: FilledButton(
-              onPressed: () {},
+              onPressed: onExplore,
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: BrandColors.accent,

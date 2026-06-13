@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\KycManagementController;
 use App\Http\Controllers\Admin\DisputeManagementController;
 use App\Http\Controllers\Admin\PromoCodeController;
 use App\Http\Controllers\Webhook\StripeWebhookController;
+use App\Http\Controllers\UploadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,10 @@ Route::prefix('v1')->group(function () {
 
         // Auth
         Route::post('auth/logout', [LoginController::class, 'logout']);
+
+        // Generic image upload → returns { url } for car photos, KYC docs,
+        // chat images and trip inspection shots to reference.
+        Route::post('uploads', [UploadController::class, 'store']);
 
         // Profile
         Route::get('profile', [ProfileController::class, 'show']);

@@ -27,7 +27,7 @@ class DisputeController extends Controller
     public function store(Request $request, Booking $booking): JsonResponse
     {
         $validated = $request->validate([
-            'type' => ['required', 'in:damage,late_return,no_show,fraud,other'],
+            'type' => ['required', 'in:damage,late_return,no_show,cleanliness,fraud,other'],
             'description' => ['required', 'string', 'max:2000'],
             'evidence_urls' => ['nullable', 'array'],
             'evidence_urls.*' => ['url'],
@@ -39,6 +39,7 @@ class DisputeController extends Controller
 
     public function show(Dispute $dispute): JsonResponse
     {
+        $this->authorize('view', $dispute);
         $dispute->load(['booking.car:id,make,model,year', 'reporter:id,name', 'resolver:id,name']);
         return $this->success(new DisputeResource($dispute));
     }

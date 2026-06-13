@@ -57,7 +57,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
 
-              // ── Floating top bar: back + search pill + layers ────────────
+              // ── Floating top bar: back + search pill ─────────────────────
               Positioned(
                 top: 0,
                 left: 0,
@@ -75,41 +75,40 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ),
                         const SizedBox(width: Spacing.x3),
                         Expanded(
-                          child: Container(
-                            height: Sizes.searchBar,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.x4),
-                            decoration: BoxDecoration(
-                              color: BrandColors.surface2,
-                              borderRadius:
-                                  BorderRadius.circular(Radii.pill),
-                              border: Border.all(color: BrandColors.border),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.search,
-                                    color: BrandColors.mutedFg,
-                                    size: Sizes.iconSm),
-                                const SizedBox(width: Spacing.x2),
-                                Expanded(
-                                  child: Text(
-                                    'Cars near ${_areaLabel(list)}',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.copyWith(
-                                            color: BrandColors.foreground),
+                          child: GestureDetector(
+                            onTap: () => context.push('/search'),
+                            child: Container(
+                              height: Sizes.searchBar,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: Spacing.x4),
+                              decoration: BoxDecoration(
+                                color: BrandColors.surface2,
+                                borderRadius:
+                                    BorderRadius.circular(Radii.pill),
+                                border:
+                                    Border.all(color: BrandColors.border),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.search,
+                                      color: BrandColors.mutedFg,
+                                      size: Sizes.iconSm),
+                                  const SizedBox(width: Spacing.x2),
+                                  Expanded(
+                                    child: Text(
+                                      'Cars near ${_areaLabel(list)}',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                              color: BrandColors.foreground),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: Spacing.x3),
-                        _CircleButton(
-                          icon: Icons.layers_outlined,
-                          onTap: () {},
                         ),
                       ],
                     ),
@@ -118,10 +117,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
 
               // ── My-location FAB (44 dp, surface2/border) ─────────────────
+              // Refreshes the nearby results; map-camera recentre lands with
+              // the live Google Maps SDK.
               Positioned(
                 right: Spacing.x4,
                 bottom: selected != null ? 220 : 100,
-                child: _LocateFab(onTap: () {}),
+                child: _LocateFab(
+                  onTap: () => ref.read(carListProvider.notifier).refresh(),
+                ),
               ),
 
               // ── Empty state overlay ──────────────────────────────────────
@@ -187,7 +190,7 @@ class _BottomCarSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: BrandColors.surface,
-        borderRadius: BorderRadius.vertical(
+        borderRadius: const BorderRadius.vertical(
             top: Radius.circular(Radii.xxl)),
         boxShadow: BrandShadows.card,
       ),

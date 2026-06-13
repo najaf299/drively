@@ -62,6 +62,7 @@ class CarFactory extends Factory
             'weekly_discount_pct' => fake()->randomFloat(2, 5, 15),
             'monthly_discount_pct' => fake()->randomFloat(2, 15, 30),
             'dynamic_pricing_enabled' => fake()->boolean(30),
+            'instant_booking' => fake()->boolean(70),
             'description' => fake()->paragraph(2),
             'features' => $features,
             'lat' => $location['lat'] + fake()->randomFloat(4, -0.05, 0.05),

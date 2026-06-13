@@ -305,7 +305,7 @@ class _AnimatedNavBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: BrandColors.surface,
         // Curved top edge (rounded corners), matching the app's rounded look.
-        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
       ),
       child: SafeArea(
         top: false,

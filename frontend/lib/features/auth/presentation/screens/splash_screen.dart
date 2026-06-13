@@ -13,13 +13,13 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: GlowBackground(
-        glowAlignment: Alignment(0, -1.1),
+        glowAlignment: const Alignment(0, -1.1),
         child: SafeArea(
           child: Column(
             children: [
-              Spacer(flex: 5),
-              Center(child: DrivlyWordmark(size: 60)),
-              Spacer(flex: 5),
+              const Spacer(flex: 5),
+              const Center(child: DrivlyWordmark(size: 60)),
+              const Spacer(flex: 5),
               SizedBox(
                 width: 26,
                 height: 26,
@@ -28,7 +28,7 @@ class SplashScreen extends StatelessWidget {
                   color: BrandColors.primary,
                 ),
               ),
-              SizedBox(height: Spacing.x12),
+              const SizedBox(height: Spacing.x12),
             ],
           ),
         ),

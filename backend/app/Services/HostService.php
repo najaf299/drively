@@ -75,17 +75,23 @@ class HostService
     public function getHostStats(string $hostId): array
     {
         $user = User::findOrFail($hostId);
-        $cars = $user->cars()->count();
-        $activeCars = $user->cars()->where('status', 'active')->count();
-        $totalBookings = Booking::whereHas('car', fn ($q) => $q->where('host_id', $hostId))->count();
-        $completedBookings = Booking::whereHas('car', fn ($q) => $q->where('host_id', $hostId))
-            ->where('status', 'completed')->count();
+
+        // Total + active cars in a single query (conditional aggregate is
+        // portable across MySQL and the SQLite test DB).
+        $carCounts = $user->cars()
+            ->selectRaw("COUNT(*) as total, COUNT(CASE WHEN status = 'active' THEN 1 END) as active")
+            ->first();
+
+        // Total + completed bookings in a single query (was two whereHas counts).
+        $bookingCounts = Booking::whereHas('car', fn ($q) => $q->where('host_id', $hostId))
+            ->selectRaw("COUNT(*) as total, COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed")
+            ->first();
 
         return [
-            'total_cars' => $cars,
-            'active_cars' => $activeCars,
-            'total_bookings' => $totalBookings,
-            'completed_bookings' => $completedBookings,
+            'total_cars' => (int) $carCounts->total,
+            'active_cars' => (int) $carCounts->active,
+            'total_bookings' => (int) $bookingCounts->total,
+            'completed_bookings' => (int) $bookingCounts->completed,
             'average_rating' => $user->average_rating,
             'total_trips' => $user->total_trips,
         ];

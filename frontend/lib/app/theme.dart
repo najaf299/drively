@@ -425,7 +425,7 @@ class DrivlyTheme {
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: BrandColors.surface,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
         ),
       ),
@@ -457,7 +457,7 @@ class DrivlyTheme {
         activeTrackColor: BrandColors.primary,
         inactiveTrackColor: BrandColors.surface2,
         thumbColor: BrandColors.primary,
-        overlayColor: Color(0x26CBF24A),
+        overlayColor: const Color(0x26CBF24A),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) =>

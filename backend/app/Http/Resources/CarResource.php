@@ -25,6 +25,7 @@ class CarResource extends JsonResource
             'weekly_discount_pct' => $this->weekly_discount_pct,
             'monthly_discount_pct' => $this->monthly_discount_pct,
             'dynamic_pricing_enabled' => $this->dynamic_pricing_enabled,
+            'instant_booking' => $this->instant_booking,
             'description' => $this->description,
             'features' => $this->features,
             'location' => [

@@ -21,7 +21,7 @@ class Car extends Model
         'host_id', 'make', 'model', 'year', 'trim', 'plate_number',
         'transmission', 'fuel_type', 'seats', 'doors', 'daily_price',
         'weekly_discount_pct', 'monthly_discount_pct', 'dynamic_pricing_enabled',
-        'suggested_price', 'description', 'features', 'lat', 'lng', 'address',
+        'instant_booking', 'suggested_price', 'description', 'features', 'lat', 'lng', 'address',
         'city', 'country', 'mileage_limit_per_day', 'excess_mileage_fee',
         'fuel_policy', 'smoking_allowed', 'pets_allowed', 'status', 'rejection_reason',
     ];
@@ -42,6 +42,7 @@ class Car extends Model
             'fuel_policy' => FuelPolicy::class,
             'status' => CarStatus::class,
             'dynamic_pricing_enabled' => 'boolean',
+            'instant_booking' => 'boolean',
             'smoking_allowed' => 'boolean',
             'pets_allowed' => 'boolean',
             'average_rating' => 'decimal:2',
@@ -60,8 +61,18 @@ class Car extends Model
     public function scopeInCity($query, string $city) { return $query->where('city', $city); }
     public function scopeNearby($query, float $lat, float $lng, float $radiusKm = 25)
     {
+        // Bounding-box prefilter so the (lat, lng) index can prune most rows
+        // before the haversine runs on the survivors. ~111 km per degree of
+        // latitude; longitude degrees shrink by cos(lat). Pad by 1° to stay safe
+        // near the poles/antimeridian where the approximation is weakest.
+        $latDelta = $radiusKm / 111.0;
+        $lngDelta = $radiusKm / max(1.0, 111.0 * cos(deg2rad($lat)));
+
         $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(lat)) * cos(radians(lng) - radians(?)) + sin(radians(?)) * sin(radians(lat))))";
-        return $query->selectRaw("*, {$haversine} AS distance", [$lat, $lng, $lat])
+        return $query
+            ->whereBetween('lat', [$lat - $latDelta, $lat + $latDelta])
+            ->whereBetween('lng', [$lng - $lngDelta, $lng + $lngDelta])
+            ->selectRaw("*, {$haversine} AS distance", [$lat, $lng, $lat])
             ->having('distance', '<', $radiusKm)
             ->orderBy('distance');
     }

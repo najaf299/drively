@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/utils/formatters.dart';
+import '../features/auth/domain/providers/auth_provider.dart';
 import '../features/profile/data/settings_service.dart';
 import '../features/profile/domain/providers/settings_provider.dart';
 import '../shared/widgets/drivly_toast.dart';
@@ -18,6 +20,16 @@ class DrivlyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+
+    // Apply the user's currency + distance-unit preferences globally so every
+    // money/distance label reflects them. Prefer the loaded Settings bundle,
+    // falling back to the bootstrapped user so cold starts paint correctly
+    // before the /settings fetch resolves.
+    final settings = ref.watch(settingsProvider).valueOrNull;
+    final user = ref.watch(authProvider).user;
+    final currencyCode = settings?.currency ?? user?.preferredCurrency;
+    final units = settings?.units ?? user?.preferredUnits;
+    Formatters.configure(currencyCode: currencyCode, units: units);
 
     // Once server settings arrive, mirror the persisted `themeMode` into the
     // local controller so the next cold start paints in the chosen mode
@@ -48,9 +60,13 @@ class DrivlyApp extends ConsumerWidget {
         // read BrandColors.* flip too; the KeyedSubtree forces a full rebuild
         // when the OS appearance toggles. Also mounts the DrivlyToast overlay.
         BrandColors.brightness = Theme.of(context).brightness;
+        // Re-key on brightness + currency + units so a change to any of them
+        // rebuilds the whole subtree and money/distance labels re-render live.
+        final subtreeKey =
+            '${BrandColors.brightness}|${Formatters.currencySymbol}|${Formatters.useMiles}';
         return DrivlyToastHost(
           child: KeyedSubtree(
-            key: ValueKey(BrandColors.brightness),
+            key: ValueKey(subtreeKey),
             child: child ?? const SizedBox.shrink(),
           ),
         );

@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/network/upload_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../data/host_service.dart';
 import '../../domain/providers/host_provider.dart';
@@ -42,7 +46,10 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
   String _fuelType = 'petrol';
   String _fuelPolicy = 'full_to_full';
   final _features = <String>{'ac'};
+  final _photos = <XFile>[]; // picked listing photos (first = cover)
   bool _busy = false;
+
+  static const _maxPhotos = 9;
 
   // Presentational smart-pricing state. Mirrors the [_price] controller so the
   // submit payload is unchanged.
@@ -89,6 +96,24 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
     super.dispose();
   }
 
+  Future<void> _pickPhotos() async {
+    if (_photos.length >= _maxPhotos) return;
+    try {
+      final picked = await ImagePicker().pickMultiImage(
+        maxWidth: 1600,
+        imageQuality: 80,
+      );
+      if (picked.isEmpty) return;
+      setState(() {
+        for (final p in picked) {
+          if (_photos.length < _maxPhotos) _photos.add(p);
+        }
+      });
+    } catch (_) {
+      _snack('Could not open photos.');
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_features.isEmpty) {
@@ -97,6 +122,17 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
     }
     setState(() => _busy = true);
     try {
+      // Upload picked photos first so the create payload carries their URLs.
+      var photoPayload = const <Map<String, dynamic>>[];
+      if (_photos.isNotEmpty) {
+        final urls = await ref
+            .read(uploadServiceProvider)
+            .uploadImages(_photos, folder: 'car_photos');
+        photoPayload = [
+          for (var i = 0; i < urls.length; i++)
+            {'url': urls[i], 'is_cover': i == 0},
+        ];
+      }
       await ref.read(hostServiceProvider).createCar({
         'make': _make.text.trim(),
         'model': _model.text.trim(),
@@ -116,6 +152,7 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
         'fuel_policy': _fuelPolicy,
         if (_description.text.trim().isNotEmpty)
           'description': _description.text.trim(),
+        if (photoPayload.isNotEmpty) 'photos': photoPayload,
       });
       ref.invalidate(hostCarsProvider);
       if (mounted) {
@@ -174,7 +211,11 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
                   padding: const EdgeInsets.fromLTRB(
                       Spacing.x5, Spacing.x5, Spacing.x5, Spacing.x6),
                   children: [
-                    const _PhotoUploadGrid(),
+                    _PhotoUploadGrid(
+                      photos: _photos,
+                      onAdd: _pickPhotos,
+                      onRemove: (i) => setState(() => _photos.removeAt(i)),
+                    ),
                     const SizedBox(height: Spacing.x6),
                     _section('Basics'),
                     _field(_make, 'Make',
@@ -389,58 +430,138 @@ class _StepProgress extends StatelessWidget {
   }
 }
 
-/// A 3x3 photo-upload grid: a dashed "add" tile followed by empty slots.
+/// A 3x3 photo-upload grid: picked photo thumbnails (first = cover), a dashed
+/// "add" tile, then empty slots padding the grid to 9 cells.
 class _PhotoUploadGrid extends StatelessWidget {
-  const _PhotoUploadGrid();
+  final List<XFile> photos;
+  final VoidCallback onAdd;
+  final void Function(int index) onRemove;
+  const _PhotoUploadGrid({
+    required this.photos,
+    required this.onAdd,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
+    const maxPhotos = 9;
+    final cells = <Widget>[
+      for (var i = 0; i < photos.length; i++)
+        _PhotoThumb(
+          file: photos[i],
+          isCover: i == 0,
+          onRemove: () => onRemove(i),
+        ),
+      if (photos.length < maxPhotos) _AddPhotoTile(onTap: onAdd),
+    ];
+    while (cells.length < maxPhotos) {
+      cells.add(const _EmptyPhotoTile());
+    }
     return GridView.count(
       crossAxisCount: 3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: Spacing.x3,
       mainAxisSpacing: Spacing.x3,
+      children: cells,
+    );
+  }
+}
+
+/// A picked-photo thumbnail with a remove badge and a "Cover" tag on the first.
+class _PhotoThumb extends StatelessWidget {
+  final XFile file;
+  final bool isCover;
+  final VoidCallback onRemove;
+  const _PhotoThumb({
+    required this.file,
+    required this.isCover,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        const _AddPhotoTile(),
-        for (var i = 0; i < 8; i++) const _EmptyPhotoTile(),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(Radii.lg),
+          child: Image.file(File(file.path), fit: BoxFit.cover),
+        ),
+        if (isCover)
+          Positioned(
+            left: 4,
+            bottom: 4,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: BrandColors.primary,
+                borderRadius: BorderRadius.circular(Radii.pill),
+              ),
+              child: Text('Cover',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: BrandColors.primaryFg,
+                        fontSize: 10,
+                      )),
+            ),
+          ),
+        Positioned(
+          top: 2,
+          right: 2,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 14),
+            ),
+          ),
+        ),
       ],
     );
   }
 }
 
-/// The dashed "add photo" tile (first slot).
+/// The dashed "add photo" tile.
 class _AddPhotoTile extends StatelessWidget {
-  const _AddPhotoTile();
+  final VoidCallback onTap;
+  const _AddPhotoTile({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _DashedBorderPainter(
-        color: BrandColors.borderStrong,
-        radius: Radii.lg,
-      ),
-      child: Container(
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: Sizes.avatar,
-              height: Sizes.avatar,
-              decoration: BoxDecoration(
-                color: BrandColors.primary.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: onTap,
+      child: CustomPaint(
+        painter: _DashedBorderPainter(
+          color: BrandColors.borderStrong,
+          radius: Radii.lg,
+        ),
+        child: Container(
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: Sizes.avatar,
+                height: Sizes.avatar,
+                decoration: BoxDecoration(
+                  color: BrandColors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.photo_camera_outlined,
+                    color: BrandColors.primary, size: Sizes.icon),
               ),
-              child: Icon(Icons.photo_camera_outlined,
-                  color: BrandColors.primary, size: Sizes.icon),
-            ),
-            const SizedBox(height: Spacing.x2),
-            Text('Add',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: BrandColors.primary,
-                    )),
-          ],
+              const SizedBox(height: Spacing.x2),
+              Text('Add',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: BrandColors.primary,
+                      )),
+            ],
+          ),
         ),
       ),
     );
@@ -553,7 +674,11 @@ class _SmartPricing extends StatelessWidget {
                             ?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
                     Text(
-                      '+\$284 estimated this month',
+                      // Transparent projection from the chosen base price:
+                      // ~12 booked days/mo at a ~15% demand uplift.
+                      enabled
+                          ? '+\$${(basePrice * 1.8).round()} projected this month'
+                          : 'Auto-adjusts your nightly price by demand',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: BrandColors.primary,
                             fontWeight: FontWeight.w600,

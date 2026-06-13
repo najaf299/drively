@@ -7,13 +7,42 @@ class Formatters {
   static final NumberFormat _money = NumberFormat('#,##0.00');
   static final NumberFormat _moneyCompact = NumberFormat('#,##0');
 
-  /// `$1,234.56`
-  static String money(num amount, {String symbol = '\$'}) =>
-      '$symbol${_money.format(amount)}';
+  /// Active display currency symbol/prefix, driven by the user's Settings
+  /// (`preferred_currency`). Updated via [configure] from the settings listener
+  /// in `app.dart`, so every `money`/`moneyCompact` call reflects the user's
+  /// choice without per-call-site changes. Note: amounts are formatted with the
+  /// selected symbol; cross-currency FX conversion is a later (dependent) step.
+  static String currencySymbol = r'$';
+
+  /// Whether distances render in miles instead of kilometres, driven by the
+  /// user's Settings (`preferred_units`). The conversion is exact.
+  static bool useMiles = false;
+
+  static const Map<String, String> _currencySymbols = {
+    'USD': r'$',
+    'EUR': '€',
+    'GBP': '£',
+    'AED': 'AED ',
+    'SAR': 'SAR ',
+  };
+
+  /// Applies the user's currency/units preferences globally. Unknown currency
+  /// codes fall back to a `"CODE "` prefix so any ISO code stays readable.
+  static void configure({String? currencyCode, String? units}) {
+    if (currencyCode != null && currencyCode.isNotEmpty) {
+      final code = currencyCode.toUpperCase();
+      currencySymbol = _currencySymbols[code] ?? '$code ';
+    }
+    if (units != null && units.isNotEmpty) useMiles = units == 'mi';
+  }
+
+  /// `$1,234.56` in the active currency (override [symbol] for a fixed one).
+  static String money(num amount, {String? symbol}) =>
+      '${symbol ?? currencySymbol}${_money.format(amount)}';
 
   /// `$1,235` (no decimals) — for summary/hero figures.
-  static String moneyCompact(num amount, {String symbol = '\$'}) =>
-      '$symbol${_moneyCompact.format(amount)}';
+  static String moneyCompact(num amount, {String? symbol}) =>
+      '${symbol ?? currencySymbol}${_moneyCompact.format(amount)}';
 
   /// `Jun 14, 2026`
   static String date(DateTime date) => DateFormat('MMM d, yyyy').format(date);
@@ -39,8 +68,13 @@ class Formatters {
     return 'just now';
   }
 
-  /// `850m` / `4.2km`
+  /// `850m` / `4.2km` — or `460ft` / `0.3mi` when the user prefers miles.
   static String distance(double km) {
+    if (useMiles) {
+      final mi = km * 0.621371;
+      if (mi < 0.1) return '${(mi * 5280).round()}ft';
+      return '${mi.toStringAsFixed(1)}mi';
+    }
     if (km < 1) return '${(km * 1000).round()}m';
     return '${km.toStringAsFixed(1)}km';
   }

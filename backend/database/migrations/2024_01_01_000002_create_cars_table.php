@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('weekly_discount_pct', 5, 2)->default(0);
             $table->decimal('monthly_discount_pct', 5, 2)->default(0);
             $table->boolean('dynamic_pricing_enabled')->default(false);
+            $table->boolean('instant_booking')->default(true);
             $table->decimal('suggested_price', 8, 2)->nullable();
             $table->text('description')->nullable();
             $table->json('features');

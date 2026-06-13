@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../app/theme.dart';
 import '../../../../core/models/chat.dart';
 import '../../../../core/network/realtime_client.dart';
+import '../../../../core/network/upload_service.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_snack.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
@@ -46,6 +49,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _sending = false;
   bool _hasText = false;
   bool _emojiOpen = false;
+  int _lastMessageCount = 0;
 
   @override
   void initState() {
@@ -155,8 +159,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           subtitle: 'Start the conversation.',
                         );
                       }
-                      WidgetsBinding.instance
-                          .addPostFrameCallback((_) => _scrollToBottom());
+                      // Only jump to the bottom when a new message actually
+                      // arrives — not on every rebuild (e.g. each keystroke in
+                      // the composer), which used to yank the list mid-scroll.
+                      if (list.length != _lastMessageCount) {
+                        _lastMessageCount = list.length;
+                        WidgetsBinding.instance
+                            .addPostFrameCallback((_) => _scrollToBottom());
+                      }
                       return ListView.builder(
                         controller: _scroll,
                         padding: const EdgeInsets.fromLTRB(
@@ -245,10 +255,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
               ],
             ),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.call_outlined, color: BrandColors.primary),
           ),
         ],
       ),
@@ -419,22 +425,64 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _openAttachments(BuildContext context) async {
     FocusScope.of(context).unfocus();
     if (_emojiOpen) setState(() => _emojiOpen = false);
-    await showModalBottomSheet<void>(
+    final source = await showModalBottomSheet<ImageSource>(
       context: context,
       useRootNavigator: true,
       backgroundColor: BrandColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
+            BorderRadius.vertical(top: Radius.circular(Radii.xxl)),
       ),
       builder: (_) => _AttachmentSheet(
-        onPick: (label) {
-          Navigator.pop(context);
-          AppSnack.show(context, '$label sharing is coming soon.',
-              type: SnackType.info);
-        },
+        onPick: (source) => Navigator.pop(context, source),
       ),
     );
+    if (source != null) await _pickAndSendImage(source);
+  }
+
+  /// Picks an image (gallery or camera), uploads it, then sends it as an image
+  /// message. Cancelling the picker is a no-op.
+  Future<void> _pickAndSendImage(ImageSource source) async {
+    if (widget.recipientId == null) return;
+    XFile? file;
+    try {
+      file = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1600,
+        imageQuality: 80,
+      );
+    } catch (_) {
+      if (mounted) {
+        AppSnack.error(
+          context,
+          source == ImageSource.camera
+              ? 'Camera is not available on this device.'
+              : 'Could not open photos.',
+        );
+      }
+      return;
+    }
+    if (file == null) return; // user cancelled
+
+    setState(() => _sending = true);
+    try {
+      final url = await ref
+          .read(uploadServiceProvider)
+          .uploadImage(file, folder: 'chat');
+      final message = await ref.read(chatServiceProvider).send(
+            recipientId: widget.recipientId!,
+            content: '',
+            type: 'image',
+            imageUrl: url,
+            bookingId: widget.bookingId,
+          );
+      ref.read(chatMessagesProvider(widget.threadId).notifier).append(message);
+      _scrollToBottom();
+    } catch (_) {
+      if (mounted) AppSnack.error(context, 'Could not send photo.');
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   Widget _sendButton(bool canSend) {
@@ -459,7 +507,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
         child: _sending
             ? Padding(
-                padding: EdgeInsets.all(11),
+                padding: const EdgeInsets.all(11),
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: BrandColors.mutedFg),
               )
@@ -630,18 +678,19 @@ class _EmojiPicker extends StatelessWidget {
   }
 }
 
-/// Share sheet shown by the composer's "+" — a row of attachment options.
+/// Share sheet shown by the composer's "+" — pick a photo from the library or
+/// take one with the camera. Both upload and send as an image message.
 class _AttachmentSheet extends StatelessWidget {
-  final ValueChanged<String> onPick;
+  final ValueChanged<ImageSource> onPick;
   const _AttachmentSheet({required this.onPick});
 
   @override
   Widget build(BuildContext context) {
-    final items = <(IconData, String, Color)>[
-      (Icons.photo_library_outlined, 'Photos', BrandColors.primary),
-      (Icons.photo_camera_outlined, 'Camera', BrandColors.info),
-      (Icons.description_outlined, 'Document', BrandColors.warning),
-      (Icons.location_on_outlined, 'Location', BrandColors.success),
+    final items = <(IconData, String, Color, ImageSource)>[
+      (Icons.photo_library_outlined, 'Photos', BrandColors.primary,
+          ImageSource.gallery),
+      (Icons.photo_camera_outlined, 'Camera', BrandColors.info,
+          ImageSource.camera),
     ];
     return SafeArea(
       top: false,
@@ -663,18 +712,20 @@ class _AttachmentSheet extends StatelessWidget {
                 ),
               ),
             ),
-            Text('Share', style: Theme.of(context).textTheme.titleLarge),
+            Text('Share a photo',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: Spacing.x5),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                for (final (icon, label, color) in items)
+                for (final (icon, label, color, source) in items) ...[
                   _AttachOption(
                     icon: icon,
                     label: label,
                     color: color,
-                    onTap: () => onPick(label),
+                    onTap: () => onPick(source),
                   ),
+                  const SizedBox(width: Spacing.x6),
+                ],
               ],
             ),
           ],
@@ -751,13 +802,30 @@ class _Bubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              message.content,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color:
-                        isMine ? BrandColors.primaryFg : BrandColors.foreground,
+            if (message.isImage && (message.imageUrl?.isNotEmpty ?? false)) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(Radii.lg),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                      maxHeight: 240, minWidth: 160, maxWidth: 240),
+                  child: AppNetworkImage(
+                    url: message.imageUrl,
+                    fit: BoxFit.cover,
+                    fallbackIcon: Icons.image_outlined,
                   ),
-            ),
+                ),
+              ),
+              if (message.content.isNotEmpty) const SizedBox(height: 6),
+            ],
+            if (message.content.isNotEmpty)
+              Text(
+                message.content,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: isMine
+                          ? BrandColors.primaryFg
+                          : BrandColors.foreground,
+                    ),
+              ),
             const SizedBox(height: 3),
             // Timestamp + read receipt — bodySmall muted, grouped below.
             Row(
